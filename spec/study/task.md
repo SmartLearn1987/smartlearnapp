@@ -1,0 +1,7 @@
+- [x] Subjects list.
+- [x] Curricula list per subject.
+- [x] Lesson rendering from JSON.
+- [x] Summary and Keypoints display.
+- [x] Vocabulary list with definitions.
+- [x] Toggle completion button.
+- [x] Progress bar indicator.

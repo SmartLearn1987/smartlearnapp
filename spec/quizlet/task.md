@@ -1,0 +1,8 @@
+- [x] Create a new quizlet set.
+- [x] Edit an existing quizlet set.
+- [x] Add terms with images.
+- [x] Delete a quizlet set.
+- [x] Flashcard flipping animation.
+- [x] Quizlet search bar.
+- [x] Share status (Public/Private).
+- [x] Data validation (Duplicate terms).

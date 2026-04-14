@@ -1,0 +1,25 @@
+# Quiz (Trắc nghiệm) Feature Task List
+
+- [x] **Database & Backend**
+    - [x] Create `exams`, `exam_questions`, `exam_options` tables in `schema.sql`.
+    - [x] Implement API CRUD endpoints in `server/index.mjs`.
+- [x] **Navigation & Routing**
+    - [x] Add "Trắc nghiệm" menu item in `AppHeader.tsx`.
+    - [x] Register `/quizzes` routes in `App.tsx`.
+    - [x] Add `QuizTakePage` and `QuizResultPage` routes.
+- [x] **Management UI (Teacher View)**
+    - [x] `QuizListPage.tsx`: List, search, edit, delete.
+    - [x] `QuizFormPage.tsx`: Interactive question/option editor.
+- [x] **Taking UI (Student View)**
+    - [x] `QuizTakePage.tsx`:
+        - [x] Real-time countdown timer.
+        - [x] Question map sidebar.
+        - [x] Answer support for Single, Multiple, Text types.
+        - [x] Auto-submit when time expires.
+    - [x] `QuizResultPage.tsx`:
+        - [x] Score calculation and visualization.
+        - [x] Detailed review of all questions.
+        - [x] "Làm lại" (Retake) functionality.
+- [x] **Bug Fixes & Polish**
+    - [x] Fix 404 error on `POST /api/exams` by clearing ghost processes.
+    - [x] Ensure correct `X-User-Id` usage.

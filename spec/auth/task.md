@@ -1,0 +1,7 @@
+- [x] Register user interface.
+- [x] Login user interface.
+- [x] Password confirmations.
+- [x] Error handling for duplicate records.
+- [x] Default admin account.
+- [x] Column additions to existing data tables.
+- [x] X-User-Id auto-header.

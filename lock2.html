@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Đồng Hồ Đa Năng - Font X2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rubik:wght@300;400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { width: 100%; height: 100dvh; overflow: hidden; background: #05111f; color: #fff; font-family: 'Share Tech Mono', monospace; }
+    body { display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(160deg, #05111f 0%, #0a1e3d 50%, #071529 100%); }
+
+    /* Ambient glow */
+    .glow-blob { position: fixed; border-radius: 50%; pointer-events: none; filter: blur(100px); opacity: 0.15; z-index: 0; }
+    .glow-1 { width: 400px; height: 400px; background: #1a6aff; top: -10%; left: -10%; }
+    .glow-2 { width: 400px; height: 400px; background: #0044cc; bottom: -10%; right: -10%; }
+
+    /* Navigation */
+    .nav-tabs { position: fixed; top: 20px; display: flex; gap: 10px; z-index: 10; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+    .nav-btn { background: none; border: none; color: #4a8ccc; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Rubik'; font-size: 13px; transition: 0.3s; }
+    .nav-btn.active { background: #3a8fff; color: white; box-shadow: 0 0 15px rgba(58,143,255,0.4); }
+
+    /* Main Container */
+    .container { position: relative; z-index: 1; text-align: center; width: 100%; display: none; }
+    .container.active { display: block; }
+
+    .date-line { font-family: 'Rubik'; font-weight: 300; font-size: clamp(14px, 4vw, 24px); letter-spacing: 0.3em; color: #4a8ccc; margin-bottom: 10px; text-transform: uppercase; }
+
+    /* Time Display - GẤP ĐÔI KÍCH THƯỚC */
+    .time-display { display: flex; align-items: baseline; justify-content: center; line-height: 0.9; }
+    .main-digits { 
+      /* Tăng từ 18vw lên 36vw để đạt hiệu ứng gấp đôi trên mobile/desktop */
+      font-size: clamp(100px, 36vw, 320px); 
+      font-weight: 700; 
+      text-shadow: 0 0 50px rgba(80,160,255,0.4); 
+      letter-spacing: -0.05em;
+    }
+    .ms-digits { 
+      /* Tăng từ 8vw lên 14vw */
+      font-size: clamp(40px, 14vw, 100px); 
+      color: #3a8fff; 
+      margin-left: 15px; 
+      opacity: 0.7; 
+      width: 2ch; 
+      text-align: left; 
+    }
+    .colon { color: #3a8fff; animation: blink 1s step-end infinite; padding: 0 5px; }
+
+    @keyframes blink { 50% { opacity: 0.1; } }
+
+    /* Controls */
+    .controls { margin-top: 50px; display: flex; justify-content: center; gap: 20px; }
+    .btn { background: rgba(58,143,255,0.1); border: 1px solid #3a8fff; color: #fff; padding: 15px 30px; border-radius: 40px; cursor: pointer; font-family: 'Rubik'; font-size: 16px; transition: 0.2s; min-width: 140px; }
+    .btn:active { transform: scale(0.95); background: #3a8fff; }
+    .btn-reset { border-color: #555; color: #888; }
+
+    input[type="number"] { background: rgba(255,255,255,0.05); border: 2px solid #3a8fff; color: #fff; font-family: 'Share Tech Mono'; font-size: 40px; width: 120px; text-align: center; border-radius: 12px; margin-bottom: 20px; outline: none; padding: 5px; }
+
+    /* Footer Tools */
+    .footer-tools { position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px; }
+    .fs-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #4a8ccc; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="glow-blob glow-1"></div>
+  <div class="glow-blob glow-2"></div>
+
+  <nav class="nav-tabs">
+    <button class="nav-btn active" onclick="switchMode('clock')">ĐỒNG HỒ</button>
+    <button class="nav-btn" onclick="switchMode('stopwatch')">BẤM GIỜ</button>
+    <button class="nav-btn" onclick="switchMode('timer')">ĐẾM NGƯỢC</button>
+  </nav>
+
+  <div id="clock-container" class="container active">
+    <div class="date-line" id="date-display">ĐANG TẢI...</div>
+    <div class="time-display">
+      <span class="main-digits" id="clock-main">00:00:00</span>
+      <span class="ms-digits" id="clock-ms">00</span>
+    </div>
+  </div>
+
+  <div id="stopwatch-container" class="container">
+    <div class="date-line">STOPWATCH</div>
+    <div class="time-display">
+      <span class="main-digits" id="sw-main">00:00:00</span>
+      <span class="ms-digits" id="sw-ms">00</span>
+    </div>
+    <div class="controls">
+      <button class="btn" id="sw-start" onclick="toggleStopwatch()">BẮT ĐẦU</button>
+      <button class="btn btn-reset" onclick="resetStopwatch()">ĐẶT LẠI</button>
+    </div>
+  </div>
+
+  <div id="timer-container" class="container">
+    <div class="date-line">CÀI ĐẶT PHÚT</div>
+    <div id="timer-setup">
+        <input type="number" id="timer-input" value="05" min="1" max="999">
+    </div>
+    <div class="time-display">
+      <span class="main-digits" id="tm-main">05:00</span>
+      <span class="ms-digits" id="tm-ms">00</span>
+    </div>
+    <div class="controls">
+      <button class="btn" id="tm-start" onclick="toggleTimer()">BẮT ĐẦU</button>
+      <button class="btn btn-reset" onclick="resetTimer()">ĐẶT LẠI</button>
+    </div>
+  </div>
+
+  <div class="footer-tools">
+    <button class="fs-btn" onclick="toggleFS()">⛶ FULLSCREEN</button>
+  </div>
+
+  <script>
+    let currentMode = 'clock';
+    const days = ['Chủ nhật','Thứ hai','Thứ ba','Thứ tư','Thứ năm','Thứ sáu','Thứ bảy'];
+    let swRunning = false, swStartTime = 0, swElapsedTime = 0;
+    let tmRunning = false, tmEndTime = 0, tmTimeLeft = 300000;
+
+    function switchMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`${mode}-container`).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    function formatTime(ms) {
+      let s = Math.floor(ms / 1000);
+      let m = Math.floor(s / 60);
+      let h = Math.floor(m / 60);
+      s %= 60; m %= 60;
+      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    function update() {
+      const now = Date.now();
+      const dateObj = new Date(now);
+
+      if (currentMode === 'clock') {
+        const h = String(dateObj.getHours() % 12 || 12).padStart(2, '0');
+        const m = String(dateObj.getMinutes()).padStart(2, '0');
+        const s = String(dateObj.getSeconds()).padStart(2, '0');
+        const ms = String(Math.floor(dateObj.getMilliseconds() / 10)).padStart(2, '0');
+        document.getElementById('clock-main').innerHTML = `${h}<span class="colon">:</span>${m}<span class="colon">:</span>${s}`;
+        document.getElementById('clock-ms').textContent = ms;
+        document.getElementById('date-display').textContent = `${days[dateObj.getDay()]} · ${dateObj.getDate()}/${dateObj.getMonth()+1}`;
+      }
+
+      if (currentMode === 'stopwatch' && swRunning) {
+        const diff = now - swStartTime;
+        document.getElementById('sw-main').textContent = formatTime(diff);
+        document.getElementById('sw-ms').textContent = String(Math.floor((diff % 1000) / 10)).padStart(2, '0');
+      }
+
+      if (currentMode === 'timer' && tmRunning) {
+        tmTimeLeft = Math.max(0, tmEndTime - now);
+        document.getElementById('tm-main').textContent = formatTime(tmTimeLeft);
+        document.getElementById('tm-ms').textContent = String(Math.floor((tmTimeLeft % 1000) / 10)).padStart(2, '0');
+        if (tmTimeLeft <= 0) { tmRunning = false; alert("Hết giờ!"); }
+      }
+      requestAnimationFrame(update);
+    }
+
+    function toggleStopwatch() {
+      swRunning = !swRunning;
+      swStartTime = swRunning ? Date.now() - swElapsedTime : swStartTime;
+      swElapsedTime = !swRunning ? Date.now() - swStartTime : swElapsedTime;
+      document.getElementById('sw-start').textContent = swRunning ? 'DỪNG' : 'TIẾP TỤC';
+    }
+    function resetStopwatch() {
+      swRunning = false; swElapsedTime = 0;
+      document.getElementById('sw-main').textContent = '00:00:00';
+      document.getElementById('sw-ms').textContent = '00';
+      document.getElementById('sw-start').textContent = 'BẮT ĐẦU';
+    }
+
+    function toggleTimer() {
+      if (!tmRunning) {
+        const mins = parseFloat(document.getElementById('timer-input').value) || 0;
+        if (tmTimeLeft <= 0 || tmTimeLeft === (mins * 60000)) tmTimeLeft = mins * 60000;
+        tmEndTime = Date.now() + tmTimeLeft;
+        tmRunning = true;
+        document.getElementById('tm-start').textContent = 'DỪNG';
+      } else {
+        tmRunning = false;
+        tmTimeLeft = tmEndTime - Date.now();
+        document.getElementById('tm-start').textContent = 'TIẾP TỤC';
+      }
+    }
+    function resetTimer() {
+      tmRunning = false;
+      const mins = document.getElementById('timer-input').value;
+      tmTimeLeft = mins * 60000;
+      document.getElementById('tm-main').textContent = formatTime(tmTimeLeft);
+      document.getElementById('tm-ms').textContent = '00';
+      document.getElementById('tm-start').textContent = 'BẮT ĐẦU';
+    }
+
+    function toggleFS() {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+
+    requestAnimationFrame(update);
+  </script>
+</body>
+</html>
