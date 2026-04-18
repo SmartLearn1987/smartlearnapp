@@ -8,6 +8,7 @@ Smart Learn là một ứng dụng web hiện đại giúp quản lý giáo trì
 
 ### 👨‍🎓 Đối với Học sinh
 - **Sổ tay môn học**: Danh sách môn học và giáo trình trực quan, phân loại khoa học theo từng chủ đề. Phụ lục ghi chú trọng tâm giúp nắm vững kiến thức bứt phá.
+- **Thiết định môn học cá nhân**: Mỗi người dùng tự chọn danh sách môn học hiển thị trong Sổ tay và Trang chủ của mình thông qua giao diện **Thiết định môn học** trực quan.
 - **Học tập đa phương thức**: Giao diện bài học dạng tab thông minh (Nội dung, Trắc nghiệm, Flashcard, Tổng kết).
 - **Luyện tập Quizlet & Trắc nghiệm**: Bộ thẻ ghi nhớ và đề kiểm tra được đồng bộ môn học, hỗ trợ **Auto-play**, **Shuffle**, **Fullscreen** và **Tùy biến giao diện Flashcard**.
 - **Cá nhân hóa nội dung Cộng đồng**: Tự động lọc các bộ thẻ ghi nhớ và bài trắc nghiệm trong mục "Cộng đồng" dựa trên **Cấp độ học tập** của người dùng, giúp tiếp cận nội dung phù hợp nhất.
@@ -75,6 +76,8 @@ Truy cập: `http://localhost:8080`
 
 ## 📦 Triển khai (Deployment)
 Dự án được tối ưu hóa để triển khai trên **Railway** với tệp cấu hình `railway.toml` có sẵn.
+- **Production URL**: [http://smartlearnapp.net/](http://smartlearnapp.net/)
+- **SEO**: Tối ưu hóa Meta tags, `robots.txt` và `sitemap.xml` với từ khóa: _Smart learn, Nền tảng học thông minh_.
 
 ---
 
@@ -82,8 +85,13 @@ Dự án được tối ưu hóa để triển khai trên **Railway** với tệ
 - `/src`: Mã nguồn Frontend (Pages, Components, Contexts).
 - `/server`: Mã nguồn Backend (API Routes, Database logic).
 - `/uploads`: Thư mục lưu trữ hình ảnh bài học.
-- `/spec`: Tài liệu đặc tả và hướng dẫn sử dụng chi tiết các tính năng.
-- `/spec/api.md`: Tài liệu đặc tả API đầy đủ (Request/Response) cho toàn bộ hệ thống.
+- `/public`: Tài nguyên tĩnh (`robots.txt`, `sitemap.xml`, `favicon.png`).
+- `/spec`: Tài liệu đặc tả và nhật ký thay đổi.
+  - `api.md`: Tài liệu đặc tả API đầy đủ (Request/Response) cho toàn bộ hệ thống.
+  - `change-spec.md`: Nhật ký thay đổi tính năng, checklist và nội dung cập nhật.
+  - `/auth`: Đặc tả luồng xác thực.
+  - `/game`: Đặc tả các tính năng trò chơi.
+  - `/quiz`, `/quizlet`, `/study`, `/teacher`: Đặc tả các chức năng theo từng nhóm tính năng.
 
 ---
 

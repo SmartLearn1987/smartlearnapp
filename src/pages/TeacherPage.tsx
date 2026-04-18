@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import RichTextEditor, { type RichBlock } from "@/components/RichTextEditor";
 import { BookOpen, Plus, ArrowLeft, Upload, Trash2, Pencil, ImagePlus, X, Eye, EyeOff, CheckCircle2, HelpCircle, Layers, FileText, Lightbulb, BookMarked, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 import QuizRunner from "@/components/QuizRunner";
 import FlashcardViewer from "@/components/FlashcardViewer";
@@ -316,7 +317,7 @@ export default function TeacherPage() {
   // lesson form
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonDescription, setLessonDescription] = useState("");
-  const [lessonContent, setLessonContent] = useState("");
+  const [lessonBlocks, setLessonBlocks] = useState<RichBlock[]>([]);
   const [lessonSummary, setLessonSummary] = useState("");
   const [lessonKeyPoints, setLessonKeyPoints] = useState("");
   const [lessonError, setLessonError] = useState("");
@@ -326,6 +327,7 @@ export default function TeacherPage() {
   const [showImportFlashcard, setShowImportFlashcard] = useState(false);
   const [importFlashcardContent, setImportFlashcardContent] = useState("");
   const [lessonImages, setLessonImages] = useState<LessonImage[]>([]);
+  const [pendingImageFiles, setPendingImageFiles] = useState<File[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -563,7 +565,7 @@ export default function TeacherPage() {
   const resetLessonForm = () => {
     setLessonTitle("");
     setLessonDescription("");
-    setLessonContent("");
+    setLessonBlocks([]);
     setLessonSummary("");
     setLessonKeyPoints("");
     setLessonError("");
@@ -571,6 +573,7 @@ export default function TeacherPage() {
     setLessonQuiz([]);
     setLessonFlashcards([]);
     setLessonImages([]);
+    setPendingImageFiles([]);
   };
 
   const handleSaveLesson = async () => {
@@ -580,14 +583,6 @@ export default function TeacherPage() {
       return;
     }
     try {
-      const contentBlocks = lessonContent.trim()
-        ? lessonContent
-          .split("\n")
-          .map((line) => line.trim())
-          .filter(Boolean)
-          .map((text) => ({ type: "paragraph", text }))
-        : [];
-
       const keyPoints = lessonKeyPoints
         .split("\n")
         .map((x) => x.trim())
@@ -597,7 +592,7 @@ export default function TeacherPage() {
         curriculum_id: selectedCurriculum.id,
         title: lessonTitle.trim(),
         description: lessonDescription.trim() || null,
-        content: contentBlocks,
+        content: lessonBlocks,
         summary: lessonSummary.trim() || null,
         key_points: keyPoints,
         vocabulary: [],
@@ -632,16 +627,22 @@ export default function TeacherPage() {
       await apiFetch(`/lessons/${savedLesson.id}/quiz-flashcards`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          quiz: cleanedQuiz,
-          flashcards: cleanedFlashcards,
-        }),
+        body: JSON.stringify({ quiz: cleanedQuiz, flashcards: cleanedFlashcards }),
       });
 
-      await fetchLessons(selectedCurriculum.id);
-      if (selectedSubject) {
-        await fetchCurricula(selectedSubject.id);
+      // Upload pending images for new lessons
+      if (!editingLessonId && pendingImageFiles.length > 0) {
+        const formData = new FormData();
+        pendingImageFiles.forEach((file) => formData.append("images", file));
+        try {
+          await apiFetch(`/lessons/${savedLesson.id}/images`, { method: "POST", body: formData });
+        } catch {
+          // non-fatal
+        }
       }
+
+      await fetchLessons(selectedCurriculum.id);
+      if (selectedSubject) await fetchCurricula(selectedSubject.id);
       resetLessonForm();
       setView("lessons");
     } catch {
@@ -653,15 +654,24 @@ export default function TeacherPage() {
     setEditingLessonId(lesson.id);
     setLessonTitle(lesson.title || "");
     setLessonDescription(lesson.description || "");
-    setLessonContent(
-      Array.isArray(lesson.content)
-        ? lesson.content.map((b) => b?.text || "").filter(Boolean).join("\n")
-        : ""
+    setLessonBlocks(
+      Array.isArray(lesson.content) && lesson.content.length > 0
+        ? lesson.content.map((b: any) => ({
+            type: b.type || "paragraph",
+            text: b.text || "",
+            fontSize: b.fontSize,
+            fontFamily: b.fontFamily,
+            color: b.color,
+            bold: b.bold,
+            italic: b.italic,
+          }))
+        : []
     );
     setLessonSummary(lesson.summary || "");
     setLessonKeyPoints(Array.isArray(lesson.key_points) ? lesson.key_points.join("\n") : "");
     setLessonQuiz(Array.isArray(lesson.quiz) ? lesson.quiz : []);
     setLessonFlashcards(Array.isArray(lesson.flashcards) ? lesson.flashcards : []);
+    setPendingImageFiles([]);
     setLessonError("");
     // Load existing images
     try {
@@ -1142,7 +1152,13 @@ export default function TeacherPage() {
 
         {/* ── LESSON_FORM VIEW ── */}
         {view === "lesson_form" && selectedSubject && selectedCurriculum && (
-          <div className="space-y-6">
+          <div className="space-y-6 pt-2">
+            <div className="flex items-center gap-4 ml-2 mb-4">
+              <h1 className="text-4xl md:text-5xl font-extrabold text-[#112240] tracking-tight">{selectedCurriculum.name}</h1>
+              <span className="rounded-full bg-emerald-50 px-4 py-1.5 text-xs font-bold text-emerald-600 border border-emerald-200 uppercase tracking-widest">
+                Môn: {selectedSubject.name}
+              </span>
+            </div>
             <div className="flex items-center gap-4 mb-2">
               <button
                 onClick={() => {
@@ -1176,14 +1192,8 @@ export default function TeacherPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-semibold">Nội dung (mỗi dòng là 1 đoạn)</label>
-                  <textarea
-                    value={lessonContent}
-                    onChange={(e) => setLessonContent(e.target.value)}
-                    rows={6}
-                    className="mt-1 w-full rounded-xl border bg-background px-4 py-2.5 text-sm"
-                    placeholder="Nhập nội dung bài học..."
-                  />
+                  <label className="text-sm font-semibold mb-1 block">Nội dung bài học</label>
+                  <RichTextEditor value={lessonBlocks} onChange={setLessonBlocks} />
                 </div>
 
                 {/* ── Hình ảnh bài học ── */}
@@ -1215,9 +1225,49 @@ export default function TeacherPage() {
                         </Button>
                       </div>
                     ) : (
-                      <p className="text-xs text-muted-foreground">Lưu bài học trước để thêm ảnh</p>
+                      <div className="flex items-center gap-2">
+                        <input
+                          ref={imageInputRef}
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files) {
+                              setPendingImageFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                            }
+                          }}
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => imageInputRef.current?.click()}
+                        >
+                          <ImagePlus className="mr-1 h-4 w-4" />
+                          Thêm ảnh
+                        </Button>
+                        {pendingImageFiles.length > 0 && (
+                          <span className="text-xs text-muted-foreground">{pendingImageFiles.length} ảnh sẽ tải khi lưu</span>
+                        )}
+                      </div>
                     )}
                   </div>
+                  {/* Pending images preview (new lesson) */}
+                  {!editingLessonId && pendingImageFiles.length > 0 && (
+                    <div className="grid grid-cols-3 gap-3 mt-2">
+                      {pendingImageFiles.map((file, idx) => (
+                        <div key={idx} className="group relative rounded-xl overflow-hidden border bg-muted aspect-video">
+                          <img src={URL.createObjectURL(file)} alt={file.name} className="h-full w-full object-cover" />
+                          <button
+                            onClick={() => setPendingImageFiles(prev => prev.filter((_, i) => i !== idx))}
+                            className="absolute top-1.5 right-1.5 rounded-full bg-destructive/90 p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   {lessonImages.length > 0 && (
                     <div className="grid grid-cols-3 gap-3">
                       {lessonImages.map((img) => {
@@ -1692,22 +1742,34 @@ function ContentRenderer({ blocks }: { blocks: any[] }) {
   return (
     <div className="space-y-4 text-left">
       {(blocks || []).map((block, i) => {
+        const style: React.CSSProperties = {
+          fontSize: block.fontSize ? `${block.fontSize}px` : undefined,
+          fontFamily: block.fontFamily && block.fontFamily !== "inherit" ? block.fontFamily : undefined,
+          color: block.color || undefined,
+          fontWeight: block.bold ? "bold" : undefined,
+          fontStyle: block.italic ? "italic" : undefined,
+          whiteSpace: "pre-wrap",
+        };
         switch (block.type) {
           case "heading":
-            if (block.level === 1) return <h1 key={i} className="font-heading text-2xl font-bold mt-0 mb-2">{block.text}</h1>;
-            return <h2 key={i} className="font-heading text-xl font-bold mt-6 mb-2">{block.text}</h2>;
-          case "paragraph":
-            return <p key={i} className="leading-relaxed text-foreground/90">{block.text}</p>;
-          case "quote":
+            return <h2 key={i} className="font-heading text-xl font-bold mt-4 mb-1" style={style}>{block.text}</h2>;
+          case "list_item":
             return (
-              <blockquote key={i} className="border-l-4 border-primary/30 bg-primary/5 rounded-r-xl pl-5 pr-4 py-3 italic text-foreground/80">
-                {block.text}
-              </blockquote>
+              <div key={i} className="flex items-start gap-2">
+                <span className="mt-1 text-primary font-bold shrink-0">•</span>
+                <p className="leading-relaxed text-foreground/90" style={style}>{block.text}</p>
+              </div>
             );
-          case "divider":
-            return <hr key={i} className="my-6 border-border" />;
+          case "numbered_item":
+            return (
+              <div key={i} className="flex items-start gap-2">
+                <span className="mt-1 font-bold text-primary min-w-[20px] shrink-0">{i + 1}.</span>
+                <p className="leading-relaxed text-foreground/90" style={style}>{block.text}</p>
+              </div>
+            );
+          case "paragraph":
           default:
-            return <p key={i}>{block.text}</p>;
+            return <p key={i} className="leading-relaxed text-foreground/90" style={style}>{block.text}</p>;
         }
       })}
     </div>

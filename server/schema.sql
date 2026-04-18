@@ -229,3 +229,10 @@ create table if not exists nhanh_nhu_chop_questions (
 );
 
 create index if not exists idx_nc_level on nhanh_nhu_chop_questions(level);
+
+create table if not exists user_subjects (
+  user_id uuid references users(id) on delete cascade,
+  subject_id uuid references subjects(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, subject_id)
+);

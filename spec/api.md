@@ -384,6 +384,59 @@ Delete a subject.
 
 ---
 
+## 🎯 User Subjects (Thiết định môn học cá nhân)
+
+### `GET /api/user-subjects`
+Lấy danh sách các môn học mà người dùng hiện tại đã chọn đưa vào sổ tay. Chỉ trả về những môn học đã được chọn, kèm số lượng chương trình học của từng môn.
+
+**Headers:** Yêu cầu `x-user-id` và `x-session-token`.
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": "uuid",
+    "name": "string",
+    "description": "string | null",
+    "icon": "string | null",
+    "user_id": "uuid",
+    "created_by": "string | null",
+    "sort_order": 0,
+    "curriculum_count": 3,
+    "created_at": "timestamp"
+  }
+]
+```
+
+> Trả về mảng rỗng `[]` nếu người dùng chưa chọn môn nào.
+
+---
+
+### `POST /api/user-subjects`
+Cập nhật lại toàn bộ danh sách môn học mà người dùng đã chọn. Thực hiện xóa toàn bộ lựa chọn cũ và thêm mới theo danh sách gửi lên (Transactional).
+
+**Headers:** Yêu cầu `x-user-id` và `x-session-token`.
+
+**Request Body:**
+| Field         | Type     | Required | Description                       |
+|---------------|----------|----------|-----------------------------------|
+| `subject_ids` | UUID[]   | ✅       | Mảng ID các môn học được chọn     |
+
+```json
+{
+  "subject_ids": ["uuid-1", "uuid-2", "uuid-3"]
+}
+```
+
+**Response:** `200 OK`
+```json
+{ "ok": true }
+```
+
+**Errors:** `400` (thiếu `subject_ids`), `500`.
+
+---
+
 ## 📖 Curricula
 
 ### `GET /api/curricula`

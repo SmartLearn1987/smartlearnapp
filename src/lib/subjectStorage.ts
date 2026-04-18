@@ -7,7 +7,7 @@ const SUBJECT_COLORS = [
   "bg-primary", "bg-secondary", "bg-accent", "bg-quiz",
   "bg-emerald-500", "bg-blue-500", "bg-purple-500", "bg-orange-500",
 ];
-const SUBJECT_ICONS = ["📖", "🔢", "🌿", "⭐", "🎨", "🔬", "🌍", "🎵", "💻", "📐", "📜", "⌛", "📍", "🚀", "🔭", "⚙️", "🇯🇵", "⚽", "🎭", "🎯", "📊", "💡"];
+const SUBJECT_ICONS = ["📖", "🔢", "🌿", "⭐", "🎨", "🔬", "🧪", "🌍", "🗺️", "🏛️", "🎵", "💻", "📐", "📜", "⌛", "📍", "🚀", "🔭", "⚙️", "EN", "🔤", "🇯🇵", "⚽", "🎭", "🎯", "📊", "💡"];
 
 export function getCustomSubjects(): Subject[] {
   const raw = localStorage.getItem(CUSTOM_SUBJECTS_KEY);

@@ -29,35 +29,40 @@ interface SubjectData {
    const [activeTab, setActiveTab] = useState<"subjects" | "clock" | "game">("subjects");
  
    useEffect(() => {
-     if (isAuthLoading) return;
- 
-     const fetchData = async () => {
-       try {
-         const [subjectsData, curriculaData] = await Promise.all([
-           apiFetch<SubjectData[]>("/subjects"),
-           apiFetch<CurriculumData[]>("/curricula"),
-         ]);
- 
-         const filteredCurricula = (curriculaData || []).filter(
-           (c) => c.created_by === user?.id
-         );
- 
-         const updatedSubjects = (subjectsData || []).map((s) => ({
-           ...s,
-           curriculum_count: filteredCurricula.filter((c) => c.subject_id === s.id).length,
-         }));
- 
-         setSubjects(updatedSubjects);
-       } catch (err) {
-         console.error("Error fetching personalized counts for home page:", err);
-         apiFetch<SubjectData[]>("/subjects")
-           .then(data => setSubjects(data || []))
-           .catch(() => setSubjects([]));
-       }
-     };
- 
-     fetchData();
-   }, [user?.id, isAuthLoading]);
+    if (isAuthLoading) return;
+
+    const fetchData = async () => {
+      try {
+        const subjectsEndpoint = user ? "/user-subjects" : "/subjects";
+        const [subjectsData, curriculaData] = await Promise.all([
+          apiFetch<SubjectData[]>(subjectsEndpoint),
+          apiFetch<CurriculumData[]>("/curricula"),
+        ]);
+
+        const filteredCurricula = (curriculaData || []).filter(
+          (c) => c.created_by === user?.id
+        );
+
+        const updatedSubjects = (subjectsData || []).map((s) => ({
+          ...s,
+          curriculum_count: filteredCurricula.filter((c) => c.subject_id === s.id).length,
+        }));
+
+        setSubjects(updatedSubjects);
+      } catch (err) {
+        console.error("Error fetching personalized counts for home page:", err);
+        if (user) {
+          setSubjects([]);
+        } else {
+          apiFetch<SubjectData[]>("/subjects")
+            .then(data => setSubjects(data || []))
+            .catch(() => setSubjects([]));
+        }
+      }
+    };
+
+    fetchData();
+  }, [user?.id, isAuthLoading]);
   return (
     <div className="min-h-[calc(100vh-64px)] flex flex-col">
       {/* Hero */}
@@ -135,9 +140,16 @@ interface SubjectData {
                 Lưu trữ thông minh – Ghi nhớ sâu
               </p>
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                {subjects.map((s, i) => (
-                  <SubjectCard key={s.id} subject={s} index={i} />
-                ))}
+                {subjects.length > 0 ? (
+                  subjects.map((s, i) => (
+                    <SubjectCard key={s.id} subject={s} index={i} />
+                  ))
+                ) : (
+                  <div className="col-span-full py-10 text-center text-muted-foreground animate-fade-up">
+                    <p className="mb-2">Bạn chưa chọn môn học nào để đưa vào sổ tay.</p>
+                    <Link to="/subjects" className="text-primary hover:underline font-medium">Bấm vào đây để cấu hình Thiết định môn học nhé</Link>
+                  </div>
+                )}
               </div>
             </div>
           ) : activeTab === "clock" ? (

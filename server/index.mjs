@@ -125,6 +125,11 @@ app.post(`${API_PREFIX}/upload`, upload.single("file"), (req, res) => {
 
 // ── Session Middleware ────────────────────────────────────────────────────
 app.use(async (req, res, next) => {
+  // Chỉ áp dụng xác thực cho các routes API
+  if (!req.path.startsWith(API_PREFIX)) {
+    return next();
+  }
+
   if (
     req.path.startsWith(`${API_PREFIX}/login`) || 
     req.path.startsWith(`${API_PREFIX}/register`) || 
@@ -611,6 +616,49 @@ app.post(`${API_PREFIX}/system-pages`, async (req, res) => {
   }
 });
 
+app.get(`${API_PREFIX}/user-subjects`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const { rows } = await query(
+      `select s.*, count(c.id)::int as curriculum_count
+       from subjects s
+       join user_subjects us on s.id = us.subject_id
+       left join curricula c on c.subject_id = s.id and c.is_public = true
+       where us.user_id = $1
+       group by s.id
+       order by s.sort_order asc, s.created_at desc`,
+      [userId]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error("GET /user-subjects Error:", err.message);
+    res.status(500).json({ error: "Failed to fetch user subjects", details: err.message });
+  }
+});
+
+app.post(`${API_PREFIX}/user-subjects`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const { subject_ids } = req.body || {};
+  if (!Array.isArray(subject_ids)) return res.status(400).json({ error: "subject_ids must be an array" });
+
+  try {
+    await query("BEGIN");
+    await query(`delete from user_subjects where user_id = $1`, [userId]);
+    for (const sid of subject_ids) {
+      await query(`insert into user_subjects (user_id, subject_id) values ($1, $2)`, [userId, sid]);
+    }
+    await query("COMMIT");
+    res.json({ ok: true });
+  } catch (err) {
+    await query("ROLLBACK");
+    console.error("POST /user-subjects Error:", err.message);
+    res.status(500).json({ error: "Failed to update user subjects" });
+  }
+});
 
 
 app.get(`${API_PREFIX}/subjects`, async (req, res) => {
@@ -2497,6 +2545,21 @@ async function initializeApp() {
         await query(`CREATE INDEX IF NOT EXISTS idx_nc_level ON nhanh_nhu_chop_questions(level)`);
       } catch (tabErr) {
         console.warn(`[Migration] Could not create nhanh_nhu_chop tables:`, tabErr.message);
+      }
+
+      // ── User Subjects Table Migration ──────────────────────────────────────
+      console.log("[Migration] Checking user_subjects table...");
+      try {
+        await query(`
+          CREATE TABLE IF NOT EXISTS user_subjects (
+            user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+            subject_id UUID REFERENCES subjects(id) ON DELETE CASCADE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            PRIMARY KEY (user_id, subject_id)
+          )
+        `);
+      } catch (tabErr) {
+        console.warn(`[Migration] Could not create user_subjects table:`, tabErr.message);
       }
 
     } catch (migErr) {

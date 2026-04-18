@@ -26,26 +26,38 @@ const tabs = [
 
 type TabId = (typeof tabs)[number]["id"];
 
-function ContentRenderer({ blocks }: { blocks: ContentBlock[] }) {
+function ContentRenderer({ blocks }: { blocks: any[] }) {
   return (
-    <div className="space-y-4">
-      {blocks.map((block, i) => {
+    <div className="space-y-3">
+      {(blocks || []).map((block, i) => {
+        const style: React.CSSProperties = {
+          fontSize: block.fontSize ? `${block.fontSize}px` : undefined,
+          fontFamily: block.fontFamily && block.fontFamily !== "inherit" ? block.fontFamily : undefined,
+          color: block.color || undefined,
+          fontWeight: block.bold ? "bold" : undefined,
+          fontStyle: block.italic ? "italic" : undefined,
+          whiteSpace: "pre-wrap",
+        };
         switch (block.type) {
           case "heading":
-            if (block.level === 1) return <h1 key={i} className="font-heading text-2xl font-bold mt-0 mb-2">{block.text}</h1>;
-            return <h2 key={i} className="font-heading text-xl font-bold mt-6 mb-2">{block.text}</h2>;
-          case "paragraph":
-            return <p key={i} className="leading-relaxed text-foreground/90">{block.text}</p>;
-          case "quote":
+            return <h2 key={i} className="font-heading text-xl font-bold mt-4 mb-1" style={style}>{block.text}</h2>;
+          case "list_item":
             return (
-              <blockquote key={i} className="border-l-4 border-primary/30 bg-primary/5 rounded-r-xl pl-5 pr-4 py-3 italic text-foreground/80">
-                {block.text}
-              </blockquote>
+              <div key={i} className="flex items-start gap-2">
+                <span className="mt-1 text-primary font-bold shrink-0">•</span>
+                <p className="leading-relaxed text-foreground/90" style={style}>{block.text}</p>
+              </div>
             );
-          case "divider":
-            return <hr key={i} className="my-6 border-border" />;
+          case "numbered_item":
+            return (
+              <div key={i} className="flex items-start gap-2">
+                <span className="mt-1 font-bold text-primary min-w-[20px] shrink-0">{i + 1}.</span>
+                <p className="leading-relaxed text-foreground/90" style={style}>{block.text}</p>
+              </div>
+            );
+          case "paragraph":
           default:
-            return <p key={i}>{block.text}</p>;
+            return <p key={i} className="leading-relaxed text-foreground/90" style={style}>{block.text}</p>;
         }
       })}
     </div>

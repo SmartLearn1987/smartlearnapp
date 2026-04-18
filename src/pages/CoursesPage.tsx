@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, BookOpen, Plus, Trash2, Pencil, Eye, EyeOff, X, ImagePlus, Upload, HelpCircle, Layers, FileText, CheckCircle2, Lightbulb, BookMarked, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 import QuizRunner from "@/components/QuizRunner";
 import FlashcardViewer from "@/components/FlashcardViewer";
+import RichTextEditor, { type RichBlock } from "@/components/RichTextEditor";
 import { apiFetch, API_BASE_URL } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -145,7 +146,7 @@ export default function CoursesPage() {
   // ── lesson states ────────────────────────────────────────────────────────
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonDescription, setLessonDescription] = useState("");
-  const [lessonContent, setLessonContent] = useState("");
+  const [lessonBlocks, setLessonBlocks] = useState<RichBlock[]>([]);
   const [lessonSummary, setLessonSummary] = useState("");
   const [lessonKeyPoints, setLessonKeyPoints] = useState("");
   const [lessonError, setLessonError] = useState("");
@@ -153,12 +154,13 @@ export default function CoursesPage() {
   const [lessonQuiz, setLessonQuiz] = useState<QuizItem[]>([]);
   const [lessonFlashcards, setLessonFlashcards] = useState<FlashcardItem[]>([]);
   const [lessonImages, setLessonImages] = useState<any[]>([]);
+  const [pendingImageFiles, setPendingImageFiles] = useState<File[]>([]);
 
   // ── lesson logic ────────────────────────────────────────────────────────
   const resetLessonForm = () => {
     setLessonTitle("");
     setLessonDescription("");
-    setLessonContent("");
+    setLessonBlocks([]);
     setLessonSummary("");
     setLessonKeyPoints("");
     setLessonError("");
@@ -166,6 +168,7 @@ export default function CoursesPage() {
     setLessonQuiz([]);
     setLessonFlashcards([]);
     setLessonImages([]);
+    setPendingImageFiles([]);
   };
 
   const handleDeleteLesson = async (lessonId: string) => {
@@ -189,14 +192,6 @@ export default function CoursesPage() {
       return;
     }
     try {
-      const contentBlocks = lessonContent.trim()
-        ? lessonContent
-          .split("\n")
-          .map((line) => line.trim())
-          .filter(Boolean)
-          .map((text) => ({ type: "paragraph", text }))
-        : [];
-
       const keyPoints = lessonKeyPoints
         .split("\n")
         .map((x) => x.trim())
@@ -206,7 +201,7 @@ export default function CoursesPage() {
         curriculum_id: selectedCurriculum.id,
         title: lessonTitle.trim(),
         description: lessonDescription.trim() || null,
-        content: contentBlocks,
+        content: lessonBlocks,
         summary: lessonSummary.trim() || null,
         key_points: keyPoints,
         vocabulary: [],
@@ -247,6 +242,17 @@ export default function CoursesPage() {
         }),
       });
 
+      // Upload pending images for new lessons
+      if (!editingLessonId && pendingImageFiles.length > 0) {
+        const formData = new FormData();
+        pendingImageFiles.forEach((file) => formData.append("images", file));
+        try {
+          await apiFetch(`/lessons/${savedLesson.id}/images`, { method: "POST", body: formData });
+        } catch {
+          toast.warning("Đã lưu bài học nhưng không thể tải ảnh lên.");
+        }
+      }
+
       toast.success("Đã lưu bài học thành công");
       await fetchLessons(selectedCurriculum.id);
       fetchCurricula();
@@ -261,15 +267,24 @@ export default function CoursesPage() {
     setEditingLessonId(lesson.id);
     setLessonTitle(lesson.title || "");
     setLessonDescription(lesson.description || "");
-    setLessonContent(
-      Array.isArray(lesson.content)
-        ? lesson.content.map((b) => b?.text || "").filter(Boolean).join("\n")
-        : ""
+    setLessonBlocks(
+      Array.isArray(lesson.content) && lesson.content.length > 0
+        ? lesson.content.map((b: any) => ({
+            type: b.type || "paragraph",
+            text: b.text || "",
+            fontSize: b.fontSize,
+            fontFamily: b.fontFamily,
+            color: b.color,
+            bold: b.bold,
+            italic: b.italic,
+          }))
+        : []
     );
     setLessonSummary(lesson.summary || "");
     setLessonKeyPoints(Array.isArray(lesson.key_points) ? lesson.key_points.join("\n") : "");
     setLessonQuiz(Array.isArray(lesson.quiz) ? lesson.quiz : []);
     setLessonFlashcards(Array.isArray(lesson.flashcards) ? lesson.flashcards : []);
+    setPendingImageFiles([]);
     
     // Tải hình ảnh của bài học từ server
     try {
@@ -673,14 +688,13 @@ export default function CoursesPage() {
         </div>
       ) : (
         <div className="animate-fade-in max-w-4xl mx-auto space-y-8">
-          <div className="space-y-1 ml-10">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-primary/70">{selectedCurriculum?.name}</span>
-              <span className="text-xs text-muted-foreground">/</span>
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{subject?.name}</span>
-            </div>
+          <div className="flex items-center gap-4 pt-4 ml-0">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-[#112240] tracking-tight">{selectedCurriculum?.name}</h1>
+            <span className="rounded-full bg-emerald-50 px-4 py-1.5 text-[11px] font-bold text-emerald-600 border border-emerald-200 uppercase tracking-widest mt-2">
+              Môn: {subject?.name}
+            </span>
           </div>
-          <div className="flex items-center gap-4 mt-1">
+          <div className="flex items-center gap-4 mt-6">
             <button
               onClick={() => setView("lessons")}
               className="rounded-xl p-2 hover:bg-muted transition-colors -ml-12"
@@ -713,14 +727,8 @@ export default function CoursesPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold ml-1 text-foreground/70">Nội dung bài học (mỗi dòng là một đoạn)</label>
-                <textarea
-                  value={lessonContent}
-                  onChange={(e) => setLessonContent(e.target.value)}
-                  rows={8}
-                  className="w-full rounded-2xl border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none"
-                  placeholder="Nhập kiến thức trọng tâm..."
-                />
+                <label className="text-sm font-bold ml-1 text-foreground/70">Nội dung bài học</label>
+                <RichTextEditor value={lessonBlocks} onChange={setLessonBlocks} />
               </div>
 
               {/* ── Lesson Images ── */}
@@ -756,10 +764,58 @@ export default function CoursesPage() {
                       </Button>
                     </div>
                   ) : (
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">Lưu bài học trước để thêm ảnh</p>
+                    // --- New lesson: queue images locally ---
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={imageInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => {
+                          if (e.target.files) {
+                            setPendingImageFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                          }
+                        }}
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-xl h-9 px-4 border-primary/20 text-primary hover:bg-primary/5"
+                        onClick={() => imageInputRef.current?.click()}
+                      >
+                        <Upload className="mr-1.5 h-4 w-4" />
+                        Thêm ảnh
+                      </Button>
+                      {pendingImageFiles.length > 0 && (
+                        <span className="text-xs text-muted-foreground">{pendingImageFiles.length} ảnh sẽ được tải lên khi lưu</span>
+                      )}
+                    </div>
                   )}
                 </div>
                 
+                {/* Pending images preview (new lesson) */}
+                {!editingLessonId && pendingImageFiles.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-2">
+                    {pendingImageFiles.map((file, idx) => (
+                      <div key={idx} className="group relative rounded-xl overflow-hidden border bg-background aspect-video shadow-sm">
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={file.name}
+                          className="h-full w-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <button
+                            onClick={() => setPendingImageFiles(prev => prev.filter((_, i) => i !== idx))}
+                            className="rounded-full bg-destructive p-2 text-white hover:bg-destructive/80 transition-colors shadow-lg"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {lessonImages.length > 0 && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-2">
                     {lessonImages.map((img) => {
@@ -892,7 +948,7 @@ export default function CoursesPage() {
               {/* Flashcard Section */}
               <div className="pt-6 border-t mt-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-lg flex items-center gap-2 text-foreground/70">
+                  <h3 className="font-bold text-lg flex items-center gap-2 text-primary">
                     Flashcards
                   </h3>
                   <div className="flex gap-2">
@@ -900,7 +956,7 @@ export default function CoursesPage() {
                       onClick={() => setShowImportFlashcard(true)} 
                       variant="outline" 
                       size="sm" 
-                      className="rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50"
+                      className="rounded-xl border-primary/20 text-primary hover:bg-primary/5"
                     >
                       Nhập
                     </Button>
@@ -908,7 +964,7 @@ export default function CoursesPage() {
                       onClick={addFlashcard} 
                       variant="outline" 
                       size="sm" 
-                      className="rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50"
+                      className="rounded-xl border-primary/20 text-primary hover:bg-primary/5"
                     >
                       <Plus className="mr-1 h-4 w-4" /> Thẻ
                     </Button>
@@ -930,21 +986,21 @@ export default function CoursesPage() {
                       </div>
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-orange-400 uppercase ml-1">Mặt trước</label>
+                          <label className="text-[10px] font-bold text-primary/80 uppercase ml-1">Mặt trước</label>
                           <input
                             value={f.front}
                             onChange={(e) => updateFlashcard(fi, old => ({ ...old, front: e.target.value }))}
                             placeholder="Câu hỏi/Từ vựng..."
-                            className="w-full rounded-xl border-orange-100 bg-white px-3 py-2.5 text-sm outline-none shadow-sm focus:ring-2 focus:ring-orange-500/10"
+                            className="w-full rounded-xl border-border bg-white px-3 py-2.5 text-sm outline-none shadow-sm focus:ring-2 focus:ring-primary/20"
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-orange-400 uppercase ml-1">Mặt sau</label>
+                          <label className="text-[10px] font-bold text-primary/80 uppercase ml-1">Mặt sau</label>
                           <input
                             value={f.back}
                             onChange={(e) => updateFlashcard(fi, old => ({ ...old, back: e.target.value }))}
                             placeholder="Đáp án/Định nghĩa..."
-                            className="w-full rounded-xl border-orange-100 bg-white px-3 py-2.5 text-sm outline-none shadow-sm focus:ring-2 focus:ring-orange-500/10"
+                            className="w-full rounded-xl border-border bg-white px-3 py-2.5 text-sm outline-none shadow-sm focus:ring-2 focus:ring-primary/20"
                           />
                         </div>
                       </div>
@@ -987,29 +1043,28 @@ export default function CoursesPage() {
       )}
 
       <Dialog open={showImportFlashcard} onOpenChange={setShowImportFlashcard}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-orange-600">Nhập Flashcards</DialogTitle>
-            <DialogDescription className="text-sm italic">
-              Nhập danh sách thẻ theo định dạng: <b className="text-foreground">Mặt trước, Mặt sau</b> (mỗi thẻ 1 dòng)
+            <DialogTitle>Nhập thuật ngữ và định nghĩa</DialogTitle>
+            <DialogDescription>
+              Dán nội dung vào đây. Mỗi dòng là một thẻ, thuật ngữ và định nghĩa cách nhau bằng dấu phẩy (,).
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Textarea
-              placeholder="VD:&#10;Quả táo, Apple&#10;Quả chuối, Banana"
+          <div className="space-y-4">
+            <div className="rounded-lg bg-muted p-3 text-sm font-mono text-muted-foreground whitespace-pre-wrap">
+              Ví dụ:{"\n"}Hello, xin chào{"\n"}Bye, Tạm biệt
+            </div>
+            <textarea
               value={importFlashcardContent}
               onChange={(e) => setImportFlashcardContent(e.target.value)}
-              className="min-h-[200px] rounded-2xl border-orange-100 focus:ring-orange-500/20 resize-none p-4 text-sm"
+              className="w-full min-h-[150px] rounded-xl border bg-background p-4 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+              placeholder="Từ vựng, Định nghĩa..."
             />
+            <div className="flex justify-end gap-3 mt-4">
+              <Button variant="outline" onClick={() => setShowImportFlashcard(false)}>Hủy</Button>
+              <Button onClick={handleImportFlashcards}>Nhập ngay</Button>
+            </div>
           </div>
-          <DialogFooter className="sm:justify-end gap-2 border-t pt-4">
-            <Button variant="outline" onClick={() => setShowImportFlashcard(false)} className="rounded-xl h-11 px-6">
-              Hủy
-            </Button>
-            <Button onClick={handleImportFlashcards} className="rounded-xl h-11 px-6 bg-orange-500 hover:bg-orange-600 border-none text-white font-bold shadow-lg shadow-orange-500/20">
-              Nhập ngay
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -1020,24 +1075,36 @@ export default function CoursesPage() {
 
 function ContentRenderer({ blocks }: { blocks: any[] }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {blocks.map((block, i) => {
+        const style: React.CSSProperties = {
+          fontSize: block.fontSize ? `${block.fontSize}px` : undefined,
+          fontFamily: block.fontFamily && block.fontFamily !== "inherit" ? block.fontFamily : undefined,
+          color: block.color || undefined,
+          fontWeight: block.bold ? "bold" : undefined,
+          fontStyle: block.italic ? "italic" : undefined,
+          whiteSpace: "pre-wrap",
+        };
         switch (block.type) {
           case "heading":
-            if (block.level === 1) return <h1 key={i} className="font-heading text-2xl font-bold mt-0 mb-2">{block.text}</h1>;
-            return <h2 key={i} className="font-heading text-xl font-bold mt-6 mb-2">{block.text}</h2>;
-          case "paragraph":
-            return <p key={i} className="leading-relaxed text-foreground/90">{block.text}</p>;
-          case "quote":
+            return <h2 key={i} className="font-heading text-xl font-bold mt-4 mb-1" style={style}>{block.text}</h2>;
+          case "list_item":
             return (
-              <blockquote key={i} className="border-l-4 border-primary/30 bg-primary/5 rounded-r-xl pl-5 pr-4 py-3 italic text-foreground/80">
-                {block.text}
-              </blockquote>
+              <div key={i} className="flex items-start gap-2">
+                <span className="mt-1 text-primary font-bold shrink-0">•</span>
+                <p className="leading-relaxed text-foreground/90" style={style}>{block.text}</p>
+              </div>
             );
-          case "divider":
-            return <hr key={i} className="my-6 border-border" />;
+          case "numbered_item":
+            return (
+              <div key={i} className="flex items-start gap-2">
+                <span className="mt-1 font-bold text-primary min-w-[20px] shrink-0">{i + 1}.</span>
+                <p className="leading-relaxed text-foreground/90" style={style}>{block.text}</p>
+              </div>
+            );
+          case "paragraph":
           default:
-            return <p key={i}>{block.text}</p>;
+            return <p key={i} className="leading-relaxed text-foreground/90" style={style}>{block.text}</p>;
         }
       })}
     </div>
