@@ -416,7 +416,7 @@ export default function QuizFormPage() {
                       <SelectItem value="Trung học cơ sở" className="cursor-pointer font-medium">Trung học cơ sở</SelectItem>
                       <SelectItem value="Trung học Phổ Thông" className="cursor-pointer font-medium">Trung học Phổ Thông</SelectItem>
                       <SelectItem value="Đại Học / Cao Đẳng" className="cursor-pointer font-medium">Đại Học / Cao Đẳng</SelectItem>
-                      <SelectItem value="Khác" className="cursor-pointer font-medium">Khác</SelectItem>
+                      <SelectItem value="Luyện thi chứng chỉ" className="cursor-pointer font-medium">Luyện thi chứng chỉ</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

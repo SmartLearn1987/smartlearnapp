@@ -5,7 +5,7 @@ Smart Learn hiện đã nâng cấp mạnh mẽ trải nghiệm học flashcards
 ## 📁 Tổ chức và Gán Môn học
 Toàn bộ học phần Quizlet cũng sẽ được phân loại tự động:
 -   **Subject Headers**: Các bộ thẻ học được trình bày gọn gàng dưới tiêu đề môn học.
--   **Chưa phân loại**: Những học phần không có môn sẽ xuất hiện cuối cùng trong nhóm "Khác".
+-   **Chưa phân loại**: Những học phần không có môn sẽ xuất hiện cuối cùng trong nhóm "Chưa phân loại".
 -   **Cập nhật Môn học**: Giáo viên có thể nhanh chóng chọn hoặc thay đổi môn học trong trang Chỉnh sửa học phần.
 
 ## 🎨 Trình phát Flashcard Cao cấp (Advanced Player)

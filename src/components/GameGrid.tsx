@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Gamepad2, Loader2, X } from "lucide-react";
+import { ChevronRight, Gamepad2, Loader2, X, BookOpen, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createPortal } from "react-dom";
 import { apiFetch } from "@/lib/api";
@@ -12,13 +12,6 @@ export const GAMES = [
     image: "/images/game_duoihinh_1775396514456.png",
     description: "Thách thức tư duy với những câu đố hình ảnh đầy thú vị",
     color: "bg-blue-500/10 text-blue-600",
-  },
-  {
-    id: "aithongminh",
-    title: "Ai thông minh hơn",
-    image: "/images/game_aithongminh_1775396575203.png",
-    description: "Kiểm tra kiến thức với các câu hỏi tư duy logic",
-    color: "bg-orange-500/10 text-orange-600",
   },
   {
     id: "vuatiengviet",
@@ -35,11 +28,25 @@ export const GAMES = [
     color: "bg-purple-500/10 text-purple-600",
   },
   {
-    id: "dovui",
-    title: "Đố vui",
-    image: "/images/game_dovui_1775396858101.png",
-    description: "Giải trí với vô vàn câu đố vui nhộn, hack não",
-    color: "bg-pink-500/10 text-pink-600",
+    id: "hoccungbe",
+    title: "Học cùng bé",
+    image: "/images/game_hoccungbe.png",
+    description: "Khám phá thế giới tri thức cùng những bài học vui nhộn cho bé",
+    color: "bg-cyan-500/10 text-cyan-600",
+  },
+  {
+    id: "cadao",
+    title: "Ca dao tục ngữ",
+    image: "/images/game_cadao.png",
+    description: "Tìm hiểu kho tàng trí tuệ dân gian qua các câu ca dao truyền thống",
+    color: "bg-amber-500/10 text-amber-600",
+  },
+  {
+    id: "nhanhnhuchop",
+    title: "Nhanh như chớp",
+    image: "/images/game_nhanhchớp.png",
+    description: "Thử thách phản xạ và kiến thức cực nhanh với các câu hỏi hóc búa",
+    color: "bg-emerald-500/10 text-emerald-600",
   },
 ];
 
@@ -257,10 +264,450 @@ function PictogramSelectModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+function ProverbSelectModal({ onClose }: { onClose: () => void }) {
+  const navigate = useNavigate();
+  const [level, setLevel] = useState("medium");
+  const [limit, setLimit] = useState(10);
+  const [time, setTime] = useState(5); // minutes
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handlePlay = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const qs = new URLSearchParams({ level, limit: limit.toString() });
+      await apiFetch(`/proverbs/play?${qs}`); // validate exists
+      navigate(`/games/proverbs/play?level=${level}&limit=${limit}&time=${time * 60}`);
+      onClose();
+    } catch {
+      setError("Chưa có đủ câu hỏi phù hợp với lựa chọn này. Vui lòng thử cấp độ khác.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+      <div className="w-full max-w-sm rounded-2xl bg-card border border-border shadow-2xl p-6 space-y-5 animate-scale-in">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+              <Gamepad2 className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="font-heading text-base font-bold">Ca dao tục ngữ</h2>
+              <p className="text-xs text-muted-foreground">Cấu hình lượt chơi của bạn</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-muted transition-colors">
+            <X className="h-4 w-4 text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* Level */}
+        <div className="space-y-2">
+          <label className="text-sm font-semibold">Cấp độ</label>
+          <div className="grid grid-cols-2 gap-2">
+            {LEVELS.map((lv) => (
+              <button
+                key={lv.value}
+                onClick={() => setLevel(lv.value)}
+                className={`rounded-xl border-2 py-2 text-xs font-semibold transition-all
+                  ${level === lv.value ? lv.color + " ring-2 ring-offset-1 ring-current" : "border-border bg-muted/40 text-muted-foreground hover:bg-muted"}`}
+              >
+                {lv.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Limit & Time */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-semibold">Số câu hỏi</label>
+            <select 
+              value={limit} 
+              onChange={(e) => setLimit(Number(e.target.value))}
+              className="w-full rounded-xl border-2 border-border bg-background px-3 py-2 text-sm focus:outline-none focus:border-primary"
+            >
+              {[5, 10, 15, 20, 30].map(n => (
+                <option key={n} value={n}>{n} câu</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-semibold">Thời gian (phút)</label>
+            <select 
+              value={time} 
+              onChange={(e) => setTime(Number(e.target.value))}
+              className="w-full rounded-xl border-2 border-border bg-background px-3 py-2 text-sm focus:outline-none focus:border-primary"
+            >
+              {[1, 2, 3, 5, 10, 15].map(n => (
+                <option key={n} value={n}>{n} phút</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {error && (
+          <p className="rounded-xl bg-destructive/10 px-4 py-2.5 text-xs text-destructive font-medium">
+            {error}
+          </p>
+        )}
+
+        <div className="flex gap-2 pt-1">
+          <Button variant="outline" className="flex-1" onClick={onClose}>Hủy</Button>
+          <Button className="flex-1" onClick={handlePlay} disabled={loading}>
+            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Chơi ngay
+          </Button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+function LearningSelectModal({ onClose }: { onClose: () => void }) {
+  const navigate = useNavigate();
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const fetchCategories = async () => {
+    try {
+      const data = await apiFetch<any[]>("/learning/categories");
+      const filtered = data.filter(c => (c.item_count || 0) > 0);
+      setCategories(filtered);
+      if (filtered.length > 0) setSelectedId(filtered[0].id);
+    } catch {
+      setError("Không thể tải danh sách chủ đề.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useState(() => {
+    fetchCategories();
+  });
+
+  const handlePlay = () => {
+    if (selectedId) {
+      navigate(`/games/learning/play/${selectedId}`);
+      onClose();
+    }
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+      <div className="w-full max-w-md rounded-[2rem] bg-card border border-border shadow-2xl p-6 space-y-5 animate-scale-in">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-100 text-cyan-600">
+              <BookOpen className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="font-heading text-lg font-bold">Học cùng bé</h2>
+              <p className="text-xs text-muted-foreground">Chọn một chủ đề để bắt đầu bài học</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-muted transition-colors">
+            <X className="h-4 w-4 text-muted-foreground" />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-10">
+            <Loader2 className="h-8 w-8 animate-spin text-cyan-500" />
+          </div>
+        ) : error ? (
+          <p className="text-center py-6 text-sm text-destructive font-medium">{error}</p>
+        ) : categories.length === 0 ? (
+          <div className="text-center py-8 space-y-2">
+            <p className="text-sm text-muted-foreground font-medium">Hiện chưa có bài học nào sẵn sàng.</p>
+            <p className="text-xs text-muted-foreground/60 italic">Vui lòng quay lại sau nhé!</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedId(cat.id)}
+                  className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left
+                    ${selectedId === cat.id 
+                      ? "border-cyan-500 bg-cyan-50/50 shadow-md ring-4 ring-cyan-500/5" 
+                      : "border-border bg-muted/20 hover:border-cyan-200 hover:bg-white"}`}
+                >
+                  <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0
+                    ${selectedId === cat.id ? "bg-cyan-500 text-white" : "bg-muted text-muted-foreground"}`}
+                  >
+                    <LayoutGrid className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm truncate">{cat.name}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">{cat.item_count} hình ảnh</p>
+                  </div>
+                  {selectedId === cat.id && (
+                    <div className="h-2 w-2 rounded-full bg-cyan-500 animate-pulse" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button variant="outline" className="flex-1 h-12 rounded-2xl font-bold" onClick={onClose}>Hủy</Button>
+              <Button 
+                className="flex-1 h-12 rounded-2xl font-bold text-base bg-cyan-600 hover:bg-cyan-700 shadow-lg shadow-cyan-200" 
+                onClick={handlePlay}
+                disabled={!selectedId}
+              >
+                Chơi ngay
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+function NhanhNhuChopSelectModal({ onClose }: { onClose: () => void }) {
+  const navigate = useNavigate();
+  const [level, setLevel] = useState("medium");
+  const [limit, setLimit] = useState("10");
+  const [time, setTime] = useState("300"); // 5 minutes in seconds
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handlePlay = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      // Validate questions exist
+      const data = await apiFetch<any[]>(`/nhanhnhuchop/play?level=${level}&limit=1`);
+      if (data.length === 0) {
+        setError("Chưa có câu hỏi phù hợp với cấp độ này. Vui lòng chọn cấp độ khác.");
+        return;
+      }
+      navigate(`/games/nhanhnhuchop/play?level=${level}&limit=${limit}&time=${time}`);
+      onClose();
+    } catch {
+      setError("Không thể khởi tạo trò chơi. Vui lòng thử lại sau.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+      <div className="w-full max-w-sm rounded-[2rem] bg-card border border-border shadow-2xl p-8 space-y-6 animate-scale-in">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
+              <Gamepad2 className="h-6 w-6" />
+            </div>
+            <div>
+              <h2 className="font-heading text-lg font-bold">Nhanh như chớp</h2>
+              <p className="text-xs text-muted-foreground">Tùy chỉnh lượt chơi của bạn</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors">
+            <X className="h-4 w-4 text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* Level */}
+        <div className="space-y-3">
+          <label className="text-sm font-black uppercase tracking-wider text-slate-500">Cấp độ</label>
+          <div className="grid grid-cols-2 gap-2">
+            {LEVELS.map((lv) => (
+              <button
+                key={lv.value}
+                onClick={() => setLevel(lv.value)}
+                className={`rounded-2xl border-2 py-3 text-sm font-bold transition-all
+                  ${level === lv.value 
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-700 ring-2 ring-offset-1 ring-emerald-500/20" 
+                    : "border-slate-100 bg-slate-50/50 text-slate-400 hover:bg-slate-50"}`}
+              >
+                {lv.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Filters Grid */}
+        <div className="grid grid-cols-2 gap-4">
+           {/* Question Count */}
+          <div className="space-y-3">
+            <label className="text-sm font-black uppercase tracking-wider text-slate-500">Số câu hỏi</label>
+            <select 
+              value={limit}
+              onChange={(e) => setLimit(e.target.value)}
+              className="w-full h-12 px-4 rounded-2xl bg-slate-50 border-2 border-slate-100 font-bold focus:border-emerald-500 outline-none transition-all"
+            >
+              <option value="10">10 câu</option>
+              <option value="20">20 câu</option>
+              <option value="30">30 câu</option>
+            </select>
+          </div>
+
+          {/* Time Limit */}
+          <div className="space-y-3">
+            <label className="text-sm font-black uppercase tracking-wider text-slate-500">Thời gian</label>
+            <select 
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              className="w-full h-12 px-4 rounded-2xl bg-slate-50 border-2 border-slate-100 font-bold focus:border-emerald-500 outline-none transition-all"
+            >
+              <option value="300">5 phút</option>
+              <option value="600">10 phút</option>
+              <option value="900">15 phút</option>
+            </select>
+          </div>
+        </div>
+
+        {error && (
+          <p className="rounded-xl bg-red-50 px-4 py-3 text-xs text-red-600 font-bold border border-red-100">
+            {error}
+          </p>
+        )}
+
+        <div className="flex gap-3 pt-2">
+          <Button variant="ghost" className="flex-1 h-12 rounded-2xl font-bold bg-slate-50" onClick={onClose}>Hủy</Button>
+          <Button 
+            className="flex-1 h-12 rounded-2xl font-bold bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200" 
+            onClick={handlePlay} 
+            disabled={loading}
+          >
+            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Chơi ngay"}
+          </Button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+function VuaTiengVietSelectModal({ onClose }: { onClose: () => void }) {
+  const navigate = useNavigate();
+  const [level, setLevel] = useState("medium");
+  const [limit, setLimit] = useState(10);
+  const [time, setTime] = useState(5); // minutes
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handlePlay = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const qs = new URLSearchParams({ level, limit: limit.toString() });
+      await apiFetch(`/vuatiengviet/play?${qs}`); // validate exists
+      navigate(`/games/vuatiengviet/play?level=${level}&limit=${limit}&time=${time * 60}`);
+      onClose();
+    } catch {
+      setError("Chưa có đủ câu hỏi phù hợp với lựa chọn này. Vui lòng thử cấp độ khác.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+      <div className="w-full max-w-sm rounded-2xl bg-card border border-border shadow-2xl p-6 space-y-5 animate-scale-in">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-green-100 text-green-600">
+              <Gamepad2 className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="font-heading text-base font-bold">Vua tiếng việt</h2>
+              <p className="text-xs text-muted-foreground">Cấu hình lượt chơi của bạn</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-muted transition-colors">
+            <X className="h-4 w-4 text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* Level */}
+        <div className="space-y-2">
+          <label className="text-sm font-semibold">Cấp độ</label>
+          <div className="grid grid-cols-2 gap-2">
+            {LEVELS.map((lv) => (
+              <button
+                key={lv.value}
+                onClick={() => setLevel(lv.value)}
+                className={`rounded-xl border-2 py-2 text-xs font-semibold transition-all
+                  ${level === lv.value ? lv.color + " ring-2 ring-offset-1 ring-current" : "border-border bg-muted/40 text-muted-foreground hover:bg-muted"}`}
+              >
+                {lv.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Limit & Time */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-semibold">Số câu hỏi</label>
+            <select 
+              value={limit} 
+              onChange={(e) => setLimit(Number(e.target.value))}
+              className="w-full rounded-xl border-2 border-border bg-background px-3 py-2 text-sm focus:outline-none focus:border-primary"
+            >
+              {[5, 10, 15, 20, 30].map(n => (
+                <option key={n} value={n}>{n} câu</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-semibold">Thời gian (phút)</label>
+            <select 
+              value={time} 
+              onChange={(e) => setTime(Number(e.target.value))}
+              className="w-full rounded-xl border-2 border-border bg-background px-3 py-2 text-sm focus:outline-none focus:border-primary"
+            >
+              {[1, 2, 3, 5, 10, 15].map(n => (
+                <option key={n} value={n}>{n} phút</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {error && (
+          <p className="rounded-xl bg-destructive/10 px-4 py-2.5 text-xs text-destructive font-medium">
+            {error}
+          </p>
+        )}
+
+        <div className="flex gap-2 pt-1">
+          <Button variant="outline" className="flex-1" onClick={onClose}>Hủy</Button>
+          <Button className="flex-1" onClick={handlePlay} disabled={loading}>
+            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Chơi ngay
+          </Button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export default function GameGrid({ isAdmin = false }: { isAdmin?: boolean }) {
   const navigate = useNavigate();
   const [showDictationSelect, setShowDictationSelect] = useState(false);
   const [showPictogramSelect, setShowPictogramSelect] = useState(false);
+  const [showProverbSelect, setShowProverbSelect] = useState(false);
+  const [showVuaTiengVietSelect, setShowVuaTiengVietSelect] = useState(false);
+  const [showLearningSelect, setShowLearningSelect] = useState(false);
+  const [showNhanhNhuChopSelect, setShowNhanhNhuChopSelect] = useState(false);
 
   const handleGameClick = (gameId: string, gameTitle: string) => {
     if (gameId === "chepchinh") {
@@ -275,6 +722,30 @@ export default function GameGrid({ isAdmin = false }: { isAdmin?: boolean }) {
       } else {
         setShowPictogramSelect(true);
       }
+    } else if (gameId === "vuatiengviet") {
+      if (isAdmin) {
+        navigate("/games/vuatiengviet");
+      } else {
+        setShowVuaTiengVietSelect(true);
+      }
+    } else if (gameId === "cadao") {
+      if (isAdmin) {
+        navigate("/games/proverbs");
+      } else {
+        setShowProverbSelect(true);
+      }
+    } else if (gameId === "hoccungbe") {
+      if (isAdmin) {
+        navigate("/games/learning");
+      } else {
+        setShowLearningSelect(true);
+      }
+    } else if (gameId === "nhanhnhuchop") {
+      if (isAdmin) {
+        navigate("/games/nhanhnhuchop");
+      } else {
+        setShowNhanhNhuChopSelect(true);
+      }
     } else {
       alert(`Tính năng ${gameTitle} sắp ra mắt!`);
     }
@@ -282,7 +753,7 @@ export default function GameGrid({ isAdmin = false }: { isAdmin?: boolean }) {
 
   return (
     <>
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {GAMES.map((game, index) => (
           <div
             key={game.id}
@@ -325,6 +796,18 @@ export default function GameGrid({ isAdmin = false }: { isAdmin?: boolean }) {
       )}
       {showPictogramSelect && (
         <PictogramSelectModal onClose={() => setShowPictogramSelect(false)} />
+      )}
+      {showProverbSelect && (
+        <ProverbSelectModal onClose={() => setShowProverbSelect(false)} />
+      )}
+      {showVuaTiengVietSelect && (
+        <VuaTiengVietSelectModal onClose={() => setShowVuaTiengVietSelect(false)} />
+      )}
+      {showLearningSelect && (
+        <LearningSelectModal onClose={() => setShowLearningSelect(false)} />
+      )}
+      {showNhanhNhuChopSelect && (
+        <NhanhNhuChopSelectModal onClose={() => setShowNhanhNhuChopSelect(false)} />
       )}
     </>
   );

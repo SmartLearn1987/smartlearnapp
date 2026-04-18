@@ -876,7 +876,7 @@ export default function TeacherPage() {
                   return acc;
                 }, {} as Record<string, Curriculum[]>);
 
-                const levelOrder = ["Tiểu học", "Trung học cơ sở", "Trung học Phổ Thông", "Đại Học / Cao Đẳng", "Khác", "Chưa phân loại"];
+                const levelOrder = ["Tiểu học", "Trung học cơ sở", "Trung học Phổ Thông", "Đại Học / Cao Đẳng", "Luyện thi chứng chỉ", "Chưa phân loại"];
                 const sortedGroupKeys = Object.keys(groups).sort((a, b) => {
                   const idxA = levelOrder.indexOf(a);
                   const idxB = levelOrder.indexOf(b);
@@ -1436,7 +1436,7 @@ export default function TeacherPage() {
                         <option value="Trung học cơ sở">Trung học cơ sở</option>
                         <option value="Trung học Phổ Thông">Trung học Phổ Thông</option>
                         <option value="Đại Học / Cao Đẳng">Đại Học / Cao Đẳng</option>
-                        <option value="Khác">Khác</option>
+                        <option value="Luyện thi chứng chỉ">Luyện thi chứng chỉ</option>
                       </select>
                     </div>
                   </div>
@@ -1576,7 +1576,7 @@ export default function TeacherPage() {
                       <option value="Trung học cơ sở">Trung học cơ sở</option>
                       <option value="Trung học Phổ Thông">Trung học Phổ Thông</option>
                       <option value="Đại Học / Cao Đẳng">Đại Học / Cao Đẳng</option>
-                      <option value="Khác">Khác</option>
+                      <option value="Luyện thi chứng chỉ">Luyện thi chứng chỉ</option>
                     </select>
                   </div>
                 </div>

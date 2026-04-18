@@ -13,10 +13,11 @@ Smart Learn là một ứng dụng web hiện đại giúp quản lý giáo trì
 - **Cá nhân hóa nội dung Cộng đồng**: Tự động lọc các bộ thẻ ghi nhớ và bài trắc nghiệm trong mục "Cộng đồng" dựa trên **Cấp độ học tập** của người dùng, giúp tiếp cận nội dung phù hợp nhất.
 - **Bảng tổng kết**: Theo dõi chuỗi hoạt động học tập hàng ngày (Streak) và các chỉ số thống kê kết quả học tập tổng quát một cách trực quan.
 - **Thời khóa biểu đa nhóm**: Quản lý nhiều loại thời khóa biểu độc lập với giao diện chuyển đổi linh hoạt. Nội dung mô tả nhiệm vụ trong danh sách được hiển thị đầy đủ, giữ nguyên định dạng xuống dòng giúp ghi chú rõ ràng hơn.
-- **Trò chơi học tập**: Tham gia các trò chơi tương tác như **Chép chính tả** và **Đuổi hình bắt chữ** để rèn luyện kỹ năng nghe-viết và vốn từ vựng với hệ thống tính điểm thông minh và đồng hồ đếm giờ.
+- **Trò chơi học tập**: Tham gia các trò chơi tương tác như **Chép chính tả**, **Đuổi hình bắt chữ**, **Ca dao tục ngữ** và **Nhanh như chớp** (Trắc nghiệm tính giờ) để rèn luyện kỹ năng với hệ thống tính điểm thông minh và đồng hồ đếm ngược.
 - **Quản lý cá nhân**: Xem và chỉnh sửa thông tin hiển thị, ảnh đại diện, trình độ giáo dục và đổi mật khẩu dễ dàng.
 - **Gói hội viên**: Xem chi tiết thông tin gói cước. Tài khoản mới sẽ được tự động kích hoạt gói **Miễn phí** với thời hạn dùng thử **6 ngày** ngay khi đăng ký.
 - **Thông báo Email**: Hệ thống tự động gửi email chào mừng khi đăng ký thành công và gửi mật khẩu mới khi yêu cầu khôi phục mật khẩu, kèm theo thông tin hỗ trợ chi tiết.
+- **Bảo mật & Phiên làm việc**: Hệ thống bảo mật an toàn với cơ chế **Refresh Token** tự động làm mới, đảm bảo duy trì đăng nhập lâu dài (30 ngày) và trải nghiệm liền mạch cho người dùng.
 
 ### 👨‍🏫 Đối với Giáo viên & Admin
 - **Quản lý tài khoản**: Khởi tạo, chỉnh sửa thông tin, đặt lại mật khẩu, quản lý **Gói cước hội viên** (Ngày bắt đầu/kết thúc) và thực hiện khóa/mở khóa tài khoản trực quan trên giao diện Admin.
@@ -25,11 +26,12 @@ Smart Learn là một ứng dụng web hiện đại giúp quản lý giáo trì
 - **Tạo tài liệu siêu tốc**: Quy trình tạo Giáo trình (hiển thị **số lượng bài học**, **người tạo**, **ngày tạo**) và Trắc nghiệm tối giản, gán môn học trực tiếp để phân loại nội dung thông minh.
 - **Phân quyền nội dung**: Giáo viên chỉ xem và quản lý giáo trình do mình tạo. Admin có quyền truy cập toàn bộ hệ thống.
 - **Biên tập bài học thông minh**: Tích hợp văn bản, slideshow hình ảnh, bộ câu hỏi trắc nghiệm và thẻ ghi nhớ trong cùng một trang duy nhất.
-- **Quản trị Game**: Quản lý kho nội dung trò chơi (**Chép chính tả** và **Đuổi hình bắt chữ**) với giao diện trực quan, hỗ trợ tải lên hình ảnh và gán cấp độ câu hỏi.
+- **Quản trị Nội dung & Game**: Quản lý kho nội dung trực tiếp (**Chép chính tả**, **Đuổi hình bắt chữ**, **Ca dao tục ngữ** và **Nhanh như chớp**) với giao diện trực quan, hỗ trợ import hàng loạt, tải lên hình ảnh và gán cấp độ câu hỏi.
 - **Quản lý tập trung**: Giao diện quản lý Quizlet và Trắc nghiệm chuyên nghiệp, hỗ trợ nhập liệu nhanh (Bulk Import).
 
 ### ⏱️ Công cụ hỗ trợ
 - **Pomodoro Timer**: Đồng hồ đếm ngược với hiệu ứng Glassmorphism và thông báo âm thanh Digital Chime giúp tăng cường sự tập trung khi học.
+34: - **Liên hệ & Phản hồi**: Trang liên hệ chuyên nghiệp tích hợp hệ thống gửi email tự động tới Ban quản trị, giúp người dùng dễ dàng đóng góp ý kiến xây dựng hệ thống.
 
 ---
 

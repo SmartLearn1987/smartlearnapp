@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kết quả bài thi - Smart Learn</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .result-hero {
+      text-align: center;
+      padding: 40px 20px;
+      background: linear-gradient(to bottom, #E9F5EE, #F8FAFC);
+    }
+    .trophy-container {
+      width: 120px;
+      height: 120px;
+      background: white;
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-lg);
+      animation: bounce 2s infinite;
+      color: #FACC15;
+    }
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .score-card {
+      background: white;
+      padding: 16px 8px;
+      border-radius: var(--radius-2xl);
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+    }
+    .score-value { font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 4px; }
+    .score-label { font-size: 0.6875rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+    
+    .review-card {
+      padding: 20px;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+      background: white;
+    }
+    .review-card.correct { border-left: 8px solid var(--success); }
+    .review-card.wrong { border-left: 8px solid var(--danger); }
+    
+    .review-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    .badge-success { background: var(--success-light); color: var(--success); }
+    .badge-error { background: var(--danger-light); color: var(--danger); }
+    
+    .opt-review {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      margin-top: 8px;
+      font-size: 0.9375rem;
+    }
+    .opt-correct { background: var(--success-light); color: var(--success); font-weight: 600; border: 1px solid rgba(22, 163, 74, 0.2); }
+    .opt-wrong { background: var(--danger-light); color: var(--danger); font-weight: 600; border: 1px solid rgba(220, 38, 38, 0.2); }
+  </style>
+</head>
+<body>
+  <div class="result-hero">
+    <div class="trophy-container">
+      <i data-lucide="trophy" size="64"></i>
+    </div>
+    <h1 style="color: var(--primary); margin-bottom: 8px;">Chúc mừng bạn!</h1>
+    <p>Bạn đã hoàn thành bài thi với kết quả xuất sắc</p>
+  </div>
+
+  <main class="container" style="margin-top: -20px;">
+    <div class="score-grid">
+      <div class="score-card">
+        <div class="score-value" style="color: var(--primary);">85%</div>
+        <div class="score-label">Điểm số</div>
+      </div>
+      <div class="score-card">
+        <div class="score-value">17/20</div>
+        <div class="score-label">Đúng</div>
+      </div>
+      <div class="score-card">
+        <div class="score-value">12p 45s</div>
+        <div class="score-label">Thời gian</div>
+      </div>
+    </div>
+
+    <div class="flex-between" style="margin-bottom: 24px;">
+      <button class="btn btn-outline" style="width: auto; padding: 10px 20px; background: white;">
+        <i data-lucide="refresh-cw" size="18"></i> Làm lại
+      </button>
+      <button class="btn btn-primary" style="width: auto; padding: 10px 20px; background: var(--text-main);">
+        <i data-lucide="home" size="18"></i> Về danh sách
+      </button>
+    </div>
+
+    <h3 style="margin-bottom: 16px;">Chi tiết từng câu hỏi</h3>
+
+    <!-- Correct Card -->
+    <div class="review-card correct">
+      <div class="review-badge badge-success">
+        <i data-lucide="check-circle" size="14"></i> CHÍNH XÁC
+      </div>
+      <p style="color: var(--text-main); font-weight: 600; margin-bottom: 12px;">Câu 1: Số nguyên tố lớn nhất nhỏ hơn 100 là gì?</p>
+      <div class="opt-review opt-correct">
+        <i data-lucide="check" size="18"></i>
+        <span>97</span>
+      </div>
+    </div>
+
+    <!-- Wrong Card -->
+    <div class="review-card wrong">
+      <div class="review-badge badge-error">
+        <i data-lucide="x-circle" size="14"></i> CẦN XEM LẠI
+      </div>
+      <p style="color: var(--text-main); font-weight: 600; margin-bottom: 12px;">Câu 2: Số 91 có phải là số nguyên tố không?</p>
+      <div class="opt-review opt-wrong" style="margin-bottom: 4px;">
+        <i data-lucide="x" size="18"></i>
+        <span>Có</span>
+      </div>
+      <div class="opt-review opt-correct">
+        <i data-lucide="arrow-right" size="18"></i>
+        <span>Không (91 = 7 x 13)</span>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

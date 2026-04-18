@@ -171,7 +171,7 @@ function UserCreateScreen({ onBack, onCreated }: { onBack: () => void; onCreated
               <option value="Trung học cơ sở">Trung học cơ sở</option>
               <option value="Trung học Phổ Thông">Trung học Phổ Thông</option>
               <option value="Đại Học / Cao Đẳng">Đại Học / Cao Đẳng</option>
-              <option value="Khác">Khác</option>
+              <option value="Luyện thi chứng chỉ">Luyện thi chứng chỉ</option>
             </select>
           </div>
 
@@ -339,7 +339,7 @@ function UserEditScreen({ user, onBack, onUpdated }: { user: User; onBack: () =>
               <option value="Trung học cơ sở">Trung học cơ sở</option>
               <option value="Trung học Phổ Thông">Trung học Phổ Thông</option>
               <option value="Đại Học / Cao Đẳng">Đại Học / Cao Đẳng</option>
-              <option value="Khác">Khác</option>
+              <option value="Luyện thi chứng chỉ">Luyện thi chứng chỉ</option>
             </select>
           </div>
 
@@ -516,81 +516,80 @@ export default function AdminPage() {
   return (
     <div className="container max-w-4xl py-10">
       {changePwTarget && <ChangePwModal user={changePwTarget} onClose={() => setChangePwTarget(null)} />}
-
-      {/* Header */}
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 opacity-0 animate-fade-up">
-        <div>
-          <h1 className="font-heading text-3xl font-bold flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
-              <Users className="h-5 w-5 text-primary" />
-            </span>
-            Quản lý tài khoản
-          </h1>
-          <p className="mt-2 sm:mt-1 text-muted-foreground text-sm">{users.length} tài khoản • {admins.length} admin, {normalUsers.length} user</p>
-        </div>
-        <Button onClick={() => setView("create")} className="w-full sm:w-auto h-12 px-6 rounded-xl shadow-lg shadow-primary/10">
-          <Plus className="mr-2 h-4 w-4" /> Tạo tài khoản
-        </Button>
-      </div>
-
-      {/* User list */}
-      <div className="space-y-3 opacity-0 animate-fade-up" style={{ animationDelay: "80ms" }}>
-        {users.map((u) => (
-          <div key={u.id} className={`flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-4 rounded-2xl px-4 sm:px-5 py-4 shadow-sm border border-border ${u.isActive === false ? "bg-muted/60 opacity-80" : "bg-card"}`}>
-            <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
-              {/* Avatar */}
-              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${u.role === "admin" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
-                {u.displayName.charAt(0).toUpperCase()}
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-sm truncate">{u.displayName}</span>
-                  <RoleBadge role={u.role} />
-                  {u.id === currentUser?.id && (
-                    <span className="rounded-lg bg-secondary/10 px-2 py-0.5 text-xs font-semibold text-secondary">Bạn</span>
-                  )}
-                  {u.isActive === false && (
-                    <span className="rounded-lg bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive">Đã khóa</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 mt-1 sm:mt-0.5 flex-wrap">
-                  <span className="text-xs text-muted-foreground truncate">@{u.username}</span>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
-                    <Calendar className="h-3 w-3" />
-                    {new Date(u.createdAt).toLocaleDateString("vi-VN")}
-                  </span>
-                </div>
-              </div>
+          {/* Header */}
+          <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 opacity-0 animate-fade-up">
+            <div>
+              <h1 className="font-heading text-3xl font-bold flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+                  <Users className="h-5 w-5 text-primary" />
+                </span>
+                Quản lý tài khoản
+              </h1>
+              <p className="mt-2 sm:mt-1 text-muted-foreground text-sm">{users.length} tài khoản • {admins.length} admin, {normalUsers.length} user</p>
             </div>
-
-            {/* Actions */}
-            <div className="flex flex-wrap items-center gap-2 shrink-0 sm:ml-auto">
-              <Button variant="outline" size="sm" onClick={() => { setEditUserTarget(u); setView("edit"); }} className="h-8 px-3 text-xs gap-1.5">
-                <Edit3 className="h-3.5 w-3.5" /> Chỉnh sửa
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setChangePwTarget(u)} className="h-8 px-3 text-xs gap-1.5">
-                <KeyRound className="h-3.5 w-3.5" /> Đổi mật khẩu
-              </Button>
-              {u.username !== "admin" && u.id !== currentUser?.id && (
-                <Button variant="ghost" size="sm" onClick={() => handleDelete(u)}
-                  className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+            <Button onClick={() => setView("create")} className="w-full sm:w-auto h-12 px-6 rounded-xl shadow-lg shadow-primary/10">
+              <Plus className="mr-2 h-4 w-4" /> Tạo tài khoản
+            </Button>
           </div>
-        ))}
-      </div>
 
-      {/* Info box */}
-      <div className="mt-6 rounded-2xl border-2 border-dashed border-border bg-muted/30 p-5 text-sm text-muted-foreground space-y-1 opacity-0 animate-fade-up" style={{ animationDelay: "160ms" }}>
-        <p className="font-semibold text-foreground">Phân quyền</p>
-        <p>🛡️ <strong>Admin</strong>: Toàn quyền – xem, upload giáo trình, import quiz/flashcard, quản lý tài khoản.</p>
-        <p>👩‍🏫 <strong>Teacher</strong>: Quyền như User, cộng thêm truy cập Màn hình Giáo viên.</p>
-        <p>👤 <strong>User</strong>: Chỉ xem bài học, làm quiz, ôn flashcard. Không upload hoặc import.</p>
-      </div>
+          {/* User list */}
+          <div className="space-y-3 opacity-0 animate-fade-up" style={{ animationDelay: "80ms" }}>
+            {users.map((u) => (
+              <div key={u.id} className={`flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-4 rounded-2xl px-4 sm:px-5 py-4 shadow-sm border border-border ${u.isActive === false ? "bg-muted/60 opacity-80" : "bg-card"}`}>
+                <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                  {/* Avatar */}
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${u.role === "admin" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
+                    {u.displayName.charAt(0).toUpperCase()}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-sm truncate">{u.displayName}</span>
+                      <RoleBadge role={u.role} />
+                      {u.id === currentUser?.id && (
+                        <span className="rounded-lg bg-secondary/10 px-2 py-0.5 text-xs font-semibold text-secondary">Bạn</span>
+                      )}
+                      {u.isActive === false && (
+                        <span className="rounded-lg bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive">Đã khóa</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 mt-1 sm:mt-0.5 flex-wrap">
+                      <span className="text-xs text-muted-foreground truncate">@{u.username}</span>
+                      <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
+                        <Calendar className="h-3 w-3" />
+                        {new Date(u.createdAt).toLocaleDateString("vi-VN")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-wrap items-center gap-2 shrink-0 sm:ml-auto">
+                  <Button variant="outline" size="sm" onClick={() => { setEditUserTarget(u); setView("edit"); }} className="h-8 px-3 text-xs gap-1.5">
+                    <Edit3 className="h-3.5 w-3.5" /> Chỉnh sửa
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setChangePwTarget(u)} className="h-8 px-3 text-xs gap-1.5">
+                    <KeyRound className="h-3.5 w-3.5" /> Đổi mật khẩu
+                  </Button>
+                  {u.username !== "admin" && u.id !== currentUser?.id && (
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(u)}
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Info box */}
+          <div className="mt-6 rounded-2xl border-2 border-dashed border-border bg-muted/30 p-5 text-sm text-muted-foreground space-y-1 opacity-0 animate-fade-up" style={{ animationDelay: "160ms" }}>
+            <p className="font-semibold text-foreground">Phân quyền</p>
+            <p>🛡️ <strong>Admin</strong>: Toàn quyền – xem, upload giáo trình, import quiz/flashcard, quản lý tài khoản.</p>
+            <p>👩‍🏫 <strong>Teacher</strong>: Quyền như User, cộng thêm truy cập Màn hình Giáo viên.</p>
+            <p>👤 <strong>User</strong>: Chỉ xem bài học, làm quiz, ôn flashcard. Không upload hoặc import.</p>
+          </div>
     </div>
   );
 }

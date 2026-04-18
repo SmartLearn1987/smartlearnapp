@@ -170,7 +170,7 @@ import { toast } from "sonner";
                   <option value="Trung học cơ sở">🏫 Trung học cơ sở</option>
                   <option value="Trung học Phổ Thông">🏫 Trung học Phổ Thông</option>
                   <option value="Đại Học / Cao Đẳng">🎓 Đại Học / Cao Đẳng</option>
-                  <option value="Khác">✨ Khác</option>
+                  <option value="Luyện thi chứng chỉ">✨ Luyện thi chứng chỉ</option>
                 </select>
               </div>
             </div>

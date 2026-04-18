@@ -194,3 +194,38 @@ create table if not exists pictogram_questions (
 );
 
 create index if not exists idx_pictogram_created_by on pictogram_questions(created_by);
+
+create table if not exists proverbs (
+  id uuid primary key default gen_random_uuid(),
+  content text not null,
+  level text not null default 'easy',
+  created_by uuid references users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_proverbs_level on proverbs(level);
+
+
+create table if not exists vua_tieng_viet_questions (
+  id uuid primary key default gen_random_uuid(),
+  question text not null,
+  answer text not null,
+  hint text,
+  level text not null default 'medium',
+  created_by uuid references users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+
+create table if not exists nhanh_nhu_chop_questions (
+  id uuid primary key default gen_random_uuid(),
+  question text not null,
+  options text[] not null default '{}',
+  correct_index integer not null default 0,
+  explanation text,
+  level text not null default 'medium',
+  created_by uuid references users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_nc_level on nhanh_nhu_chop_questions(level);

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Danh sách Bài thi - Smart Learn</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <header class="header-bar flex-between">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <i data-lucide="layout-dashboard" style="color: var(--primary);"></i>
+      <h3 style="font-weight: 800;">Smart Learn</h3>
+    </div>
+    <div class="badge badge-green">
+      <i data-lucide="user" size="14"></i>
+      <span>Admin</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <div style="margin-bottom: 24px;">
+      <h1>Quản lý Trắc nghiệm</h1>
+      <p>Tạo và quản lý các bài kiểm tra, đánh giá định kỳ</p>
+    </div>
+
+    <div style="position: relative; margin-bottom: 16px;">
+      <i data-lucide="search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted);" size="18"></i>
+      <input type="text" class="input" placeholder="Tìm kiếm bài thi..." style="padding-left: 48px;">
+    </div>
+
+    <div class="tabs">
+      <div class="tab">Cộng đồng</div>
+      <div class="tab active">Cá nhân</div>
+    </div>
+
+    <button class="btn btn-outline" style="margin-bottom: 24px; border-style: dashed; border-width: 2px;">
+      <i data-lucide="plus-circle"></i>
+      Tạo bài mới
+    </button>
+
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px; border-bottom: 2px solid var(--primary-light); padding-bottom: 8px;">
+      <i data-lucide="layers" style="color: var(--primary);"></i>
+      <h2 style="font-size: 1.25rem;">Tiểu học</h2>
+    </div>
+
+    <!-- Quiz Card 1 -->
+    <div class="card">
+      <div class="flex-between" style="margin-bottom: 12px;">
+        <div style="background: var(--primary-light); padding: 10px; border-radius: 12px; color: var(--primary);">
+          <i data-lucide="clipboard-list"></i>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <div class="badge badge-gray">
+            <i data-lucide="eye" size="14"></i>
+            Công khai
+          </div>
+          <button class="btn-ghost" style="padding: 4px; width: auto;"><i data-lucide="more-vertical"></i></button>
+        </div>
+      </div>
+      <h3 style="margin-bottom: 8px;">Toán lớp 5 - Ôn tập học kỳ 1</h3>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.875rem; color: var(--text-muted);">
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <i data-lucide="clock" size="14"></i>
+          <span>45 phút</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <i data-lucide="help-circle" size="14"></i>
+          <span>20 câu hỏi</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <i data-lucide="user-plus" size="14"></i>
+          <span>Cô Ngọc</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quiz Card 2 -->
+    <div class="card">
+      <div class="flex-between" style="margin-bottom: 12px;">
+        <div style="background: var(--primary-light); padding: 10px; border-radius: 12px; color: var(--primary);">
+          <i data-lucide="clipboard-list"></i>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <div class="badge badge-gray" style="color: #EF4444; background: #FEF2F2;">
+            <i data-lucide="eye-off" size="14"></i>
+            Riêng tư
+          </div>
+          <button class="btn-ghost" style="padding: 4px; width: auto;"><i data-lucide="more-vertical"></i></button>
+        </div>
+      </div>
+      <h3 style="margin-bottom: 8px;">Tiếng Việt 3 - Luyện từ và câu</h3>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.875rem; color: var(--text-muted);">
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <i data-lucide="clock" size="14"></i>
+          <span>20 phút</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <i data-lucide="help-circle" size="14"></i>
+          <span>10 câu hỏi</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <i data-lucide="calendar" size="14"></i>
+          <span>Hôm qua</span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <div style="position: fixed; bottom: 24px; right: 24px;">
+    <button class="btn btn-primary" style="width: 56px; height: 56px; border-radius: 50%; box-shadow: var(--shadow-lg);">
+      <i data-lucide="plus" size="28"></i>
+    </button>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

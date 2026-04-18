@@ -1,19 +1,16 @@
 const getApiBaseUrl = () => {
   if (typeof window !== "undefined") {
-    const { hostname } = window.location;
-    // On Railway (not localhost), we MUST proxy through /api
-    if (hostname !== "localhost" && hostname !== "127.0.0.1") {
-      return "/api";
-    }
+    // Luôn sử dụng đường dẫn tương đối /api để tận dụng cơ chế Proxy 
+    // của Vite (Development) hoặc Nginx/Railway (Production).
+    return "/api";
   }
 
-  // If we are on localhost, check for an explicit API base URL env var
+  // Fallback cho môi trường Node.js (ví dụ: SSR nếu có) hoặc các trường hợp đặc biệt
   const envUrl = (import.meta as any).env?.VITE_API_BASE_URL;
   if (envUrl) {
     return envUrl;
   }
 
-  // Final fallback for local development
   return "http://localhost:4000/api";
 };
 
@@ -37,6 +34,13 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   }
   if (session?.sessionToken) {
     headers.set("X-Session-Token", session.sessionToken);
+  }
+
+  const apiKey = (import.meta as any).env?.VITE_API_KEY;
+  if (apiKey) {
+    headers.set("x-api-key", apiKey);
+  } else if (import.meta.env.MODE === "production") {
+    console.warn("[API] Warning: VITE_API_KEY is missing from production bundle. This will likely cause 403 errors if the server enforces it.");
   }
 
   // Tự động thêm Content-Type: application/json nếu có body và body không phải là FormData
@@ -78,6 +82,9 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
               const retryHeaders = new Headers(init?.headers);
               retryHeaders.set("X-User-Id", updatedSession.id);
               retryHeaders.set("X-Session-Token", updatedSession.sessionToken);
+              if (apiKey) {
+                retryHeaders.set("x-api-key", apiKey);
+              }
               if (init?.body && !retryHeaders.has("Content-Type") && !(init.body instanceof FormData)) {
                 retryHeaders.set("Content-Type", "application/json");
               }

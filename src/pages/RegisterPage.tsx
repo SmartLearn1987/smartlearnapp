@@ -150,7 +150,7 @@ export default function RegisterPage() {
                   <option value="Trung học cơ sở">Trung học cơ sở</option>
                   <option value="Trung học Phổ Thông">Trung học Phổ Thông</option>
                   <option value="Đại Học / Cao Đẳng">Đại Học / Cao Đẳng</option>
-                  <option value="Khác">Khác</option>
+                  <option value="Luyện thi chứng chỉ">Luyện thi chứng chỉ</option>
                 </select>
                 <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
                   <svg className="h-4 w-4 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">

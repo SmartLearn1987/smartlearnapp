@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sửa Học Phần - Smart Learn</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .set-meta { background: white; padding: 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+    .term-item { 
+      background: white; border-radius: 16px; padding: 16px; margin-bottom: 16px;
+      border: 1px solid var(--border); box-shadow: var(--shadow-sm); position: relative;
+    }
+    .term-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .term-input { border: none; border-bottom: 2px solid var(--border); border-radius: 0; padding: 8px 0; margin-bottom: 16px; font-weight: 600; display: block; width: 100%; transition: border-color 0.2s; }
+    .term-input:focus { outline: none; border-color: var(--primary); }
+    .floating-save {
+      position: fixed; bottom: 24px; left: 16px; right: 16px; z-index: 100;
+    }
+  </style>
+</head>
+<body style="padding-bottom: 100px;">
+  <header class="header-bar">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <i data-lucide="chevron-left" style="color: var(--text-muted); cursor: pointer;"></i>
+      <h3 style="font-weight: 800; font-size: 0.9375rem;">Sửa học phần</h3>
+    </div>
+    <div style="display: flex; gap: 16px;">
+      <i data-lucide="trash-2" size="20" style="color: var(--danger);"></i>
+      <i data-lucide="check" size="24" style="color: var(--primary); font-weight: 900;"></i>
+    </div>
+  </header>
+
+  <div class="set-meta">
+    <div style="margin-bottom: 16px;">
+      <label style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Tiêu đề học phần</label>
+      <input type="text" class="term-input" value="Unit 5: Food & Drink" style="font-size: 1.25rem;">
+    </div>
+    <div style="margin-bottom: 16px;">
+      <label style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Mô tả (tùy chọn)</label>
+      <input type="text" class="term-input" placeholder="Thêm mô tả về học phần này...">
+    </div>
+    <div style="display: flex; gap: 12px;">
+      <button class="btn btn-white" style="font-size: 0.8125rem; padding: 8px 12px; border-radius: 10px;">
+        <i data-lucide="file-text" size="14"></i> Nhập CSV
+      </button>
+      <button class="btn btn-white" style="font-size: 0.8125rem; padding: 8px 12px; border-radius: 10px;">
+        <i data-lucide="lock" size="14"></i> Riêng tư
+      </button>
+    </div>
+  </div>
+
+  <main class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h2 style="font-size: 1.125rem; font-weight: 800;">Danh sách thẻ (24)</h2>
+      <i data-lucide="arrow-down-up" size="18" style="color: var(--text-muted);"></i>
+    </div>
+
+    <!-- Term Item 1 -->
+    <div class="term-item">
+      <div class="term-header">
+        <span style="font-weight: 800; color: var(--text-muted); font-size: 0.875rem;">1</span>
+        <div style="display: flex; gap: 12px;">
+          <i data-lucide="image" size="18" style="color: var(--text-muted);"></i>
+          <i data-lucide="trash-2" size="18" style="color: var(--text-muted);"></i>
+        </div>
+      </div>
+      <div>
+        <label style="font-size: 0.6875rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">Thuật ngữ</label>
+        <input type="text" class="term-input" value="Delicious">
+      </div>
+      <div>
+        <label style="font-size: 0.6875rem; font-weight: 700; color: var(--secondary); text-transform: uppercase;">Định nghĩa</label>
+        <input type="text" class="term-input" value="Thơm ngon, ngon miệng" style="border-bottom-color: var(--border);">
+      </div>
+    </div>
+
+    <!-- Term Item 2 -->
+    <div class="term-item">
+      <div class="term-header">
+        <span style="font-weight: 800; color: var(--text-muted); font-size: 0.875rem;">2</span>
+        <div style="display: flex; gap: 12px;">
+          <i data-lucide="image" size="18" style="color: var(--text-muted);"></i>
+          <i data-lucide="trash-2" size="18" style="color: var(--text-muted);"></i>
+        </div>
+      </div>
+      <div>
+        <label style="font-size: 0.6875rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">Thuật ngữ</label>
+        <input type="text" class="term-input" value="Ingredient">
+      </div>
+      <div>
+        <label style="font-size: 0.6875rem; font-weight: 700; color: var(--secondary); text-transform: uppercase;">Định nghĩa</label>
+        <input type="text" class="term-input" value="Thành phần, nguyên liệu" style="border-bottom-color: var(--border);">
+      </div>
+    </div>
+
+    <button class="btn btn-white" style="border-style: dashed; background: transparent; color: var(--primary); border-width: 2px; height: 80px;">
+      <i data-lucide="plus"></i> Thêm thẻ mới
+    </button>
+  </main>
+
+  <div class="floating-save">
+    <button class="btn btn-primary" style="box-shadow: var(--shadow-md); height: 56px;">
+      <i data-lucide="save"></i> Lưu học phần
+    </button>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

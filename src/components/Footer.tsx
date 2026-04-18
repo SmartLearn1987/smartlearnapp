@@ -1,5 +1,6 @@
 import React from 'react';
 import { Mail, MapPin, Phone } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function Footer() {
   return (
@@ -10,7 +11,7 @@ export default function Footer() {
           <div className="space-y-4">
             <h3 className="text-lg font-bold text-primary mb-4 font-heading">Liên hệ</h3>
             <div className="space-y-3">
-              <p className="font-semibold text-gray-800">CÔNG TY CỔ PHẦN SMART LEARN</p>
+              <p className="font-semibold text-gray-800">NỀN TẢNG HỌC TẬP SMART LEARN</p>
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <Mail className="h-4 w-4 shrink-0 text-primary" />
                 <a href="mailto:support.smart.learn@gmail.com" className="hover:text-primary transition-colors">
@@ -25,12 +26,12 @@ export default function Footer() {
             <h3 className="text-lg font-bold text-primary mb-4 font-heading">Chính Sách</h3>
             <ul className="space-y-3">
               <li>
-                <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors block">
+                <a href="/p/payment-methods" className="text-muted-foreground hover:text-primary text-sm transition-colors block">
                   Hình thức thanh toán
                 </a>
               </li>
               <li>
-                <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors block">
+                <a href="/p/privacy-policy" className="text-muted-foreground hover:text-primary text-sm transition-colors block">
                   Chính sách bảo mật
                 </a>
               </li>
@@ -42,24 +43,24 @@ export default function Footer() {
             <h3 className="text-lg font-bold text-primary mb-4 font-heading">Về Smart learn</h3>
             <ul className="space-y-3">
               <li>
-                <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors block">
+                <a href="/p/about-us" className="text-muted-foreground hover:text-primary text-sm transition-colors block">
                   Giới thiệu về chúng tôi
                 </a>
               </li>
               <li>
-                <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors block">
+                <Link to="/contact" className="text-muted-foreground hover:text-primary text-sm transition-colors block">
                   Liên hệ với chúng tôi
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors block">
+                <a href="/p/faq" className="text-muted-foreground hover:text-primary text-sm transition-colors block">
                   Các câu hỏi thường gặp
                 </a>
               </li>
             </ul>
           </div>
         </div>
-        
+
         <div className="mt-12 pt-8 border-t border-gray-100 text-center">
           <p className="text-sm text-gray-400">
             © {new Date().getFullYear()} Smart Learn. All rights reserved.

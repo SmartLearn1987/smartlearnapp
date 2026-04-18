@@ -13,6 +13,12 @@ All endpoints (except `/register` and `/login`) require the following headers:
 | `x-session-token` | string | Active session token (Access Token) |
 | `x-user-id`       | UUID   | The logged-in user's ID           |
 
+To ensure API security, you must also provide the API Key header in **all** requests to `/api/*` if the server is configured with `VITE_API_KEY`:
+
+| Header            | Type   | Description                    |
+|-------------------|--------|--------------------------------|
+| `x-api-key`       | string | Expected API key from `.env`   |
+
 ### ⏳ Session Expiration & Refresh
 - **Access Token**: Valid for **1 day**. If expired, the server returns `401 Unauthorized` with `{ "error": "TOKEN_EXPIRED" }`.
 - **Refresh Token**: Valid for **30 days**. Used to obtain a new set of tokens.
@@ -252,6 +258,50 @@ Generates a random 8-character password, updates it in the database, and sends i
 ```
 
 **Errors:** `404` (email not found), `500`.
+
+---
+
+## 🛠️ System Pages
+
+### `GET /api/system-pages`
+List all static pages (slug and title).
+
+**Response:** `200 OK`
+```json
+[
+  { "slug": "string", "title": "string", "updated_at": "timestamp" }
+]
+```
+
+---
+
+### `GET /api/system-pages/:slug`
+Fetch content for a specific static page.
+
+**Response:** `200 OK`
+```json
+{
+  "id": "uuid",
+  "slug": "string",
+  "title": "string",
+  "content": "string",
+  "updated_at": "timestamp"
+}
+```
+
+---
+
+### `POST /api/system-pages` *(Admin only)*
+Create or update a static page (Upsert).
+
+**Request Body:**
+| Field   | Type   | Required |
+|---------|--------|----------|
+| `slug`    | string | ✅       |
+| `title`   | string | ✅       |
+| `content` | string | ❌       |
+
+**Response:** `200 OK` — Page object.
 
 ---
 
@@ -874,3 +924,236 @@ Update a pictogram question. Same body as POST.
 Delete a pictogram question.
 
 **Response:** `200 OK` — `{ "ok": true }`.
+
+---
+
+### Proverbs (Ca dao tục ngữ)
+
+#### `GET /api/proverbs/play`
+Get randomized proverbs for gameplay.
+
+**Query Params:**
+| Param   | Type   | Required | Default |
+|---------|--------|----------|---------|
+| `level` | string | ❌       |         |
+| `limit` | number | ❌       | 5       |
+
+**Response:** `200 OK`
+```json
+[
+  { "id": "uuid", "content": "string", "level": "string" }
+]
+```
+
+#### `GET /api/proverbs`
+Get a list of all proverbs.
+
+**Response:** `200 OK`
+```json
+[
+  { "id": "uuid", "content": "string", "level": 1, "created_by": "uuid", "created_at": "timestamp" }
+]
+```
+
+#### `POST /api/proverbs` *(Admin only)*
+Create a single proverb.
+
+**Request Body:**
+| Field     | Type   | Required | Default |
+|-----------|--------|----------|---------|
+| `content` | string | ✅       |         |
+| `level`   | number | ❌       | 1       |
+
+**Response:** `201 Created`
+
+#### `POST /api/proverbs/bulk` *(Admin only)*
+Create multiple proverbs at once. The content is plain text separated by line breaks.
+
+**Request Body:**
+| Field     | Type   | Required | Default |
+|-----------|--------|----------|---------|
+| `content` | string | ✅       |         |
+| `level`   | number | ❌       | 1       |
+
+**Response:** `201 Created`
+
+#### `PUT /api/proverbs/:id` *(Admin only)*
+Update a proverb. Same body as POST.
+
+#### `DELETE /api/proverbs/:id` *(Admin only)*
+Delete a proverb.
+
+**Response:** `204 No Content`.
+
+---
+
+### Nhanh Như Chớp (Fast Response)
+
+#### `GET /api/nhanhnhuchop/questions` *(Admin only)*
+List all questions for management.
+
+#### `GET /api/nhanhnhuchop/play`
+Get randomized questions for gameplay.
+
+**Query Params:**
+| Param   | Type   | Required | Default |
+|---------|--------|----------|---------|
+| `level` | string | ❌       | medium  |
+| `limit` | number | ❌       | 10      |
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": "uuid",
+    "question": "string",
+    "options": ["A", "B", "C", "D"],
+    "correct_index": 0,
+    "explanation": "string | null",
+    "level": "easy | medium | hard"
+  }
+]
+```
+
+#### `POST /api/nhanhnhuchop/questions` *(Admin only)*
+Create a new question.
+
+**Request Body:**
+| Field           | Type     | Required |
+|-----------------|----------|----------|
+| `question`      | string   | ✅       |
+| `options`       | string[] | ✅       |
+| `correct_index` | number   | ✅       |
+| `explanation`   | string   | ❌       |
+| `level`         | string   | ✅       |
+
+#### `PUT /api/nhanhnhuchop/questions/:id` *(Admin only)*
+Update an existing question. Same body as POST.
+
+#### `DELETE /api/nhanhnhuchop/questions/:id` *(Admin only)*
+Delete a question.
+
+#### `POST /api/nhanhnhuchop/import` *(Admin only)*
+Bulk import questions.
+
+**Request Body:**
+```json
+{
+  "questions": [
+    {
+      "question": "string",
+      "options": ["A", "B", "C", "D"],
+      "correct_index": 0,
+      "explanation": "string",
+      "level": "easy"
+    }
+  ]
+}
+```
+
+**Response:** `201 Created` — `{ "imported": number }`.
+
+---
+
+## 👑 Vua Tiếng Việt
+
+### `GET /api/vuatiengviet`
+List all questions for management.
+
+### `GET /api/vuatiengviet/play`
+Get randomized questions for gameplay.
+
+**Query Params:**
+| Param   | Type   | Required | Default |
+|---------|--------|----------|---------|
+| `level` | string | ❌       | medium  |
+| `limit` | number | ❌       | 5       |
+
+**Response:** `200 OK` — Array of questions.
+
+### `POST /api/vuatiengviet` *(Admin only)*
+Create a new question.
+
+**Request Body:**
+| Field      | Type   | Required | Default  |
+|------------|--------|----------|----------|
+| `question` | string | ✅       |          |
+| `answer`   | string | ✅       |          |
+| `hint`     | string | ❌       |          |
+| `level`    | string | ❌       | "medium" |
+
+### `POST /api/vuatiengviet/bulk` *(Admin only)*
+Bulk create questions. Same body structure as Nhanh Như Chớp import.
+
+### `PUT /api/vuatiengviet/:id` *(Admin only)*
+Update a question.
+
+### `DELETE /api/vuatiengviet/:id` *(Admin only)*
+Delete a question.
+
+---
+
+## 🧒 Learning with Kids (Học cùng bé)
+
+### `GET /api/learning/categories`
+List all categories with item counts.
+
+### `GET /api/learning/categories/:id`
+Get a single category.
+
+### `POST /api/learning/categories` *(Admin only)*
+Create a category.
+
+**Request Body:**
+| Field              | Type   | Required |
+|--------------------|--------|----------|
+| `name`             | string | ✅       |
+| `description`      | string | ❌       |
+| `general_question` | string | ✅       |
+
+### `PUT /api/learning/categories/:id` *(Admin only)*
+Update a category.
+
+### `DELETE /api/learning/categories/:id` *(Admin only)*
+Delete a category.
+
+### `GET /api/learning/categories/:categoryId/questions`
+List all questions in a category.
+
+### `POST /api/learning/questions` *(Admin only)*
+Create a new image-based question.
+
+**Request Body:**
+| Field         | Type   | Required |
+|---------------|--------|----------|
+| `category_id` | UUID   | ✅       |
+| `image_url`   | string | ✅       |
+| `answer`      | string | ✅       |
+
+### `PUT /api/learning/questions/:id` *(Admin only)*
+Update a question.
+
+### `DELETE /api/learning/questions/:id` *(Admin only)*
+Delete a question.
+
+---
+
+## ✉️ Contact
+
+### `POST /api/contact`
+Submit the contact form. Forces a `sendMail` to the configured `EMAIL_USER`.
+
+**Request Body:**
+| Field     | Type   | Required |
+|-----------|--------|----------|
+| `name`    | string | ✅       |
+| `email`   | string | ✅       |
+| `phone`   | string | ✅       |
+| `message` | string | ❌       |
+
+**Response:** `200 OK`
+```json
+{ "success": true, "message": "..." }
+```
+
+**Errors:** `400` (missing required fields), `500` (email configuration error or SMTP fail).

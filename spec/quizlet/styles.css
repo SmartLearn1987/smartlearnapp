@@ -1,0 +1,206 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --primary: #4255ff; /* Quizlet-like blue */
+  --primary-hover: #3b4be6;
+  --primary-light: #edefff;
+  --secondary: #3ccfcf;
+  --danger: #ff725e;
+  --success: #23b26d;
+  --background: #f6f7fb;
+  --card-bg: #FFFFFF;
+  --text-main: #1a1d28;
+  --text-muted: #586380;
+  --border: #edeff4;
+  --radius-xl: 12px;
+  --radius-2xl: 20px;
+  --radius-3xl: 32px;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.08);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--background);
+  color: var(--text-main);
+  line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+.container { padding: 16px; }
+
+/* Components */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius-2xl);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:active {
+  transform: scale(0.98);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 24px;
+  border-radius: var(--radius-xl);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  font-size: 0.9375rem;
+  gap: 10px;
+  width: 100%;
+}
+
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:active { background: var(--primary-hover); }
+
+.btn-white { background: white; color: var(--text-main); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+
+.input {
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: var(--radius-xl);
+  border: 2px solid var(--border);
+  font-family: inherit;
+  font-size: 1rem;
+  transition: all 0.2s;
+  background: white;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: white;
+}
+
+/* Flashcard Flip 3D */
+.flip-container {
+  perspective: 1000px;
+  width: 100%;
+  aspect-ratio: 4/5;
+  margin-bottom: 32px;
+}
+
+.flipper {
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.flipper.flipped {
+  transform: rotateY(180deg);
+}
+
+.card-front, .card-back {
+  backface-visibility: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+  border-radius: var(--radius-3xl);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+.flashcard-text {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-main);
+  word-break: break-word;
+}
+
+/* Header */
+.header-bar {
+  position: sticky;
+  top: 0;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  z-index: 50;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Progress */
+.progress-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.3s ease;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  background: #edeff4;
+  padding: 4px;
+  border-radius: 12px;
+  margin: 16px 0;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.tab.active {
+  background: white;
+  color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tạo Đề Trắc Nghiệm - Smart Learn</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .form-group { margin-bottom: 20px; }
+    .label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 0.875rem; color: var(--text-main); }
+    .question-card { border-left: 4px solid var(--primary); }
+    .option-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .q-type-toggle { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+    .q-type-btn { 
+      padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border); 
+      background: white; font-size: 0.8125rem; font-weight: 600; display: flex; align-items: center; gap: 6px;
+      white-space: nowrap;
+    }
+    .q-type-btn.active { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+  </style>
+</head>
+<body>
+  <header class="header-bar flex-between">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <i data-lucide="arrow-left" size="20"></i>
+      <h3 style="font-weight: 800;">Tạo đề trắc nghiệm</h3>
+    </div>
+    <button class="btn btn-primary" style="width: auto; padding: 8px 16px; font-size: 0.875rem;">
+      <i data-lucide="save" size="16"></i>
+      Lưu
+    </button>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <div class="form-group">
+        <label class="label">Tiêu đề bài thi</label>
+        <input type="text" class="input" placeholder="Nhập tiêu đề (VD: Ôn tập Toán Chương 1)">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label class="label">Môn học</label>
+          <select class="input">
+            <option>Toán học</option>
+            <option>Tiếng Việt</option>
+            <option>Tiếng Anh</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="label">Thời gian (phút)</label>
+          <input type="number" class="input" value="30">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="label">Mô tả bài thi</label>
+        <textarea class="input" rows="3" placeholder="Ghi chú ngắn gọn về nội dung bài thi"></textarea>
+      </div>
+
+      <div style="display: flex; gap: 12px;">
+        <button class="btn btn-outline" style="font-size: 0.8125rem;">
+          <i data-lucide="file-spreadsheet" size="16"></i> Import Excel
+        </button>
+        <button class="btn btn-outline" style="font-size: 0.8125rem;">
+          <i data-lucide="file-json" size="16"></i> JSON
+        </button>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; margin-top: 32px;">
+      <h2 style="font-size: 1.25rem;">Nội dung câu hỏi</h2>
+      <span class="badge badge-gray">2 câu</span>
+    </div>
+
+    <!-- Question 1 -->
+    <div class="card question-card">
+      <div class="flex-between" style="margin-bottom: 16px;">
+        <span style="font-weight: 800; font-size: 1.125rem;">#1</span>
+        <button class="btn-ghost" style="width: auto; color: var(--danger);"><i data-lucide="trash-2" size="20"></i></button>
+      </div>
+
+      <div class="q-type-toggle">
+        <div class="q-type-btn active"><i data-lucide="check-circle-2" size="14"></i> Một đáp án</div>
+        <div class="q-type-btn"><i data-lucide="check-square" size="14"></i> Nhiều đáp án</div>
+        <div class="q-type-btn"><i data-lucide="type" size="14"></i> Tự luận</div>
+      </div>
+
+      <div class="form-group">
+        <textarea class="input" style="height: 80px; font-weight: 500;" placeholder="Nhập nội dung câu hỏi..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <div class="option-row">
+          <input type="radio" checked style="width: 20px; height: 20px; accent-color: var(--primary);">
+          <input type="text" class="input" placeholder="Đáp án A" value="Kết quả là 10">
+        </div>
+        <div class="option-row">
+          <input type="radio" style="width: 20px; height: 20px;">
+          <input type="text" class="input" placeholder="Đáp án B" value="Kết quả là 20">
+        </div>
+        <div class="option-row">
+          <input type="radio" style="width: 20px; height: 20px;">
+          <input type="text" class="input" placeholder="Đáp án C">
+        </div>
+        <div class="option-row">
+          <input type="radio" style="width: 20px; height: 20px;">
+          <input type="text" class="input" placeholder="Đáp án D">
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-outline" style="border-style: dashed; background: white; margin-top: 8px;">
+      <i data-lucide="plus"></i> Thêm câu hỏi
+    </button>
+  </main>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

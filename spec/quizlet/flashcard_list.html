@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flashcards - Học phần - Smart Learn</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <header class="header-bar">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <i data-lucide="layers" style="color: var(--primary);"></i>
+      <h3 style="font-weight: 800;">Flashcards</h3>
+    </div>
+    <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-light); display: flex; align-items: center; justify-content: center; color: var(--primary);">
+      <i data-lucide="user" size="20"></i>
+    </div>
+  </header>
+
+  <main class="container">
+    <div style="margin-bottom: 24px;">
+      <h1 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 8px;">Thư viện học phần</h1>
+      <p style="color: var(--text-muted); font-size: 0.9375rem;">Ôn luyện từ vựng và thuật ngữ hiệu quả</p>
+    </div>
+
+    <div style="position: relative; margin-bottom: 16px;">
+      <i data-lucide="search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted);" size="18"></i>
+      <input type="text" class="input" placeholder="Tìm bộ thẻ..." style="padding-left: 48px; border-radius: 16px; border-width: 1px;">
+    </div>
+
+    <div class="tabs">
+      <div class="tab">Cộng đồng</div>
+      <div class="tab active">Cá nhân</div>
+    </div>
+
+    <button class="btn btn-primary" style="margin-bottom: 24px; border-radius: 16px;">
+      <i data-lucide="plus-square"></i>
+      Tạo học phần mới
+    </button>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+      <h2 style="font-size: 1.125rem; font-weight: 700;">Gần đây</h2>
+      <a href="#" style="color: var(--primary); font-size: 0.8125rem; font-weight: 700; text-decoration: none;">Xem tất cả</a>
+    </div>
+
+    <!-- Flashcard Set Card 1 -->
+    <div class="card animate-fade-in">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+        <h3 style="font-size: 1.125rem; font-weight: 700; max-width: 80%;">Từ vựng Tiếng Anh - Unit 5: Food & Drink</h3>
+        <button style="border: none; background: transparent; color: var(--text-muted);"><i data-lucide="more-horizontal"></i></button>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+        <span style="background: var(--primary-light); color: var(--primary); font-size: 0.75rem; font-weight: 700; padding: 4px 8px; border-radius: 6px;">24 thẻ</span>
+        <span style="display: flex; align-items: center; gap: 4px; color: var(--text-muted); font-size: 0.75rem; font-weight: 500;">
+          <i data-lucide="user" size="12"></i> Thầy Bình
+        </span>
+      </div>
+      <div class="progress-bar" style="margin-bottom: 8px;">
+        <div class="progress-fill" style="width: 65%;"></div>
+      </div>
+      <p style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Đã học 15/24 thẻ</p>
+    </div>
+
+    <!-- Flashcard Set Card 2 -->
+    <div class="card animate-fade-in" style="animation-delay: 0.1s;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+        <h3 style="font-size: 1.125rem; font-weight: 700; max-width: 80%;">Công thức Vật lý 10 - Học kỳ 1</h3>
+        <button style="border: none; background: transparent; color: var(--text-muted);"><i data-lucide="more-horizontal"></i></button>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+        <span style="background: #fff8eb; color: #b45309; font-size: 0.75rem; font-weight: 700; padding: 4px 8px; border-radius: 6px;">12 thẻ</span>
+        <span style="display: flex; align-items: center; gap: 4px; color: var(--text-muted); font-size: 0.75rem; font-weight: 500;">
+          <i data-lucide="globe" size="12"></i> Cộng đồng
+        </span>
+      </div>
+      <div class="btn btn-white" style="padding: 10px; font-size: 0.8125rem;">
+        <i data-lucide="play" size="16"></i> Bắt đầu ôn luyện
+      </div>
+    </div>
+
+    <!-- Empty State / Footer -->
+    <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+      <i data-lucide="smile" size="48" style="margin-bottom: 12px; opacity: 0.3;"></i>
+      <p style="font-size: 0.875rem;">Bạn đã học xong 2 bộ thẻ trong tuần này!</p>
+    </div>
+
+  </main>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

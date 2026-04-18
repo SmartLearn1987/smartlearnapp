@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, Home, GraduationCap, Users, LogOut, ChevronDown, ShieldCheck, Layers, Library, ClipboardList, User as UserIcon, Gamepad2, CalendarClock } from "lucide-react";
+import { BookOpen, Home, GraduationCap, Users, LogOut, ChevronDown, ShieldCheck, Layers, Library, ClipboardList, User as UserIcon, Gamepad2, CalendarClock, FileText } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
@@ -40,6 +40,7 @@ export default function AppHeader() {
   const mgmtItems = [
     { path: "/games",     label: "Quản lý Game",     icon: Gamepad2,      show: isAdmin },
     { path: "/teacher",   label: "Màn hình Giáo viên", icon: GraduationCap,  show: isAdmin || isTeacher },
+    { path: "/admin/content", label: "Quản lý nội dung", icon: FileText, show: isAdmin },
   ].filter((item) => item.show);
 
   if (!user) return null;

@@ -22,6 +22,19 @@
    > [!TIP]
    > Biến `DATABASE_URL` sẽ được Railway tự cung cấp khi bạn thêm dịch vụ PostgreSQL vào cùng một project.
 
+### Cấu hình Gửi Email (Nodemailer)
+Hệ thống sử dụng Gmail để gửi email (ví dụ: Khôi phục mật khẩu). Bạn cần thiết lập trong phần **Variables** của code ứng dụng trên Railway:
+1. `EMAIL_USER`: Địa chỉ Gmail của bạn (vd: `nguyenvana@gmail.com`).
+2. `EMAIL_PASS`: **Mật khẩu ứng dụng (App Password)** của Gmail. Tuyệt đối **không** dùng mật khẩu đăng nhập thông thường.
+
+> [!WARNING]
+> **Cách tạo Mật khẩu ứng dụng (App Password) trên Gmail:**
+> 1. Truy cập [Tài khoản Google](https://myaccount.google.com/).
+> 2. Bật **Xác minh 2 bước (2-Step Verification)** trong mục **Bảo mật**.
+> 3. Tìm kiếm "Mật khẩu ứng dụng" hoặc "App passwords" trong thanh tìm kiếm của cài đặt Bảo mật.
+> 4. Tạo một mật khẩu ứng dụng mới (đặt tên là "Railway SmartLearn") và dán mã gồm 16 chữ cái vào biến `EMAIL_PASS` trên Railway.
+> 5. (Lưu ý) Mã nguồn đã được cấu hình ép dùng IPv4 (`localAddress: "0.0.0.0"`) và SSL, nên lỗi `ENETUNREACH` IPv6 khi deploy lên Railway sẽ không còn xuất hiện.
+
 ## 5. Cấu hình Build & Start
 Railway sẽ đọc file `package.json` và tự động thực hiện:
 - **Build Command**: `npm run build` (để tạo thư mục `/dist`).

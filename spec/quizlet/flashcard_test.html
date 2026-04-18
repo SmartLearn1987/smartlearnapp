@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kiểm tra Flashcard - Smart Learn</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .prompt-card {
+      background: white;
+      border-radius: var(--radius-2xl);
+      padding: 40px 20px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+    }
+    .feedback-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(35, 178, 109, 0.95);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-align: center;
+    }
+    .feedback-overlay.show { display: flex; animation: fadeIn 0.2s; }
+  </style>
+</head>
+<body>
+  <header class="header-bar">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <i data-lucide="chevron-left" style="color: var(--text-muted); cursor: pointer;"></i>
+      <h3 style="font-weight: 800; font-size: 0.875rem;">Kiểm tra: Mặt trước → Sau</h3>
+    </div>
+    <div style="font-weight: 800; color: var(--primary);">8 / 12</div>
+  </header>
+
+  <div class="progress-bar" style="border-radius: 0;">
+    <div class="progress-fill" style="width: 66%;"></div>
+  </div>
+
+  <main class="container">
+    <div style="margin-top: 24px; margin-bottom: 40px;">
+      <p style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Thuật ngữ:</p>
+      <div class="prompt-card">
+        <h2 style="font-size: 2.25rem; font-weight: 800; color: var(--text-main);">Ingredient</h2>
+      </div>
+
+      <p style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Câu trả lời của bạn:</p>
+      <input type="text" class="input" placeholder="Nhập định nghĩa..." style="height: 60px; font-size: 1.125rem; font-weight: 600;">
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding: 0 4px;">
+        <span style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 600;">Nhấn Enter để gửi</span>
+        <a href="#" style="color: var(--primary); font-size: 0.8125rem; font-weight: 700; text-decoration: none;">Tôi không biết</a>
+      </div>
+    </div>
+
+    <div class="card" style="background: #f8fafc; border-style: dashed; border-color: #cbd5e1;">
+      <h3 style="font-size: 0.875rem; font-weight: 700; color: #64748b; margin-bottom: 8px;">Gợi ý:</h3>
+      <p style="font-size: 0.875rem; color: #94a3b8;">Phần tử cấu thành nên một món ăn hoặc hỗn hợp nào đó...</p>
+    </div>
+  </main>
+
+  <!-- Feedback Overlay (Hidden by default) -->
+  <div class="feedback-overlay" onclick="this.classList.remove('show')">
+    <div style="width: 80px; height: 80px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--success); margin-bottom: 24px;">
+      <i data-lucide="check" size="48"></i>
+    </div>
+    <h1 style="font-size: 2.5rem; font-weight: 900; margin-bottom: 8px;">Chính xác!</h1>
+    <p style="font-size: 1.125rem; opacity: 0.9; margin-bottom: 32px;">Bạn đang làm rất tốt.</p>
+    <p style="font-size: 0.8125rem; font-weight: 700; opacity: 0.7;">Click để tiếp tục</p>
+  </div>
+
+  <div style="position: fixed; bottom: 32px; left: 16px; right: 16px;">
+    <button class="btn btn-primary" onclick="document.querySelector('.feedback-overlay').classList.add('show')">
+      Kiểm tra đáp án
+    </button>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

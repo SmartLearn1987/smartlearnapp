@@ -371,7 +371,7 @@ export default function CoursesPage() {
     return acc;
   }, {} as Record<string, CurriculumData[]>);
 
-  const levelOrder = ["Tiểu học", "Trung học cơ sở", "Trung học Phổ Thông", "Đại Học / Cao Đẳng", "Khác", "Chưa phân loại"];
+  const levelOrder = ["Tiểu học", "Trung học cơ sở", "Trung học Phổ Thông", "Đại Học / Cao Đẳng", "Luyện thi chứng chỉ", "Chưa phân loại"];
   const sortedLevels = Object.keys(groupedCurricula).sort((a, b) => {
     const idxA = levelOrder.indexOf(a);
     const idxB = levelOrder.indexOf(b);

@@ -6,7 +6,11 @@ import fs from "fs/promises";
 import multer from "multer";
 import crypto from "node:crypto";
 import nodemailer from "nodemailer";
+import dns from "node:dns";
 import { query, pool } from "./db.mjs";
+
+// Ép buộc ưu tiên IPv4 để sửa lỗi ENETUNREACH trên Railway (IPv6 không hỗ trợ)
+dns.setDefaultResultOrder("ipv4first");
 
 
 // Biến môi trường được load trong ./db.mjs (path .env cố định theo thư mục project)
@@ -38,6 +42,42 @@ app.use(express.json({ limit: "10mb" }));
 app.use("/uploads", express.static(uploadsDir));
 app.use(express.static(distDir)); // Serve built frontend assets
 
+// Log all requests
+app.use((req, res, next) => {
+  console.log(`[Request] ${req.method} ${req.url}`);
+  next();
+});
+
+// ── API Key Middleware ────────────────────────────────────────────────────
+app.use(`${API_PREFIX}`, (req, res, next) => {
+  if (req.method === "OPTIONS") return next(); 
+  
+  const expectedKey = process.env.VITE_API_KEY;
+  if (expectedKey && expectedKey.trim() !== "") {
+    const providedKey = req.headers["x-api-key"];
+    
+    // Log for production diagnostics (masked)
+    if (!providedKey || providedKey !== expectedKey) {
+      console.warn(`[Security] API Key mismatch. Expected: ${expectedKey.substring(0, 4)}..., Provided: ${providedKey ? providedKey.substring(0, 4) + '...' : 'NONE'}`);
+      return res.status(403).json({ error: "Forbidden: Invalid API Key" });
+    }
+  }
+  next();
+});
+
+app.post(`${API_PREFIX}/upload`, upload.single("file"), (req, res) => {
+  console.log(`[Upload] Received upload request: ${req.file?.originalname || 'No file'}`);
+  if (!req.file) {
+    console.error("[Upload Error] No file in request");
+    return res.status(400).json({ error: "No file uploaded" });
+  }
+  
+  // Trả về đường dẫn truy cập cho ảnh
+  const fileUrl = `/uploads/${req.file.filename}`;
+  console.log(`[Upload] File saved successfully: ${fileUrl}`);
+  res.json({ url: fileUrl });
+});
+
 // Auto-migrate schema
 (async () => {
   try {
@@ -58,7 +98,21 @@ app.use(express.static(distDir)); // Serve built frontend assets
       `ALTER TABLE curricula ADD COLUMN IF NOT EXISTS sort_order integer DEFAULT 0;`,
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token text;`,
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS access_token_expires_at timestamp;`,
-      `ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_expires_at timestamp;`
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_expires_at timestamp;`,
+      `CREATE TABLE IF NOT EXISTS system_pages (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        slug text UNIQUE NOT NULL,
+        title text NOT NULL,
+        content text NOT NULL,
+        updated_at timestamptz DEFAULT now()
+      );`,
+      `CREATE TABLE IF NOT EXISTS proverbs (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        content text NOT NULL,
+        level integer NOT NULL DEFAULT 1,
+        created_by uuid REFERENCES users(id) ON DELETE SET NULL,
+        created_at timestamptz DEFAULT now()
+      );`
     ];
     for (const q of queries) {
       await query(q);
@@ -71,25 +125,46 @@ app.use(express.static(distDir)); // Serve built frontend assets
 
 // ── Session Middleware ────────────────────────────────────────────────────
 app.use(async (req, res, next) => {
-  if (req.path.startsWith(`${API_PREFIX}/login`) || req.path.startsWith(`${API_PREFIX}/register`) || req.path.startsWith(`${API_PREFIX}/refresh-token`)) {
+  if (
+    req.path.startsWith(`${API_PREFIX}/login`) || 
+    req.path.startsWith(`${API_PREFIX}/register`) || 
+    req.path.startsWith(`${API_PREFIX}/refresh-token`) ||
+    req.path.startsWith(`${API_PREFIX}/forgot-password`) ||
+    req.path.startsWith(`${API_PREFIX}/contact`) ||
+    req.path.startsWith(`${API_PREFIX}/nhanhnhuchop/play`) ||
+    (req.path.startsWith(`${API_PREFIX}/system-pages`) && req.method === "GET")
+  ) {
     return next();
   }
-  const userId = req.headers["x-user-id"];
-  const sessionToken = req.headers["x-session-token"];
-  if (userId && sessionToken) {
-    try {
-      const { rows } = await query('select session_token, access_token_expires_at from users where id = $1', [userId]);
-      const user = rows[0];
-      if (!user || (user.session_token && user.session_token !== sessionToken)) {
-        return res.status(401).json({ error: "Phiên đăng nhập đã hết hạn hoặc bạn đã đăng nhập ở thiết bị/trình duyệt khác." });
-      }
+  const userIdRaw = req.headers["x-user-id"];
+  const sessionTokenRaw = req.headers["x-session-token"];
+  
+  const userId = userIdRaw ? userIdRaw.trim() : null;
+  const sessionToken = sessionTokenRaw ? sessionTokenRaw.trim() : null;
 
-      if (user.access_token_expires_at && new Date() > new Date(user.access_token_expires_at)) {
-        return res.status(401).json({ error: "TOKEN_EXPIRED" });
-      }
-    } catch (err) {
-      console.error("Session verification error:", err);
+  if (!userId || !sessionToken) {
+    return res.status(401).json({ error: "Thiếu thông tin xác thực (x-user-id hoặc x-session-token)." });
+  }
+
+  // Regex kiểm tra định dạng UUID
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(userId)) {
+    return res.status(401).json({ error: "ID người dùng không hợp lệ (Phải là UUID)." });
+  }
+
+  try {
+    const { rows } = await query('select session_token, access_token_expires_at from users where id = $1', [userId]);
+    const user = rows[0];
+    if (!user || (user.session_token && user.session_token !== sessionToken)) {
+      return res.status(401).json({ error: "Phiên đăng nhập đã hết hạn hoặc bạn đã đăng nhập ở thiết bị/trình duyệt khác." });
     }
+
+    if (user.access_token_expires_at && new Date() > new Date(user.access_token_expires_at)) {
+      return res.status(401).json({ error: "TOKEN_EXPIRED" });
+    }
+  } catch (err) {
+    console.error("Session verification error:", err);
+    return res.status(500).json({ error: "Lỗi xác thực phiên làm việc." });
   }
   next();
 });
@@ -138,11 +213,18 @@ async function sendMail(to, subject, html) {
   }
 
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true, // sử dụng cổng 465 SSL thay cho 587 TLS
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
+    // Buộc kết nối nội bộ phải qua giao diện IPv4
+    localAddress: "0.0.0.0",
+    tls: {
+      rejectUnauthorized: false
+    }
   });
 
   const mailOptions = {
@@ -261,6 +343,11 @@ app.post(`${API_PREFIX}/login`, async (req, res) => {
 app.post(`${API_PREFIX}/refresh-token`, async (req, res) => {
   const { userId, refreshToken } = req.body || {};
   if (!userId || !refreshToken) return res.status(400).json({ error: "Missing data" });
+
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(userId)) {
+    return res.status(400).json({ error: "ID người dùng không hợp lệ" });
+  }
 
   try {
     const { rows } = await query(
@@ -477,6 +564,50 @@ app.put(`${API_PREFIX}/users/:id/password`, async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: "Failed to change password" });
+  }
+});
+
+// ── System Pages (Static content) ──────────────────────────────────────────
+app.get(`${API_PREFIX}/system-pages/:slug`, async (req, res) => {
+  const { slug } = req.params;
+  try {
+    const { rows } = await query(`select * from system_pages where slug = $1`, [slug]);
+    if (!rows[0]) return res.json({ title: "", content: "", slug });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch page" });
+  }
+});
+
+app.get(`${API_PREFIX}/system-pages`, async (req, res) => {
+  try {
+    const { rows } = await query(`select slug, title, updated_at from system_pages order by title asc`);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch pages" });
+  }
+});
+
+app.post(`${API_PREFIX}/system-pages`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Unauthorized" });
+
+  const { slug, title, content } = req.body || {};
+  if (!slug || !title) return res.status(400).json({ error: "Slug and title are required" });
+
+  try {
+    const { rows } = await query(
+      `insert into system_pages (slug, title, content, updated_at)
+       values ($1, $2, $3, now())
+       on conflict (slug) do update
+       set title = EXCLUDED.title, content = EXCLUDED.content, updated_at = now()
+       returning *`,
+      [slug, title, content || ""]
+    );
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("POST /system-pages error:", err);
+    res.status(500).json({ error: "Failed to update page" });
   }
 });
 
@@ -1622,6 +1753,518 @@ app.get(`${API_PREFIX}/pictogram/play`, async (req, res) => {
   }
 });
 
+// ── Proverbs (Ca dao tục ngữ) Endpoints ─────────────────────────────────────
+// GET random proverbs for playing
+app.get(`${API_PREFIX}/proverbs/play`, async (req, res) => {
+  const { level, limit = 5 } = req.query;
+  try {
+    let sql = `select id, content, level from proverbs`;
+    const params = [];
+    if (level) {
+      sql += ` where level = $1`;
+      params.push(level);
+    }
+    sql += ` order by random() limit $${params.length + 1}`;
+    params.push(Number(limit) || 5);
+
+    const { rows } = await query(sql, params);
+    if (rows.length === 0) return res.status(404).json({ error: "No proverbs found for this level" });
+    res.json(rows);
+  } catch (err) {
+    console.error("Proverbs Play API Error:", err);
+    res.status(500).json({ error: "Failed to fetch proverbs" });
+  }
+});
+app.get(`${API_PREFIX}/proverbs`, async (req, res) => {
+  try {
+    const { rows } = await query(`select * from proverbs order by created_at desc`);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch proverbs" });
+  }
+});
+
+app.post(`${API_PREFIX}/proverbs`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  const { content, level } = req.body || {};
+  if (!content?.trim()) return res.status(400).json({ error: "content required" });
+
+  try {
+    const { rows } = await query(
+      `insert into proverbs (content, level, created_by) values ($1, $2, $3) returning *`,
+      [content.trim(), level || 'easy', userId]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create proverb" });
+  }
+});
+
+app.post(`${API_PREFIX}/proverbs/bulk`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  const { content, level } = req.body || {};
+  if (!content) return res.status(400).json({ error: "content required" });
+
+  const lines = content.split('\n').map(l => l.trim()).filter(l => l !== "");
+  const inserted = [];
+
+  try {
+    for (const line of lines) {
+      const { rows } = await query(
+        `insert into proverbs (content, level, created_by) values ($1, $2, $3) returning *`,
+        [line, level || 'easy', userId]
+      );
+      inserted.push(rows[0]);
+    }
+    res.status(201).json(inserted);
+  } catch (err) {
+    console.error("Bulk proverbs error:", err);
+    res.status(500).json({ error: "Failed to create some proverbs" });
+  }
+});
+
+app.put(`${API_PREFIX}/proverbs/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  const { id } = req.params;
+  const { content, level } = req.body || {};
+  if (!content?.trim()) return res.status(400).json({ error: "content required" });
+
+  try {
+    const { rows } = await query(
+      `update proverbs set content = $1, level = $2 where id = $3 returning *`,
+      [content.trim(), level || 'easy', id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update proverb" });
+  }
+});
+
+app.delete(`${API_PREFIX}/proverbs/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  try {
+    const { id } = req.params;
+    await query(`delete from proverbs where id = $1`, [id]);
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete proverb" });
+  }
+});
+// ── Vua Tiếng Việt Endpoints ─────────────────────────────────────
+app.get(`${API_PREFIX}/vuatiengviet`, async (req, res) => {
+  try {
+    const { rows } = await query(`select * from vua_tieng_viet_questions order by created_at desc`);
+    res.json(rows);
+  } catch (err) {
+    console.error("Vua Tieng Viet List API Error:", err);
+    res.status(500).json({ error: "Failed to fetch questions" });
+  }
+});
+
+// GET random vua tieng viet questions for playing
+app.get(`${API_PREFIX}/vuatiengviet/play`, async (req, res) => {
+  const { level, limit = 5 } = req.query;
+  try {
+    let sql = `select id, question, answer, hint, level from vua_tieng_viet_questions`;
+    const params = [];
+    if (level) {
+      sql += ` where level = $1`;
+      params.push(level);
+    }
+    sql += ` order by random() limit $${params.length + 1}`;
+    params.push(Number(limit) || 5);
+
+    const { rows } = await query(sql, params);
+    if (rows.length === 0) return res.status(404).json({ error: "No questions found for this level" });
+    res.json(rows);
+  } catch (err) {
+    console.error("Vua Tieng Viet Play API Error:", err);
+    res.status(500).json({ error: "Failed to fetch questions" });
+  }
+});
+
+app.post(`${API_PREFIX}/vuatiengviet`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  const { question, answer, hint, level } = req.body || {};
+  if (!question || !answer) return res.status(400).json({ error: "question and answer required" });
+
+  try {
+    const { rows } = await query(
+      `insert into vua_tieng_viet_questions (question, answer, hint, level, created_by) values ($1, $2, $3, $4, $5) returning *`,
+      [question.trim(), answer.trim(), hint?.trim() || null, level || 'medium', userId]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Vua Tieng Viet Create API Error:", err);
+    res.status(500).json({ error: "Failed to create question" });
+  }
+});
+
+app.post(`${API_PREFIX}/vuatiengviet/bulk`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  const { questions } = req.body || {};
+  if (!Array.isArray(questions) || questions.length === 0) {
+    return res.status(400).json({ error: "questions array is required" });
+  }
+
+  try {
+    // Start transaction
+    await query('BEGIN');
+    
+    const results = [];
+    for (const q of questions) {
+      if (!q.question?.trim() || !q.answer?.trim()) continue;
+      
+      const { rows } = await query(
+        `insert into vua_tieng_viet_questions (question, answer, hint, level, created_by) values ($1, $2, $3, $4, $5) returning id`,
+        [q.question.trim(), q.answer.trim(), q.hint?.trim() || null, q.level || 'medium', userId]
+      );
+      results.push(rows[0]);
+    }
+    
+    await query('COMMIT');
+    res.status(201).json({ imported: results.length });
+  } catch (err) {
+    await query('ROLLBACK').catch(() => {});
+    console.error("Vua Tieng Viet Bulk Create API Error:", err);
+    res.status(500).json({ error: "Failed to bulk create questions" });
+  }
+});
+
+app.put(`${API_PREFIX}/vuatiengviet/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  const { id } = req.params;
+  const { question, answer, hint, level } = req.body || {};
+  if (!question?.trim() || !answer?.trim()) return res.status(400).json({ error: "question and answer required" });
+
+  try {
+    const { rows } = await query(
+      `update vua_tieng_viet_questions set question = $1, answer = $2, hint = $3, level = $4 where id = $5 returning *`,
+      [question.trim(), answer.trim(), hint?.trim() || null, level || 'medium', id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update question" });
+  }
+});
+
+app.delete(`${API_PREFIX}/vuatiengviet/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  try {
+    const { id } = req.params;
+    await query(`delete from vua_tieng_viet_questions where id = $1`, [id]);
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete question" });
+  }
+});
+
+// ── Learning with Kids APIs ────────────────────────────────────────────────
+
+app.get(`${API_PREFIX}/learning/categories`, async (req, res) => {
+  try {
+    const { rows } = await query(
+      `SELECT c.*, COUNT(q.id) as item_count 
+       FROM learning_categories c 
+       LEFT JOIN learning_questions q ON c.id = q.category_id 
+       GROUP BY c.id 
+       ORDER BY c.created_at DESC`
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch categories" });
+  }
+});
+
+app.get(`${API_PREFIX}/learning/categories/:id`, async (req, res) => {
+  try {
+    const { rows } = await query(
+      `SELECT * FROM learning_categories WHERE id = $1`,
+      [req.params.id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Category not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch category" });
+  }
+});
+
+app.post(`${API_PREFIX}/learning/categories`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  const { name, description, general_question } = req.body || {};
+  if (!name || !general_question) return res.status(400).json({ error: "Name and general question required" });
+
+  try {
+    const { rows } = await query(
+      `INSERT INTO learning_categories (name, description, general_question, created_by) VALUES ($1, $2, $3, $4) RETURNING *`,
+      [name.trim(), description?.trim() || null, general_question.trim(), userId]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create category" });
+  }
+});
+
+app.put(`${API_PREFIX}/learning/categories/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  const { id } = req.params;
+  const { name, description, general_question } = req.body || {};
+  if (!name || !general_question) return res.status(400).json({ error: "Name and general question required" });
+
+  try {
+    const { rows } = await query(
+      `UPDATE learning_categories SET name = $1, description = $2, general_question = $3 WHERE id = $4 RETURNING *`,
+      [name.trim(), description?.trim() || null, general_question.trim(), id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Category not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update category" });
+  }
+});
+
+app.delete(`${API_PREFIX}/learning/categories/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  try {
+    await query(`DELETE FROM learning_categories WHERE id = $1`, [req.params.id]);
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete category" });
+  }
+});
+
+app.get(`${API_PREFIX}/learning/categories/:categoryId/questions`, async (req, res) => {
+  try {
+    const { rows } = await query(
+      `SELECT * FROM learning_questions WHERE category_id = $1 ORDER BY created_at ASC`,
+      [req.params.categoryId]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch questions" });
+  }
+});
+
+app.post(`${API_PREFIX}/learning/questions`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  const { category_id, image_url, answer } = req.body || {};
+  if (!category_id || !image_url || !answer) return res.status(400).json({ error: "Missing required fields" });
+
+  try {
+    const { rows } = await query(
+      `INSERT INTO learning_questions (category_id, image_url, answer, created_by) VALUES ($1, $2, $3, $4) RETURNING *`,
+      [category_id, image_url, answer.trim(), userId]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create question" });
+  }
+});
+
+app.put(`${API_PREFIX}/learning/questions/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  const { id } = req.params;
+  const { image_url, answer } = req.body || {};
+  if (!image_url || !answer) return res.status(400).json({ error: "Image URL and answer required" });
+
+  try {
+    const { rows } = await query(
+      `UPDATE learning_questions SET image_url = $1, answer = $2 WHERE id = $3 RETURNING *`,
+      [image_url, answer.trim(), id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Question not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update question" });
+  }
+});
+
+app.delete(`${API_PREFIX}/learning/questions/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  try {
+    await query(`DELETE FROM learning_questions WHERE id = $1`, [req.params.id]);
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete question" });
+  }
+});
+
+// ── Nhanh Nhu Chop Game APIs ────────────────────────────────────────────────
+
+app.get(`${API_PREFIX}/nhanhnhuchop/questions`, async (req, res) => {
+  try {
+    const { rows } = await query(
+      `SELECT * FROM nhanh_nhu_chop_questions ORDER BY created_at DESC`
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch questions" });
+  }
+});
+
+app.get(`${API_PREFIX}/nhanhnhuchop/play`, async (req, res) => {
+  const { level, limit } = req.query;
+  const count = parseInt(limit) || 10;
+  try {
+    const { rows } = await query(
+      `SELECT * FROM nhanh_nhu_chop_questions WHERE level = $1 ORDER BY RANDOM() LIMIT $2`,
+      [level || 'medium', count]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch questions" });
+  }
+});
+
+app.post(`${API_PREFIX}/contact`, async (req, res) => {
+  console.log(`[Contact] Received message from ${req.body?.email || 'unknown'}`);
+  const { name, email, phone, message } = req.body;
+  if (!name || !email || !phone) {
+    return res.status(400).json({ error: "Vui lòng cung cấp đầy đủ thông tin bắt buộc." });
+  }
+
+  const adminEmail = process.env.EMAIL_USER;
+  if (!adminEmail) {
+    console.warn("[Contact API] EMAIL_USER not configured.");
+    return res.status(500).json({ error: "Hệ thống chưa cấu hình email nhận." });
+  }
+
+  const subject = `[Smart Learn] Thông tin liên hệ mới từ ${name}`;
+  const html = `
+    <div style="font-family: sans-serif; padding: 20px; color: #333; line-height: 1.6; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 10px;">
+      <h2 style="color: #2D9B63; border-bottom: 2px solid #2D9B63; padding-bottom: 10px;">Tin nhắn liên hệ mới</h2>
+      <p><b>Họ tên:</b> ${name}</p>
+      <p><b>Email:</b> ${email}</p>
+      <p><b>Số điện thoại:</b> ${phone}</p>
+      <p><b>Nội dung:</b></p>
+      <div style="background: #f9f9f9; padding: 15px; border-radius: 5px;">${message || "Không có nội dung."}</div>
+    </div>
+  `;
+
+  try {
+    const success = await sendMail(adminEmail, subject, html);
+    if (success) {
+      res.json({ success: true, message: "Đã gửi thành công!" });
+    } else {
+      res.status(500).json({ error: "Lỗi gửi mail." });
+    }
+  } catch (err) {
+    res.status(500).json({ error: "Lỗi server." });
+  }
+});
+
+app.post(`${API_PREFIX}/nhanhnhuchop/questions`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  const { question, options, correct_index, explanation, level } = req.body || {};
+  if (!question || !Array.isArray(options)) return res.status(400).json({ error: "Question and options required" });
+
+  try {
+    const { rows } = await query(
+      `INSERT INTO nhanh_nhu_chop_questions (question, options, correct_index, explanation, level, created_by) 
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [question.trim(), options, correct_index || 0, explanation?.trim() || null, level || 'medium', userId]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create question" });
+  }
+});
+
+app.post(`${API_PREFIX}/nhanhnhuchop/import`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  const { questions } = req.body || {};
+  if (!Array.isArray(questions) || questions.length === 0) {
+    return res.status(400).json({ error: "questions array is required" });
+  }
+
+  try {
+    await query('BEGIN');
+    const results = [];
+    for (const q of questions) {
+      if (!q.question?.trim() || !Array.isArray(q.options)) continue;
+      
+      const { rows } = await query(
+        `INSERT INTO nhanh_nhu_chop_questions (question, options, correct_index, explanation, level, created_by) 
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+        [q.question.trim(), q.options, q.correct_index || 0, q.explanation?.trim() || null, q.level || 'medium', userId]
+      );
+      results.push(rows[0]);
+    }
+    await query('COMMIT');
+    res.status(201).json({ imported: results.length });
+  } catch (err) {
+    await query('ROLLBACK').catch(() => {});
+    res.status(500).json({ error: "Failed to bulk import questions" });
+  }
+});
+
+app.put(`${API_PREFIX}/nhanhnhuchop/questions/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  const { id } = req.params;
+  const { question, options, correct_index, explanation, level } = req.body || {};
+  if (!question || !Array.isArray(options)) return res.status(400).json({ error: "Question and options required" });
+
+  try {
+    const { rows } = await query(
+      `UPDATE nhanh_nhu_chop_questions SET question = $1, options = $2, correct_index = $3, explanation = $4, level = $5 
+       WHERE id = $6 RETURNING *`,
+      [question.trim(), options, correct_index || 0, explanation?.trim() || null, level || 'medium', id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Question not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update question" });
+  }
+});
+
+app.delete(`${API_PREFIX}/nhanhnhuchop/questions/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  try {
+    await query(`DELETE FROM nhanh_nhu_chop_questions WHERE id = $1`, [req.params.id]);
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete question" });
+  }
+});
+
 // Catch-all handler to serve index.html for SPA (placed at the end)
 
 app.use((req, res, next) => {
@@ -1633,6 +2276,16 @@ app.use((req, res, next) => {
       // If index.html is missing (e.g. no build), continue to default 404
       next();
     }
+  });
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error("[Global Error Handled]", err);
+  res.status(500).json({ 
+    error: "Internal Server Error", 
+    message: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined 
   });
 });
 
@@ -1790,6 +2443,61 @@ async function initializeApp() {
       await query(`update quizlet_sets set user_id = $1 where user_id is null`, [adminId]);
       await query(`update exams set user_id = $1 where user_id is null`, [adminId]);
       console.log("[Migration] Done.");
+
+      console.log("[Migration] Converting proverbs level to text...");
+      try {
+        await query(`alter table proverbs alter column level type text using (case when level=1 then 'easy' when level=2 then 'medium' when level=3 then 'hard' when level=4 then 'extreme' else 'easy' end)`);
+        await query(`alter table proverbs alter column level set default 'easy'`);
+      } catch (colErr) {
+        // Safe to ignore if it's already text
+      }
+
+      // ── Learning with Kids Tables ──────────────────────────────────────────
+      console.log("[Migration] Checking learning game tables...");
+      try {
+        await query(`
+          CREATE TABLE IF NOT EXISTS learning_categories (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            name TEXT NOT NULL,
+            description TEXT,
+            general_question TEXT NOT NULL,
+            created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          )
+        `);
+        await query(`
+          CREATE TABLE IF NOT EXISTS learning_questions (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            category_id UUID REFERENCES learning_categories(id) ON DELETE CASCADE,
+            image_url TEXT NOT NULL,
+            answer TEXT NOT NULL,
+            created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          )
+        `);
+      } catch (tabErr) {
+        console.warn(`[Migration] Could not create learning tables:`, tabErr.message);
+      }
+
+      // ── Nhanh Nhu Chop Table Migration ─────────────────────────────────────
+      console.log("[Migration] Checking nhanh_nhu_chop_questions table...");
+      try {
+        await query(`
+          CREATE TABLE IF NOT EXISTS nhanh_nhu_chop_questions (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            question TEXT NOT NULL,
+            options TEXT[] NOT NULL DEFAULT '{}',
+            correct_index INTEGER NOT NULL DEFAULT 0,
+            explanation TEXT,
+            level TEXT NOT NULL DEFAULT 'medium',
+            created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          )
+        `);
+        await query(`CREATE INDEX IF NOT EXISTS idx_nc_level ON nhanh_nhu_chop_questions(level)`);
+      } catch (tabErr) {
+        console.warn(`[Migration] Could not create nhanh_nhu_chop tables:`, tabErr.message);
+      }
 
     } catch (migErr) {
       console.error("[Migration Error] Failed:", migErr);

@@ -452,7 +452,7 @@ export default function EditQuizletPage() {
                   <SelectItem value="Trung học cơ sở" className="cursor-pointer hover:bg-gray-100 focus:bg-primary/10 focus:text-gray-900 transition-colors">Trung học cơ sở</SelectItem>
                   <SelectItem value="Trung học Phổ Thông" className="cursor-pointer hover:bg-gray-100 focus:bg-primary/10 focus:text-gray-900 transition-colors">Trung học Phổ Thông</SelectItem>
                   <SelectItem value="Đại Học / Cao Đẳng" className="cursor-pointer hover:bg-gray-100 focus:bg-primary/10 focus:text-gray-900 transition-colors">Đại Học / Cao Đẳng</SelectItem>
-                  <SelectItem value="Khác" className="cursor-pointer hover:bg-gray-100 focus:bg-primary/10 focus:text-gray-900 transition-colors">Khác</SelectItem>
+                  <SelectItem value="Luyện thi chứng chỉ" className="cursor-pointer hover:bg-gray-100 focus:bg-primary/10 focus:text-gray-900 transition-colors">Luyện thi chứng chỉ</SelectItem>
                 </SelectContent>
               </Select>
             </div>

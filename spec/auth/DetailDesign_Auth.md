@@ -25,7 +25,7 @@ Tài liệu này mô tả chi tiết thiết kế cho hệ thống xác thực v
 - **Email**: Phải đúng định dạng email (regex), không được để trống.
 - **Mật khẩu**: Tối thiểu 6 ký tự.
 - **Xác nhận mật khẩu**: Phải trùng khớp với mật khẩu đã nhập.
-- **Cấp học**: Chọn từ danh sách có sẵn (Tiểu học, THCS, THPT, Đại học, Khác).
+- **Cấp học**: Chọn từ danh sách có sẵn (Tiểu học, THCS, THPT, Đại học, Luyện thi chứng chỉ).
 
 ### 2.2. Phía Backend
 - **Unique Constraint**: Kiểm tra Username và Email không được trùng lặp trong Database.

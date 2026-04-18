@@ -53,7 +53,7 @@ Tài liệu này tổng hợp các mockup giao diện cho nhóm chức năng **X
 | 4 | Input: Email | Icon ✉️ bên trái, placeholder "name@example.com" |
 | 5 | Input: Password | Icon 🔒 bên trái + Eye toggle bên phải, placeholder "Tối thiểu 6 ký tự" |
 | 6 | Input: Confirm | Icon 🔒 bên trái, placeholder "Nhập lại mật khẩu" |
-| 7 | Select: Education | Icon 🎓 bên trái + Chevron bên phải, options: Tiểu học, THCS, THPT, ĐH/CĐ, Khác |
+| 7 | Select: Education | Icon 🎓 bên trái + Chevron bên phải, options: Tiểu học, THCS, THPT, ĐH/CĐ, Luyện thi chứng chỉ |
 | 8 | Error Block | Hiển thị khi validation fail |
 | 9 | Button: Submit | "Đăng ký tài khoản" — full width, nền primary green |
 | 10 | Link: Login | "Đã có tài khoản? Đăng nhập ngay" |
