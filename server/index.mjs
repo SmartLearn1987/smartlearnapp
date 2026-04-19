@@ -57,16 +57,19 @@ app.use((req, res, next) => {
 app.use(`${API_PREFIX}`, (req, res, next) => {
   if (req.method === "OPTIONS") return next(); 
   
-  const expectedKey = process.env.VITE_API_KEY;
-  if (expectedKey && expectedKey.trim() !== "") {
-    const providedKey = req.headers["x-api-key"];
+  // Lấy key từ env và loại bỏ dấu ngoặc đơn/kép dư thừa nếu có (thường gặp khi cấu hình trên cloud)
+  const envKey = process.env.VITE_API_KEY;
+  const expectedKey = envKey ? envKey.trim().replace(/^["']|["']$/g, '') : "";
+  
+  if (expectedKey !== "") {
+    const headerKey = req.headers["x-api-key"];
+    const providedKey = headerKey ? String(headerKey).trim().replace(/^["']|["']$/g, '') : "";
     
-    if (!providedKey || providedKey !== expectedKey) {
+    if (providedKey !== expectedKey) {
       const maskedExpected = expectedKey.substring(0, 4) + "...";
       const maskedProvided = providedKey ? providedKey.substring(0, 4) + "..." : "NONE";
-      console.warn(`[Security] API Key mismatch for ${req.method} ${req.path}. Expected: ${maskedExpected}, Provided: ${maskedProvided}. Header count: ${Object.keys(req.headers).length}`);
+      console.warn(`[Security] API Key mismatch for ${req.method} ${req.path}. Expected: ${maskedExpected}, Provided: ${maskedProvided}.`);
       
-      // If the path is /api/upload, we might want to be extra careful but if the key is wrong it's wrong
       return res.status(403).json({ error: "Forbidden: Invalid API Key" });
     }
   }
