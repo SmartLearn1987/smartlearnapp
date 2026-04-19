@@ -71,7 +71,7 @@ function ProverbModal({
       <div className="w-full max-w-lg rounded-2xl bg-card border border-border shadow-2xl p-6 space-y-5 animate-scale-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Quote className="h-5 w-5" />
             </div>
             <h2 className="font-heading text-lg font-bold">
@@ -97,7 +97,7 @@ function ProverbModal({
               onChange={(e) => setForm({ ...form, content: e.target.value })}
               rows={4}
               placeholder="Ví dụ: Bầu ơi thương lấy bí cùng, tuy rằng khác giống nhưng chung một giàn..."
-              className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none"
+              className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
             />
           </div>
 
@@ -123,7 +123,7 @@ function ProverbModal({
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Hủy</Button>
-            <Button type="submit" disabled={saving} className="bg-amber-600 hover:bg-amber-700">
+            <Button type="submit" disabled={saving} className="bg-primary hover:brightness-110">
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               {initial ? "Cập nhật" : "Tạo mới"}
             </Button>
@@ -171,7 +171,7 @@ function ProverbBulkModal({
       <div className="w-full max-w-lg rounded-2xl bg-card border border-border shadow-2xl p-6 space-y-5 animate-scale-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Layers className="h-5 w-5" />
             </div>
             <h2 className="font-heading text-lg font-bold">Thêm theo danh sách</h2>
@@ -195,7 +195,7 @@ function ProverbBulkModal({
               onChange={(e) => setContent(e.target.value)}
               rows={10}
               placeholder="Câu ca dao 1&#10;Câu tục ngữ 2&#10;..."
-              className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+              className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
 
@@ -221,7 +221,7 @@ function ProverbBulkModal({
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Hủy</Button>
-            <Button type="submit" disabled={saving} className="bg-amber-600 hover:bg-amber-700">
+            <Button type="submit" disabled={saving} className="bg-primary hover:brightness-110">
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Thêm vào hệ thống
             </Button>
@@ -306,8 +306,8 @@ export default function ProverbManagePage() {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="flex-1">
-          <h1 className="font-heading text-2xl font-bold flex items-center gap-2 text-amber-900">
-            <Quote className="h-7 w-7 text-amber-600" />
+          <h1 className="font-heading text-2xl font-bold flex items-center gap-2 text-gray-900">
+            <Quote className="h-7 w-7 text-primary" />
             Quản lý Ca dao tục ngữ
           </h1>
           <p className="text-muted-foreground text-sm mt-0.5">
@@ -315,10 +315,10 @@ export default function ProverbManagePage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setShowBulk(true)} className="rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50">
+          <Button variant="outline" onClick={() => setShowBulk(true)} className="rounded-xl border-primary/20 text-primary hover:bg-primary/5">
             <Layers className="h-4 w-4 mr-2" /> Thêm danh sách
           </Button>
-          <Button onClick={() => setShowCreate(true)} className="rounded-xl bg-amber-600 hover:bg-amber-700">
+          <Button onClick={() => setShowCreate(true)} className="rounded-xl bg-primary hover:brightness-110 shadow-lg shadow-primary/20 text-white">
             <Plus className="h-4 w-4 mr-2" /> Thêm một câu
           </Button>
         </div>
@@ -334,10 +334,10 @@ export default function ProverbManagePage() {
             </h3>
             <div className="space-y-2">
               <div 
-                className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-colors ${selectedFilter === null ? 'bg-amber-100/50' : 'hover:bg-muted/50'}`}
+                className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-colors ${selectedFilter === null ? 'bg-primary/10' : 'hover:bg-muted/50'}`}
                 onClick={() => handleFilterChange(null)}
               >
-                <span className={`text-xs font-bold px-2 py-1 rounded-md border border-transparent ${selectedFilter === null ? 'text-amber-700' : 'text-foreground'}`}>
+                <span className={`text-xs font-bold px-2 py-1 rounded-md border border-transparent ${selectedFilter === null ? 'text-primary' : 'text-foreground'}`}>
                   Tất cả
                 </span>
                 <span className="text-xs font-semibold text-muted-foreground">{proverbs.length} câu</span>
@@ -347,7 +347,7 @@ export default function ProverbManagePage() {
                 return (
                   <div 
                     key={lv.value} 
-                    className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-colors ${selectedFilter === lv.value ? 'bg-amber-100/50' : 'hover:bg-muted/50'}`}
+                    className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-colors ${selectedFilter === lv.value ? 'bg-primary/10' : 'hover:bg-muted/50'}`}
                     onClick={() => handleFilterChange(lv.value)}
                   >
                     <span className={`text-xs font-bold px-2 py-1 rounded-md border ${lv.color} ${selectedFilter === lv.value ? 'ring-2 ring-offset-1 ring-current' : ''}`}>
@@ -365,7 +365,7 @@ export default function ProverbManagePage() {
         <div className="lg:col-span-3 space-y-4">
           {loading ? (
             <div className="flex justify-center py-20 bg-card rounded-2xl border border-dashed border-border">
-              <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : proverbs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center gap-3 border-2 border-dashed border-border rounded-2xl bg-muted/20">

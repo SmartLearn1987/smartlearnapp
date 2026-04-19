@@ -1,9 +1,27 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Clock, Send, ChevronLeft, ChevronRight, HelpCircle, Loader2, AlertTriangle, ShieldCheck, Check } from "lucide-react";
+import { Clock, Send, ChevronLeft, ChevronRight, HelpCircle, Loader2, AlertTriangle, ShieldCheck, Check, Gamepad2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  horizontalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Option {
   id: string;
@@ -13,16 +31,43 @@ interface Option {
 interface Question {
   id: string;
   content: string;
-  type: "single" | "multiple" | "text";
+  type: "single" | "multiple" | "text" | "ordering";
   options: Option[];
 }
 
-interface Exam {
-  id: string;
-  title: string;
-  description: string;
-  duration: number;
-  questions: Question[];
+// ── Sortable Word Component ──────────────────────────────────────────────────
+function SortableWord({ id, word }: { id: string; word: string }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={cn(
+        "px-4 py-2 sm:px-6 sm:py-3 rounded-2xl border-2 shadow-sm font-heading text-base sm:text-lg font-bold transition-all cursor-grab active:cursor-grabbing select-none",
+        isDragging
+          ? "border-primary bg-primary/5 text-primary shadow-xl scale-105 z-50"
+          : "border-gray-200 bg-white hover:border-primary/20 text-gray-700"
+      )}
+    >
+      {word}
+    </div>
+  );
 }
 
 export default function QuizTakePage() {
@@ -34,6 +79,13 @@ export default function QuizTakePage() {
   const [timeLeft, setTimeLeft] = useState<number>(0); // seconds
   const [userAnswers, setUserAnswers] = useState<Record<string, any>>({});
   const [currentIdx, setCurrentIdx] = useState(0);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     const loadExam = async () => {
@@ -51,14 +103,51 @@ export default function QuizTakePage() {
     loadExam();
   }, [id, navigate]);
 
+  // Initialize Ordering Answers if not already set
+  useEffect(() => {
+    if (!exam) return;
+    const q = exam.questions[currentIdx];
+    if (q.type === "ordering" && !userAnswers[q.id]) {
+      const sentence = q.options?.[0]?.content || "";
+      const words = sentence.trim().split(/\s+/).map((w, i) => ({ id: `w-${q.id}-${i}`, word: w }));
+      // Shuffle once
+      const shuffled = [...words].sort(() => Math.random() - 0.5);
+      setUserAnswers(prev => ({ ...prev, [q.id]: shuffled }));
+    }
+  }, [currentIdx, exam]);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    const q = exam?.questions[currentIdx];
+    if (!q) return;
+
+    if (active.id !== over?.id) {
+      const items = userAnswers[q.id] as { id: string, word: string }[];
+      const oldIndex = items.findIndex(item => item.id === active.id);
+      const newIndex = items.findIndex(item => item.id === over?.id);
+      
+      setUserAnswers({
+        ...userAnswers,
+        [q.id]: arrayMove(items, oldIndex, newIndex)
+      });
+    }
+  };
+
   const handleSubmit = useCallback(() => {
     if (!exam) return;
     
-    // Save state and navigate to result page
+    // Normalize userAnswers for backend (for ordering, join with spaces)
+    const normalizedAnswers = { ...userAnswers };
+    exam.questions.forEach(q => {
+      if (q.type === "ordering" && Array.isArray(normalizedAnswers[q.id])) {
+        normalizedAnswers[q.id] = normalizedAnswers[q.id].map((x: any) => x.word).join(" ");
+      }
+    });
+
     navigate("/quizzes/result", { 
       state: { 
         exam, 
-        userAnswers,
+        userAnswers: normalizedAnswers,
         timeTaken: (exam.duration * 60) - timeLeft
       } 
     });
@@ -195,14 +284,31 @@ export default function QuizTakePage() {
                 <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full uppercase tracking-widest">
                   Câu hỏi {currentIdx + 1}
                 </span>
+                {currentQuestion.type === "ordering" && (
+                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-black uppercase tracking-widest">
+                     <Gamepad2 className="h-3 w-3" /> Sắp xếp câu
+                   </div>
+                )}
               </div>
               
               <h2 className="text-2xl font-bold leading-snug mb-10 text-gray-800">
-                {currentQuestion.content}
+                {currentQuestion.type === "ordering" ? "Sắp xếp lại theo thứ tự đúng của câu." : currentQuestion.content}
               </h2>
 
               <div className="space-y-4">
-                {currentQuestion.type === "text" ? (
+                {currentQuestion.type === "ordering" ? (
+                  <div className="p-8 sm:p-12 rounded-[2rem] border-4 border-dashed bg-gray-50/50 border-gray-100 min-h-[200px] flex items-center justify-center">
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                      <SortableContext items={(userAnswers[currentQuestion.id] || []).map((x: any) => x.id)} strategy={horizontalListSortingStrategy}>
+                        <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
+                          {(userAnswers[currentQuestion.id] || []).map((item: any) => (
+                            <SortableWord key={item.id} id={item.id} word={item.word} />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  </div>
+                ) : currentQuestion.type === "text" ? (
                   <div className="space-y-2">
                     <p className="text-sm font-bold text-muted-foreground mb-4 uppercase tracking-widest">Nhập đáp án của bạn:</p>
                     <textarea

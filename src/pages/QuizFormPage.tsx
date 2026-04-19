@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type QuestionType = "single" | "multiple" | "text";
+type QuestionType = "single" | "multiple" | "text" | "ordering";
 
 interface Option {
   id: string | number;
@@ -205,10 +205,22 @@ export default function QuizFormPage() {
         "Đáp án 4": "x"
       },
       {
-        "Câu hỏi": "Agile là gì?",
+        "Câu hỏi": "Thủ đô của Việt Nam là gì?",
         "Loại câu hỏi": "text",
-        "Lựa chọn 1": "Một phương pháp phát triển phần mềm linh hoạt",
+        "Lựa chọn 1": "Hà Nội",
         "Đáp án 1": "x",
+        "Lựa chọn 2": "",
+        "Đáp án 2": "",
+        "Lựa chọn 3": "",
+        "Đáp án 3": "",
+        "Lựa chọn 4": "",
+        "Đáp án 4": ""
+      },
+      {
+        "Câu hỏi": "Bầu ơi thương lấy bí cùng",
+        "Loại câu hỏi": "ordering",
+        "Lựa chọn 1": "",
+        "Đáp án 1": "",
         "Lựa chọn 2": "",
         "Đáp án 2": "",
         "Lựa chọn 3": "",
@@ -246,21 +258,25 @@ export default function QuizFormPage() {
         const importedQuestions: Question[] = jsonData.map((row: any, index) => {
           const type = (row["Loại câu hỏi"] || "single") as QuestionType;
           const options: Option[] = [];
-          
-          for (let i = 1; i <= 6; i++) {
-            const content = row[`Lựa chọn ${i}`];
-            if (content) {
-              options.push({
-                id: Date.now() + index * 10 + i,
-                content: String(content),
-                is_correct: row[`Đáp án ${i}`]?.toString().toLowerCase() === "x"
-              });
+          if (type === "text" || type === "ordering") {
+            const answer = String(row["Lựa chọn 1"] || row["Câu hỏi"] || "");
+            options.push({ id: Date.now() + index * 10, content: answer, is_correct: true });
+          } else {
+            for (let i = 1; i <= 6; i++) {
+              const content = row[`Lựa chọn ${i}`];
+              if (content) {
+                options.push({
+                  id: Date.now() + index * 10 + i,
+                  content: String(content),
+                  is_correct: row[`Đáp án ${i}`]?.toString().toLowerCase() === "x"
+                });
+              }
             }
           }
 
           return {
             id: Date.now() + index,
-            content: row["Câu hỏi"] || "Câu hỏi không tên",
+            content: type === "ordering" ? "Sắp xếp câu" : (row["Câu hỏi"] || "Câu hỏi không tên"),
             type,
             options: options.length > 0 ? options : [{ id: Date.now(), content: "Lựa chọn 1", is_correct: true }]
           };
@@ -295,7 +311,7 @@ export default function QuizFormPage() {
         questions: questions.map(q => ({
           content: q.content.trim() || "Câu hỏi không tên",
           type: q.type,
-          options: q.type === "text" 
+          options: (q.type === "text" || q.type === "ordering")
             ? [{ content: q.options[0]?.content.trim() || "", is_correct: true }] 
             : q.options.filter(o => o.content.trim())
         }))
@@ -480,15 +496,27 @@ export default function QuizFormPage() {
                   <div className="flex items-center gap-2">
                     <select 
                       value={question.type}
-                      onChange={(e) => updateQuestion(question.id, { 
-                        type: e.target.value as QuestionType,
-                        options: e.target.value === "text" ? [{ id: 1, content: "", is_correct: true }] : question.options.length === 0 ? [{ id: Date.now(), content: "Lựa chọn 1", is_correct: true }] : question.options
-                      })}
-                      className="bg-transparent border-none text-sm font-bold focus:ring-0 cursor-pointer text-primary"
+                      onChange={(e) => {
+                        const newType = e.target.value as QuestionType;
+                        const updates: Partial<Question> = { type: newType };
+                        
+                        if (newType === "text" || newType === "ordering") {
+                          updates.options = [{ id: Date.now(), content: question.options[0]?.content || "", is_correct: true }];
+                          if (newType === "ordering" && (!question.content || question.content === "Câu hỏi không tên")) {
+                            updates.content = "Sắp xếp câu";
+                          }
+                        } else if (question.options.length === 0) {
+                          updates.options = [{ id: Date.now(), content: "Lựa chọn 1", is_correct: true }];
+                        }
+                        
+                        updateQuestion(question.id, updates);
+                      }}
+                      className="bg-transparent border-none text-sm font-bold focus:ring-0 cursor-pointer text-primary outline-none"
                     >
                       <option value="single">Một lựa chọn</option>
                       <option value="multiple">Nhiều lựa chọn</option>
                       <option value="text">Nhập văn bản</option>
+                      <option value="ordering">Sắp xếp câu</option>
                     </select>
                   </div>
                 </div>
@@ -516,16 +544,22 @@ export default function QuizFormPage() {
                 </div>
 
                 <div className="space-y-3">
-                  {question.type === "text" ? (
-                    <div className="mt-2">
-                      <div className="text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wider">Đáp án đúng</div>
-                      <input
-                        type="text"
-                        placeholder="Nhập nội dung đáp án..."
+                  {question.type === "text" || question.type === "ordering" ? (
+                    <div className="mt-2 text-left">
+                      <div className="text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wider">
+                        {question.type === "text" ? "Đáp án đúng" : "Nội dung câu đúng (thứ tự đúng)"}
+                      </div>
+                      <textarea
+                        placeholder={question.type === "text" ? "Nhập nội dung đáp án..." : "Nhập câu văn hoàn chỉnh với thứ tự đúng..."}
                         value={question.options[0]?.content || ""}
                         onChange={(e) => updateOptionContent(question.id, question.options[0]?.id, e.target.value)}
-                        className="w-full max-w-md rounded-2xl border-2 border-dashed bg-[#F8FAFC] px-4 py-3 text-sm font-medium focus:border-primary/30 focus:outline-none transition-all"
+                        className="w-full rounded-2xl border-2 border-dashed bg-[#F8FAFC] px-4 py-3 text-sm font-medium focus:border-primary/30 focus:outline-none transition-all resize-none min-h-[80px]"
                       />
+                      {question.type === "ordering" && (
+                        <p className="mt-2 text-[10px] text-muted-foreground italic">
+                          Hệ thống sẽ tự động tách câu này thành các từ và trộn ngẫu nhiên khi học sinh làm bài.
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <>

@@ -34,8 +34,9 @@ export interface VocabWord {
 export interface QuizQuestion {
   id: string;
   question: string;
-  options: string[];
-  correctIndex: number;
+  type?: "single" | "multiple" | "text" | "ordering";
+  options?: string[];
+  correctIndex?: number;
   explanation: string;
 }
 

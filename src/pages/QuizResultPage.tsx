@@ -61,7 +61,7 @@ export default function QuizResultPage() {
     const userAnswer = userAnswers[q.id];
     let isCorrect = false;
 
-    if (q.type === "text") {
+    if (q.type === "text" || q.type === "ordering") {
       const correctText = q.options[0]?.content || "";
       isCorrect = (userAnswer || "").trim().toLowerCase() === correctText.trim().toLowerCase();
     } else if (q.type === "multiple") {
@@ -192,7 +192,9 @@ export default function QuizResultPage() {
               </div>
             </div>
 
-            <h3 className="text-xl font-bold leading-snug mb-8 text-gray-800">{q.content}</h3>
+            <h3 className="text-xl font-bold leading-snug mb-8 text-gray-800">
+              {q.type === "ordering" ? "Sắp xếp lại theo thứ tự đúng của câu." : q.content}
+            </h3>
 
             <div className="space-y-4">
               {q.type === "text" ? (
