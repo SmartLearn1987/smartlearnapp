@@ -37,6 +37,23 @@ interface CardData {
   definition: string;
 }
 
+const getCardFontSize = (text: string, baseSize: number, isFullscreen: boolean) => {
+  const length = text?.length || 0;
+  let size = baseSize;
+  
+  if (length > 200) size = baseSize * 0.3;
+  else if (length > 100) size = baseSize * 0.4;
+  else if (length > 50) size = baseSize * 0.6;
+  else if (length > 30) size = baseSize * 0.8;
+  
+  // Mobile adjustment if not fullscreen
+  if (!isFullscreen && window.innerWidth < 640) {
+    size = size * 0.6;
+  }
+  
+  return `${size}px`;
+};
+
 export default function EditQuizletPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -308,12 +325,12 @@ export default function EditQuizletPage() {
     <div className="container py-8 max-w-5xl">
       <h1 className="text-2xl font-bold font-heading text-left text-gray-800 mb-4">{title}</h1>
 
-      <div className="flex mb-6">
-        <div className="inline-flex items-center p-1.5 bg-white/80 backdrop-blur-md rounded-2xl border border-[#2D9B63]/10 shadow-lg shadow-[#2D9B63]/5">
+      <div className="flex mb-6 justify-center">
+        <div className="grid grid-cols-2 sm:flex items-center p-1 bg-white/80 backdrop-blur-md rounded-2xl border border-[#2D9B63]/10 shadow-lg shadow-[#2D9B63]/5 w-full sm:w-auto gap-1">
           <button
             onClick={() => setTestMode('none')}
             className={cn(
-              "flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-300",
+              "flex items-center justify-center text-center rounded-xl px-2 sm:px-6 py-2.5 text-[11px] sm:text-sm font-bold transition-all duration-300 leading-tight min-h-[44px]",
               testMode === 'none'
                 ? "bg-[#2D9B63] text-white shadow-lg shadow-[#2D9B63]/30 scale-[1.02]"
                 : "text-muted-foreground hover:bg-[#2D9B63]/5 hover:text-[#2D9B63]"
@@ -324,29 +341,29 @@ export default function EditQuizletPage() {
           <button
             onClick={() => setTestMode('front')}
             className={cn(
-              "flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-300 ml-1",
+              "flex items-center justify-center text-center rounded-xl px-2 sm:px-6 py-2.5 text-[11px] sm:text-sm font-bold transition-all duration-300 leading-tight min-h-[44px]",
               testMode === 'front'
                 ? "bg-[#2D9B63] text-white shadow-lg shadow-[#2D9B63]/30 scale-[1.02]"
                 : "text-muted-foreground hover:bg-[#2D9B63]/5 hover:text-[#2D9B63]"
             )}
           >
-            Kiểm tra mặt trước
+            Kiểm tra<br/>mặt trước
           </button>
           <button
             onClick={() => setTestMode('back')}
             className={cn(
-              "flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-300 ml-1",
+              "flex items-center justify-center text-center rounded-xl px-2 sm:px-6 py-2.5 text-[11px] sm:text-sm font-bold transition-all duration-300 leading-tight min-h-[44px]",
               testMode === 'back'
                 ? "bg-[#2D9B63] text-white shadow-lg shadow-[#2D9B63]/30 scale-[1.02]"
                 : "text-muted-foreground hover:bg-[#2D9B63]/5 hover:text-[#2D9B63]"
             )}
           >
-            Kiểm tra mặt sau
+            Kiểm tra<br/>mặt sau
           </button>
           <button
             onClick={() => setTestMode('practice')}
             className={cn(
-              "flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-300 ml-1",
+              "flex items-center justify-center text-center rounded-xl px-2 sm:px-6 py-2.5 text-[11px] sm:text-sm font-bold transition-all duration-300 leading-tight min-h-[44px]",
               testMode === 'practice'
                 ? "bg-[#2D9B63] text-white shadow-lg shadow-[#2D9B63]/30 scale-[1.02]"
                 : "text-muted-foreground hover:bg-[#2D9B63]/5 hover:text-[#2D9B63]"
@@ -360,11 +377,11 @@ export default function EditQuizletPage() {
       <div ref={playerRef} className={cn("bg-white rounded-xl shadow-lg border border-gray-100 p-4 mb-10", isFullscreen ? "fixed inset-0 z-50 flex flex-col justify-center bg-white" : "")}>
         {testMode === 'practice' ? (
           <div className="w-full rounded-2xl border border-gray-200 overflow-hidden">
-            <div className="flex flex-col items-center justify-center py-8 px-10 bg-red-50/60 min-h-[180px] border-b border-gray-200">
-              <h2 className="text-center font-bold" style={{ color: frontStyle.color, fontSize: `${frontStyle.size * 0.75}px` }}>{currentCard.term || "Trống"}</h2>
+            <div className="flex flex-col items-center justify-center py-8 px-6 sm:px-10 bg-red-50/60 min-h-[180px] border-b border-gray-200">
+              <h2 className="text-center font-bold break-words w-full" style={{ color: frontStyle.color, fontSize: getCardFontSize(currentCard.term, frontStyle.size * 0.75, isFullscreen) }}>{currentCard.term || "Trống"}</h2>
             </div>
-            <div className="flex flex-col items-center justify-center py-8 px-10 bg-blue-50/60 min-h-[180px]">
-              <h2 className="text-center font-bold" style={{ color: backStyle.color, fontSize: `${backStyle.size * 0.75}px` }}>{currentCard.definition || "Trống"}</h2>
+            <div className="flex flex-col items-center justify-center py-8 px-6 sm:px-10 bg-blue-50/60 min-h-[180px]">
+              <h2 className="text-center font-bold break-words w-full" style={{ color: backStyle.color, fontSize: getCardFontSize(currentCard.definition, backStyle.size * 0.75, isFullscreen) }}>{currentCard.definition || "Trống"}</h2>
             </div>
           </div>
         ) : (
@@ -373,11 +390,11 @@ export default function EditQuizletPage() {
             onClick={toggleFlip}
           >
             <div className={cn("w-full h-full [transform-style:preserve-3d] transition-transform duration-500", isFlipped ? "rotate-y-180" : "")}>
-              <div className="absolute inset-0 bg-gray-100 rounded-2xl flex items-center justify-center p-10 backface-hidden border border-gray-200">
-                <h2 className="text-center font-bold" style={{ color: frontStyle.color, fontSize: `${frontStyle.size}px` }}>{currentCard.term || "Trống"}</h2>
+              <div className="absolute inset-0 bg-gray-100 rounded-2xl flex items-center justify-center p-6 sm:p-10 backface-hidden border border-gray-200">
+                <h2 className="text-center font-bold break-words w-full" style={{ color: frontStyle.color, fontSize: getCardFontSize(currentCard.term, frontStyle.size, isFullscreen) }}>{currentCard.term || "Trống"}</h2>
               </div>
-              <div className="absolute inset-0 bg-gray-100 rounded-2xl flex items-center justify-center p-10 backface-hidden rotate-y-180 border border-gray-200">
-                <h2 className="text-center font-bold" style={{ color: backStyle.color, fontSize: `${backStyle.size}px` }}>{currentCard.definition || "Trống"}</h2>
+              <div className="absolute inset-0 bg-gray-100 rounded-2xl flex items-center justify-center p-6 sm:p-10 backface-hidden rotate-y-180 border border-gray-200">
+                <h2 className="text-center font-bold break-words w-full" style={{ color: backStyle.color, fontSize: getCardFontSize(currentCard.definition, backStyle.size, isFullscreen) }}>{currentCard.definition || "Trống"}</h2>
               </div>
             </div>
           </div>
@@ -390,25 +407,27 @@ export default function EditQuizletPage() {
           </div>
         )}
 
-        <div className="flex items-center justify-between mt-6 px-4">
-          <div className="flex gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setIsAutoPlaying(!isAutoPlaying)}>{isAutoPlaying ? <Pause /> : <Play />}</Button>
-            <Button variant="ghost" size="icon" onClick={toggleShuffle} className={isShuffled ? "text-primary" : ""}><Shuffle /></Button>
+        <div className="flex items-center justify-between mt-6 px-1 sm:px-4 flex-nowrap gap-0">
+          <div className="flex gap-0 sm:gap-2 shrink-0 flex-nowrap">
+            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={() => setIsAutoPlaying(!isAutoPlaying)}>{isAutoPlaying ? <Pause className="h-4 w-4 sm:h-5 sm:h-5" /> : <Play className="h-4 w-4 sm:h-5 sm:h-5" />}</Button>
+            <Button variant="ghost" size="icon" className={cn("h-8 w-8 sm:h-10 sm:w-10", isShuffled ? "text-primary" : "")} onClick={toggleShuffle}><Shuffle className="h-4 w-4 sm:h-5 sm:h-5" /></Button>
           </div>
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={handlePrev} disabled={currentIndex === 0}><ChevronLeft /></Button>
-            <span className="font-bold">{currentIndex + 1} / {displayCards.length}</span>
-            <Button variant="ghost" size="icon" onClick={handleNext} disabled={currentIndex === displayCards.length - 1}><ChevronRight /></Button>
+          <div className="flex items-center gap-0.5 sm:gap-4 shrink-0 flex-nowrap mx-auto">
+            <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10" onClick={handlePrev} disabled={currentIndex === 0}><ChevronLeft className="h-5 w-5 sm:h-6 sm:h-6" /></Button>
+            <span className="font-bold text-[12px] sm:text-base px-1 whitespace-nowrap shrink-0 tabular-nums leading-none min-w-[50px] sm:min-w-[80px] text-center">
+              {currentIndex + 1} / {displayCards.length}
+            </span>
+            <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10" onClick={handleNext} disabled={currentIndex === displayCards.length - 1}><ChevronRight className="h-5 w-5 sm:h-6 sm:h-6" /></Button>
           </div>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="icon" onClick={() => {
+          <div className="flex gap-0 sm:gap-2 shrink-0 flex-nowrap">
+            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={() => {
               setTempFrontStyle(frontStyle);
               setTempBackStyle(backStyle);
               setIsSettingsOpen(true);
             }}>
-              <Settings className="h-5 w-5" />
+              <Settings className="h-4 w-4 sm:h-5 sm:h-5" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={toggleFullScreen}>{isFullscreen ? <Minimize2 /> : <Maximize2 />}</Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={toggleFullScreen}>{isFullscreen ? <Minimize2 className="h-4 w-4 sm:h-5 sm:h-5" /> : <Maximize2 className="h-4 w-4 sm:h-5 sm:h-5" />}</Button>
           </div>
         </div>
       </div>
@@ -418,11 +437,11 @@ export default function EditQuizletPage() {
 
       {isOwner ? (
         <>
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <h2 className="text-2xl font-bold">Chỉnh sửa học phần</h2>
-            <div className="flex gap-3">
-              <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>Xóa</Button>
-              <Button onClick={handleSave} disabled={isSubmitting}>Lưu thay đổi</Button>
+            <div className="grid grid-cols-2 sm:flex gap-3">
+              <Button variant="destructive" onClick={handleDelete} disabled={isDeleting} className="w-full sm:w-auto h-11 rounded-xl">Xóa</Button>
+              <Button onClick={handleSave} disabled={isSubmitting} className="w-full sm:w-auto h-11 rounded-xl shadow-lg shadow-primary/20">Lưu thay đổi</Button>
             </div>
           </div>
 

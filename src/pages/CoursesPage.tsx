@@ -512,66 +512,65 @@ export default function CoursesPage() {
         </div>
       ) : view === "lessons" ? (
         <div className="animate-fade-in space-y-6">
-          <div className="flex flex-col gap-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => setView("list")}
-                    className="rounded-xl p-2 hover:bg-muted transition-colors"
-                  >
-                    <ArrowLeft className="h-5 w-5" />
-                  </button>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-2xl font-bold">{selectedCurriculum?.name}</h2>
-                      <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary uppercase tracking-wider">
-                        Môn: {subject?.name}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {lessonsSubView === "manage" ? "Quản lý bài học" : "Ôn tập nội dung"} ({lessons.length} bài)
-                    </p>
-                    {lessonsSubView === "manage" && (
-                      <Button 
-                        onClick={() => { 
-                          resetLessonForm(); 
-                          setView("lesson_form"); 
-                        }}
-                        variant="outline"
-                        className="mt-3 rounded-full border-[#2D9B63] text-[#2D9B63] hover:bg-emerald-50 font-bold h-9 px-6 transition-all"
-                      >
-                        <Plus className="mr-2 h-4 w-4" /> Tạo ghi chú mới
-                      </Button>
-                    )}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white/50 p-6 sm:p-8 rounded-[40px] border border-white/60 shadow-sm backdrop-blur-sm">
+            <div className="flex flex-col gap-6 w-full sm:w-auto">
+              <div className="flex items-start gap-4">
+                <button
+                  onClick={() => setView("list")}
+                  className="rounded-xl p-2 hover:bg-muted transition-colors shrink-0"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-2xl font-bold break-words">{selectedCurriculum?.name}</h2>
+                    <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary uppercase tracking-wider whitespace-nowrap">
+                      Môn: {subject?.name}
+                    </span>
                   </div>
-                </div>
-
-                {/* Tab Switcher - Integrated in header with 'Personal/Community' format */}
-                <div className="flex rounded-full bg-muted/50 p-1 shadow-sm border border-white/40">
-                  <button
-                    onClick={() => setLessonsSubView("manage")}
-                    className={`flex items-center justify-center rounded-full px-6 py-2 text-sm font-bold transition-all duration-300 ${
-                      lessonsSubView === "manage"
-                        ? "bg-[#2D9B63] text-white shadow-md scale-[1.02]"
-                        : "text-muted-foreground hover:text-foreground hover:bg-white/40"
-                    }`}
-                  >
-                    Quản lý bài học
-                  </button>
-                  <button
-                    onClick={() => setLessonsSubView("review")}
-                    className={`flex items-center justify-center rounded-full px-6 py-2 text-sm font-bold transition-all duration-300 ${
-                      lessonsSubView === "review"
-                        ? "bg-[#2D9B63] text-white shadow-md scale-[1.02]"
-                        : "text-muted-foreground hover:text-foreground hover:bg-white/40"
-                    }`}
-                  >
-                    Ôn tập
-                  </button>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {lessonsSubView === "manage" ? "Quản lý bài học" : "Ôn tập nội dung"} ({lessons.length} bài)
+                  </p>
+                  {lessonsSubView === "manage" && (
+                    <Button 
+                      onClick={() => { 
+                        resetLessonForm(); 
+                        setView("lesson_form"); 
+                      }}
+                      variant="outline"
+                      className="mt-3 rounded-full border-[#2D9B63] text-[#2D9B63] hover:bg-emerald-50 font-bold h-9 px-6 transition-all"
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Tạo ghi chú mới
+                    </Button>
+                  )}
                 </div>
               </div>
-              
+            </div>
+
+            {/* Tab Switcher - Integrated in header with 'Personal/Community' format */}
+            <div className="flex justify-center sm:justify-end">
+              <div className="flex rounded-full bg-muted/50 p-1 shadow-inner border border-white/40 shadow-sm">
+                <button
+                  onClick={() => setLessonsSubView("manage")}
+                  className={`flex items-center justify-center rounded-full px-6 py-2 text-sm font-bold transition-all duration-300 ${
+                    lessonsSubView === "manage"
+                      ? "bg-[#2D9B63] text-white shadow-md scale-[1.02]"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/40"
+                  }`}
+                >
+                  Quản lý bài học
+                </button>
+                <button
+                  onClick={() => setLessonsSubView("review")}
+                  className={`flex items-center justify-center rounded-full px-6 py-2 text-sm font-bold transition-all duration-300 ${
+                    lessonsSubView === "review"
+                      ? "bg-[#2D9B63] text-white shadow-md scale-[1.02]"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/40"
+                  }`}
+                >
+                  Ôn tập
+                </button>
+              </div>
             </div>
           </div>
 
@@ -694,10 +693,10 @@ export default function CoursesPage() {
               Môn: {subject?.name}
             </span>
           </div>
-          <div className="flex items-center gap-4 mt-6">
+          <div className="flex items-center gap-3 mt-6">
             <button
               onClick={() => setView("lessons")}
-              className="rounded-xl p-2 hover:bg-muted transition-colors -ml-12"
+              className="rounded-xl p-2 hover:bg-muted transition-all active:scale-90"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
@@ -1201,28 +1200,28 @@ function LessonReviewMode({
   if (!lesson) return <div className="py-20 text-center">Không tìm thấy bài học.</div>;
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto pb-20">
-      {/* Centered Header */}
-      <div className="relative text-center px-12 py-4">
+    <div className="space-y-4 sm:space-y-8 max-w-4xl mx-auto pb-20">
+      {/* Responsive Header */}
+      <div className="flex flex-col items-center gap-4 sm:block sm:relative sm:text-center sm:px-12 sm:py-4">
         <button
           onClick={onBack}
-          className="absolute left-0 top-1/2 -translate-y-1/2 group flex items-center justify-center h-10 w-10 rounded-full border bg-white/50 text-muted-foreground hover:text-primary hover:border-primary/30 transition-all shadow-sm"
+          className="absolute left-2 top-2 sm:top-1/2 sm:left-0 sm:-translate-y-1/2 group flex items-center justify-center h-10 w-10 rounded-full border bg-white/50 text-muted-foreground hover:text-primary hover:border-primary/30 transition-all shadow-sm z-10"
           title="Quay lại danh sách"
         >
           <ArrowLeft className="h-5 w-5 group-hover:-translate-x-0.5 transition-transform" />
         </button>
         
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">{lesson.title}</h1>
-          <p className="text-muted-foreground max-w-lg mx-auto leading-relaxed">{lesson.description}</p>
+        <div className="space-y-1 pt-6 sm:pt-0">
+          <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-foreground px-4 sm:px-0">{lesson.title}</h1>
+          <p className="text-xs sm:text-base text-muted-foreground max-w-lg mx-auto leading-relaxed px-4 sm:px-0">{lesson.description}</p>
         </div>
 
-        <div className="absolute right-0 top-1/2 -translate-y-1/2">
+        <div className="sm:absolute sm:right-0 sm:top-1/2 sm:-translate-y-1/2 w-full sm:w-auto px-4 sm:px-0 mt-2 sm:mt-0">
           <Button
             variant={isDone ? "default" : "outline"}
             size="sm"
             onClick={handleToggleDone}
-            className={`rounded-2xl h-11 px-6 font-bold shadow-sm transition-all duration-300 ${
+            className={`rounded-2xl h-10 sm:h-11 w-full sm:w-auto px-6 font-bold shadow-sm transition-all duration-300 ${
               isDone 
                 ? 'bg-emerald-500 hover:bg-emerald-600 border-none text-white' 
                 : 'hover:border-primary/30'
@@ -1235,24 +1234,24 @@ function LessonReviewMode({
       </div>
 
       {/* Internal Navigation Tabs - Centered & Refined */}
-      <div className="flex justify-center">
-        <div className="inline-flex items-center gap-1 overflow-x-auto rounded-2xl bg-muted/40 p-1.5 border border-white shadow-inner">
+      <div className="flex justify-center px-2 sm:px-4">
+        <div className="grid grid-cols-2 sm:flex items-center gap-1 sm:gap-1.5 rounded-2xl bg-muted/40 p-1 sm:p-1.5 border border-white shadow-inner w-full sm:w-auto">
           {tabs.map((tab) => {
              const isActive = activeTab === tab.id;
              return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-2.5 whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-300 ${
+                className={`relative flex items-center justify-center gap-2 rounded-xl px-2 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all duration-300 ${
                   isActive
-                    ? "bg-white text-primary shadow-sm scale-[1.03]"
+                    ? "bg-white text-primary shadow-sm scale-[1.02]"
                     : "text-muted-foreground hover:text-foreground hover:bg-white/40"
                 }`}
               >
-                <tab.icon className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground/70'}`} />
-                {tab.label}
+                <tab.icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isActive ? 'text-primary' : 'text-muted-foreground/70'}`} />
+                <span className="truncate">{tab.label}</span>
                 {isActive && (
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-primary rounded-full shadow-sm shadow-primary/20" />
+                  <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-primary rounded-full hidden sm:block" />
                 )}
               </button>
             );
@@ -1261,29 +1260,29 @@ function LessonReviewMode({
       </div>
 
       {/* Content Area */}
-      <div className="animate-fade-in">
+      <div className="animate-fade-in px-2 sm:px-0">
         {activeTab === "content" && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {images.length > 0 && (
-              <div className="rounded-3xl bg-card shadow-lg border-2 border-primary/5 overflow-hidden transition-all hover:shadow-xl">
-                <div className="flex items-center justify-between px-8 py-5 border-b bg-primary/5">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-primary/10">
-                      <ImageIcon className="h-5 w-5 text-primary" />
+              <div className="rounded-2xl sm:rounded-3xl bg-card shadow-lg border-2 border-primary/5 overflow-hidden transition-all hover:shadow-xl">
+                <div className="flex items-center justify-between px-4 sm:px-8 py-3 sm:py-5 border-b bg-primary/5">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-1 sm:p-2 rounded-xl bg-primary/10">
+                      <ImageIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
                     <div>
-                      <span className="block text-xs font-bold uppercase tracking-widest text-primary/70">Hình ảnh bài học</span>
-                      <span className="text-[10px] text-muted-foreground font-medium">Trực quan hóa nội dung</span>
+                      <span className="block text-[10px] sm:text-xs font-bold uppercase tracking-widest text-primary/70">Hình ảnh bài học</span>
+                      <span className="hidden sm:block text-[10px] text-muted-foreground font-medium">Trực quan hóa nội dung</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="px-3 py-1 rounded-full bg-white text-[10px] font-bold text-primary shadow-sm border border-primary/10">
+                    <div className="px-3 py-0.5 sm:py-1 rounded-full bg-white text-[10px] font-bold text-primary shadow-sm border border-primary/10">
                       {slideIndex + 1} / {images.length}
                     </div>
                   </div>
                 </div>
-                <div className="relative group bg-muted/5 p-6">
-                  <div className="aspect-[16/10] flex items-center justify-center bg-white rounded-2xl shadow-inner border border-muted/20 overflow-hidden">
+                <div className="relative group bg-muted/5 p-2 sm:p-6">
+                  <div className="aspect-[16/10] flex items-center justify-center bg-white rounded-xl sm:rounded-2xl shadow-inner border border-muted/20 overflow-hidden">
                      <img
                        src={(() => {
                          const url = images[slideIndex]?.file_url || "";
@@ -1297,38 +1296,38 @@ function LessonReviewMode({
                     <>
                       <button
                         onClick={() => setSlideIndex((p) => (p - 1 + images.length) % images.length)}
-                        className="absolute left-10 top-1/2 -translate-y-1/2 h-12 w-12 flex items-center justify-center rounded-full bg-white/90 text-primary shadow-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-primary hover:text-white"
+                        className="absolute left-4 sm:left-10 top-1/2 -translate-y-1/2 h-8 w-8 sm:h-12 sm:w-12 flex items-center justify-center rounded-full bg-white/90 text-primary shadow-xl opacity-0 sm:opacity-0 group-hover:opacity-100 transition-all hover:bg-primary hover:text-white"
                       >
-                        <ChevronLeft className="h-6 w-6" />
+                        <ChevronLeft className="h-4 w-4 sm:h-6 sm:w-6" />
                       </button>
                       <button
                         onClick={() => setSlideIndex((p) => (p + 1) % images.length)}
-                        className="absolute right-10 top-1/2 -translate-y-1/2 h-12 w-12 flex items-center justify-center rounded-full bg-white/90 text-primary shadow-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-primary hover:text-white"
+                        className="absolute right-4 sm:right-10 top-1/2 -translate-y-1/2 h-8 w-8 sm:h-12 sm:w-12 flex items-center justify-center rounded-full bg-white/90 text-primary shadow-xl opacity-0 sm:opacity-0 group-hover:opacity-100 transition-all hover:bg-primary hover:text-white"
                       >
-                        <ChevronRight className="h-6 w-6" />
+                        <ChevronRight className="h-4 w-4 sm:h-6 sm:w-6" />
                       </button>
                     </>
                   )}
                 </div>
               </div>
             )}
-            <div className="rounded-3xl bg-card p-10 border shadow-md hover:shadow-lg transition-all">
+            <div className="rounded-2xl sm:rounded-3xl bg-card p-4 sm:p-10 border shadow-md hover:shadow-lg transition-all">
               <ContentRenderer blocks={lesson.content} />
             </div>
             
             {lesson.vocabulary && lesson.vocabulary.length > 0 && (
-              <div className="rounded-3xl bg-card p-8 border shadow-md">
-                <h3 className="mb-6 flex items-center gap-3 font-bold text-xl text-secondary">
-                  <div className="p-2 rounded-xl bg-secondary/10">
-                    <BookMarked className="h-6 w-6" />
+              <div className="rounded-2xl sm:rounded-3xl bg-card p-4 sm:p-8 border shadow-md">
+                <h3 className="mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 font-bold text-lg sm:text-xl text-secondary">
+                  <div className="p-1.5 sm:p-2 rounded-xl bg-secondary/10">
+                    <BookMarked className="h-5 w-5 sm:h-6 sm:w-6" />
                   </div>
                   Danh sách từ ngữ
                 </h3>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-gap-4 sm:grid-cols-2">
                   {lesson.vocabulary.map((v: any, i: number) => (
-                    <div key={i} className="flex flex-col gap-1 rounded-2xl bg-muted/20 p-5 border border-white transition-all hover:bg-white hover:shadow-md group">
-                      <span className="font-bold text-secondary text-lg group-hover:text-primary transition-colors">{v.word}</span>
-                      <span className="text-sm text-muted-foreground leading-relaxed italic">{v.meaning}</span>
+                    <div key={i} className="flex flex-col gap-0.5 sm:gap-1 rounded-xl sm:rounded-2xl bg-muted/20 p-3 sm:p-5 border border-white transition-all hover:bg-white hover:shadow-md group">
+                      <span className="font-bold text-secondary text-base sm:text-lg group-hover:text-primary transition-colors">{v.word}</span>
+                      <span className="text-xs sm:text-sm text-muted-foreground leading-relaxed italic">{v.meaning}</span>
                     </div>
                   ))}
                 </div>
@@ -1338,7 +1337,7 @@ function LessonReviewMode({
         )}
 
         {activeTab === "quiz" && (
-          <div className="rounded-2xl bg-card p-8 border shadow-sm">
+          <div className="rounded-2xl bg-card p-4 sm:p-8 border shadow-sm">
             {lesson.quiz?.length > 0 ? (
               <QuizRunner questions={lesson.quiz} />
             ) : (
@@ -1351,7 +1350,7 @@ function LessonReviewMode({
         )}
 
         {activeTab === "flashcard" && (
-          <div className="rounded-2xl bg-card p-8 border shadow-sm">
+          <div className="rounded-2xl bg-card p-4 sm:p-8 border shadow-sm">
             {lesson.flashcards?.length > 0 ? (
               <FlashcardViewer flashcards={lesson.flashcards} />
             ) : (
@@ -1364,26 +1363,26 @@ function LessonReviewMode({
         )}
 
         {activeTab === "summary" && (
-          <div className="space-y-6">
-            <div className="rounded-2xl bg-card p-8 border shadow-sm">
-              <h3 className="mb-4 font-bold text-xl flex items-center gap-2">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="rounded-2xl bg-card p-4 sm:p-8 border shadow-sm">
+              <h3 className="mb-3 sm:mb-4 font-bold text-lg sm:text-xl flex items-center gap-2">
                 📝 Tổng kết
               </h3>
-              <p className="text-foreground/90 leading-relaxed">{lesson.summary || "Chưa có tóm tắt."}</p>
+              <p className="text-sm sm:text-base text-foreground/90 leading-relaxed">{lesson.summary || "Chưa có tóm tắt."}</p>
             </div>
             
             {lesson.keyPoints?.length > 0 && (
-              <div className="rounded-2xl bg-primary/5 border-2 border-primary/10 p-6">
-                <h3 className="mb-4 font-bold text-lg flex items-center gap-2 text-primary">
+              <div className="rounded-2xl bg-primary/5 border-2 border-primary/10 p-4 sm:p-6">
+                <h3 className="mb-3 sm:mb-4 font-bold text-base sm:text-lg flex items-center gap-2 text-primary">
                   <Lightbulb className="h-5 w-5" /> Điểm cần nhớ
                 </h3>
-                <ul className="space-y-3">
+                <ul className="space-y-2 sm:space-y-3">
                   {lesson.keyPoints.map((point: string, i: number) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <span className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-xs font-bold text-primary">
+                    <li key={i} className="flex items-start gap-2 sm:gap-3">
+                      <span className="mt-1 flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-[10px] sm:text-xs font-bold text-primary">
                         {i + 1}
                       </span>
-                      <span className="text-foreground/85">{point}</span>
+                      <span className="text-sm sm:text-base text-foreground/85">{point}</span>
                     </li>
                   ))}
                 </ul>

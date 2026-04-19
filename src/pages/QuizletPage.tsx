@@ -220,10 +220,12 @@ export default function QuizletPage() {
                               <Layers className="h-5 w-5" />
                             </div>
                             
-                            <div className="space-y-1">
+                            <div className="space-y-1 flex-1 text-left">
                                 <h3 className="font-heading text-base font-semibold line-clamp-2 group-hover:text-primary transition-colors leading-tight min-h-[2.5rem]">{quizlet.title}</h3>
                                 {viewMode === "community" && quizlet.user_id === currentUser?.id && (
-                                  <Badge variant="secondary" className="bg-primary/5 text-primary border-primary/10 text-[10px] h-5 py-0 px-2 font-black uppercase tracking-wider">Của bạn</Badge>
+                                  <div className="flex">
+                                    <Badge variant="secondary" className="bg-primary/5 text-primary border-primary/10 text-[10px] h-5 py-0 px-2 font-black uppercase tracking-wider">Của bạn</Badge>
+                                  </div>
                                 )}
                             </div>
                             

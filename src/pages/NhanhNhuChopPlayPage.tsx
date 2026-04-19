@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
@@ -214,37 +215,42 @@ export default function NhanhNhuChopPlayPage() {
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col overflow-hidden bg-white">
       {/* Header */}
-      <div className="bg-white border-b border-border/50 px-4 sm:px-8 py-3 flex items-center justify-between shadow-sm z-10 shrink-0">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="rounded-2xl hover:bg-muted" onClick={() => navigate("/")}>
-            <Home className="h-5 w-5 text-muted-foreground" />
-          </Button>
-          <div className="h-8 w-px bg-border/60 mx-1 hidden sm:block" />
-          <div className="flex items-center gap-3">
-             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-inner">
-               <Gamepad2 className="h-5 w-5" />
-             </div>
-             <div>
-               <h1 className="font-heading text-lg font-black leading-none">Nhanh như chớp</h1>
-               <div className="flex items-center gap-2 mt-1">
-                  <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">
-                    Thử thách {currentIdx + 1} / {questions.length}
-                  </p>
+      <div className="bg-white border-b border-border/50 px-4 sm:px-8 py-2 sm:py-3 flex flex-col sm:flex-row items-center gap-3 sm:gap-0 justify-between shadow-sm z-10 shrink-0">
+        <div className="flex items-center justify-between w-full sm:w-auto">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" className="rounded-2xl hover:bg-muted" onClick={() => navigate("/")}>
+              <Home className="h-5 w-5 text-muted-foreground" />
+            </Button>
+            <div className="h-8 w-px bg-border/60 mx-1 hidden sm:block" />
+            <div className="flex items-center gap-3">
+               <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-inner">
+                 <Gamepad2 className="h-5 w-5" />
                </div>
-             </div>
+               <div>
+                 <h1 className="font-heading text-base sm:text-lg font-black leading-none text-slate-800">Nhanh như chớp</h1>
+                 <div className="flex items-center gap-2 mt-1">
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none text-slate-500 mr-2">
+                      Thử thách {currentIdx + 1} / {questions.length}
+                    </p>
+                    <span className="px-2 py-0.5 rounded-lg bg-emerald-600 text-white text-[8px] font-black uppercase tracking-widest shadow-sm flex items-center gap-1">
+                      <Zap className="h-2.5 w-2.5 fill-current" /> Tia chớp {currentIdx + 1}
+                    </span>
+                 </div>
+               </div>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 sm:gap-6">
-           <div className={`flex items-center gap-3 px-6 py-2.5 rounded-2xl border-2 transition-all duration-500
+        <div className="flex items-center justify-between w-full sm:w-auto gap-3 sm:gap-6">
+           <div className={`flex items-center gap-3 px-4 sm:px-6 py-2 sm:py-2.5 rounded-2xl border-2 transition-all duration-500 flex-1 sm:flex-none justify-center
              ${timeLeft < 30 ? "border-red-200 bg-red-50 text-red-600 animate-pulse" : "border-border/50 bg-muted/30 text-muted-foreground"}`}
            >
-             <Timer className="h-5 w-5" />
-             <span className="font-mono text-xl font-black tabular-nums">{formatTime(timeLeft)}</span>
+             <Timer className="h-4 w-4 sm:h-5 sm:w-5" />
+             <span className="font-mono text-lg sm:text-xl font-black tabular-nums">{formatTime(timeLeft)}</span>
            </div>
 
-           <Button onClick={handleFinish} className="rounded-2xl h-11 px-8 font-black uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-200">
+           <Button onClick={handleFinish} className="rounded-2xl h-10 sm:h-11 px-6 sm:px-8 font-black uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-200 flex-1 sm:flex-none">
              Kết thúc
            </Button>
         </div>
@@ -254,37 +260,32 @@ export default function NhanhNhuChopPlayPage() {
          {/* Main Game Area */}
          <div className="flex-1 flex flex-col gap-6 min-h-0 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Question Card */}
-            <div className="flex-1 min-h-0 bg-slate-50 border-2 border-border/50 rounded-[3rem] shadow-xl shadow-muted/20 flex flex-col relative overflow-hidden group">
-               <div className="absolute top-8 left-8 flex items-center gap-3 z-10">
-                  <span className="px-4 py-1.5 rounded-2xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200 flex items-center gap-2">
-                    <Zap className="h-3 w-3 fill-current" /> Tia chớp {currentIdx + 1}
-                  </span>
-               </div>
+            <div className="flex-1 min-h-0 bg-slate-50 border-2 border-border/50 rounded-[3rem] shadow-xl shadow-muted/20 flex flex-col relative overflow-y-auto custom-scrollbar group">
 
-               <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12">
-                  <div className="w-full max-w-2xl text-center space-y-10">
-                     <h2 className="relative font-heading text-3xl sm:text-5xl font-black text-slate-800 leading-tight">
-                        {q.question}
-                     </h2>
+                <div className="flex-1 flex flex-col items-center justify-start sm:justify-center p-3 sm:p-12 min-h-full">
+                   <div className="w-full max-w-2xl text-center space-y-4 sm:space-y-10">
+                      <h2 className="relative font-heading text-xl sm:text-5xl font-black text-slate-800 leading-tight">
+                         {q.question}
+                      </h2>
 
                      {/* Options Grid */}
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 w-full">
                         {q.options.map((option, idx) => (
                            <button
                              key={idx}
                              onClick={() => handleSelectOption(idx)}
-                             className={`group/opt relative flex items-center gap-4 p-5 rounded-[2rem] border-4 text-left transition-all duration-300
+                             className={`group/opt relative flex items-center gap-3 sm:gap-4 p-3 sm:p-5 rounded-2xl sm:rounded-[2rem] border-2 sm:border-4 text-left transition-all duration-300
                                ${selectedIdx === idx 
                                  ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-xl shadow-emerald-500/10 scale-[1.02]" 
                                  : "border-white bg-white hover:border-emerald-200 hover:bg-emerald-50/30 text-slate-600"}`}
                            >
-                             <div className={`h-12 w-12 shrink-0 rounded-2xl flex items-center justify-center text-lg font-black transition-all
+                             <div className={`h-9 w-9 sm:h-12 sm:w-12 shrink-0 rounded-xl sm:rounded-2xl flex items-center justify-center text-base sm:text-lg font-black transition-all
                                ${selectedIdx === idx 
                                  ? "bg-emerald-500 text-white shadow-lg" 
                                  : "bg-slate-100 text-slate-400 group-hover/opt:bg-emerald-100 group-hover/opt:text-emerald-600"}`}>
                                {String.fromCharCode(65 + idx)}
                              </div>
-                             <span className="text-lg font-bold line-clamp-2 leading-tight">
+                             <span className="text-sm sm:text-lg font-bold line-clamp-2 leading-tight">
                                {option}
                              </span>
                            </button>
@@ -300,9 +301,14 @@ export default function NhanhNhuChopPlayPage() {
                  variant="ghost" 
                  disabled={currentIdx === 0} 
                  onClick={() => setCurrentIdx(prev => prev - 1)}
-                 className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest hover:bg-muted gap-2 text-muted-foreground"
+                 className={cn(
+                   "h-14 px-4 sm:px-8 rounded-2xl font-black uppercase tracking-widest gap-2 transition-all",
+                   currentIdx === 0 
+                    ? "text-gray-300 cursor-not-allowed" 
+                    : "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                 )}
                >
-                 <ChevronLeft className="h-6 w-6" /> Trước
+                 <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" /> Câu trước
                </Button>
 
                <div className="hidden sm:flex items-center gap-2 bg-slate-100/50 p-2 rounded-2xl border border-border/40">
@@ -322,9 +328,14 @@ export default function NhanhNhuChopPlayPage() {
                  variant="ghost" 
                  disabled={currentIdx === questions.length - 1} 
                  onClick={() => setCurrentIdx(prev => prev + 1)}
-                 className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest hover:bg-muted gap-2 text-emerald-600"
+                 className={cn(
+                   "h-14 px-4 sm:px-8 rounded-2xl font-black uppercase tracking-widest gap-2 transition-all",
+                   currentIdx === questions.length - 1
+                    ? "text-gray-300 cursor-not-allowed"
+                    : "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                 )}
                >
-                 Tiếp <ChevronRight className="h-6 w-6" />
+                 Câu sau <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
                </Button>
             </div>
          </div>
@@ -379,15 +390,6 @@ export default function NhanhNhuChopPlayPage() {
                  })}
                </div>
 
-               <div className="mt-8 pt-6 border-t border-slate-200">
-                  <Button 
-                    variant="ghost" 
-                    className="w-full h-14 rounded-[1.5rem] font-black uppercase text-slate-400 hover:text-red-500 hover:bg-red-50 gap-2 border-2 border-transparent hover:border-red-100 transition-all"
-                    onClick={() => { if(confirm("Bạn có chắc muốn thoát lượt chơi?")) navigate("/") }}
-                  >
-                    <ArrowRight className="h-5 w-5 rotate-180" /> Bỏ cuộc
-                  </Button>
-               </div>
             </div>
          </div>
       </div>

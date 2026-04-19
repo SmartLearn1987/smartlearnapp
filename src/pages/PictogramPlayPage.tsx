@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { createPortal } from "react-dom";
 
 interface Question {
@@ -339,9 +340,14 @@ export default function PictogramPlayPage() {
                variant="ghost" 
                disabled={currentIdx === 0} 
                onClick={() => setCurrentIdx(prev => prev - 1)}
-               className="gap-2 rounded-2xl h-10 px-4 font-bold"
+               className={cn(
+                 "h-14 px-4 sm:px-8 rounded-2xl font-black uppercase tracking-widest gap-2 transition-all",
+                 currentIdx === 0 
+                   ? "text-gray-300 cursor-not-allowed" 
+                   : "text-primary hover:bg-primary/5"
+               )}
              >
-               <ChevronLeft className="h-5 w-5" /> Câu trước
+               <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" /> Câu trước
              </Button>
 
              <div className="hidden sm:flex items-center gap-1.5">
@@ -358,9 +364,14 @@ export default function PictogramPlayPage() {
                variant="ghost" 
                disabled={currentIdx === questions.length - 1} 
                onClick={() => setCurrentIdx(prev => prev + 1)}
-               className="gap-2 rounded-2xl h-10 px-4 font-bold"
+               className={cn(
+                 "h-14 px-4 sm:px-8 rounded-2xl font-black uppercase tracking-widest gap-2 transition-all",
+                 currentIdx === questions.length - 1 
+                   ? "text-gray-300 cursor-not-allowed" 
+                   : "text-primary hover:bg-primary/5"
+               )}
              >
-               Câu sau <ChevronRight className="h-5 w-5" />
+               Câu sau <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
              </Button>
           </div>
         </div>
@@ -372,7 +383,7 @@ export default function PictogramPlayPage() {
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Nhấn để chuyển nhanh</p>
           </div>
           
-          <div className="grid grid-cols-5 sm:grid-cols-10 lg:grid-cols-5 gap-1.5 overflow-y-auto pr-1 flex-1 custom-scrollbar">
+          <div className="grid grid-cols-5 sm:grid-cols-10 lg:grid-cols-5 gap-3 overflow-y-auto pr-1 flex-1 content-start custom-scrollbar">
             {questions.map((_, idx) => {
               const isAnswered = userAnswers[idx]?.some(char => char !== "");
               const isCurrent = idx === currentIdx;

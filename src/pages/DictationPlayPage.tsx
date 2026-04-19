@@ -149,43 +149,48 @@ export default function DictationPlayPage() {
   return (
     <div className="container max-w-3xl py-8 space-y-6">
       {/* Top bar */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => navigate("/")}
-          className="flex items-center justify-center h-9 w-9 rounded-xl bg-muted hover:bg-muted/80 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-        <div className="flex-1">
-          <h1 className="font-heading text-xl font-bold flex items-center gap-2">
-            <BookText className="h-5 w-5 text-primary" />
-            Chép chính tả
-          </h1>
-          <div className="flex items-center gap-2 mt-0.5">
-            {exercise && (
-              <>
-                <span className={`rounded-md border px-2 py-0.5 text-xs font-semibold ${lvlInfo.color}`}>
-                  {lvlInfo.label}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {LANG_FLAGS[exercise.language]} {exercise.language === "vi" ? "Tiếng Việt" : exercise.language === "en" ? "Tiếng Anh" : "Tiếng Nhật"}
-                </span>
-              </>
-            )}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center justify-center h-9 w-9 rounded-xl bg-muted hover:bg-muted/80 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <div className="flex-1">
+            <h1 className="font-heading text-xl font-bold flex items-center gap-2">
+              <BookText className="h-5 w-5 text-primary" />
+              Chép chính tả
+            </h1>
+            <div className="flex items-center gap-2 mt-0.5">
+              {exercise && (
+                <>
+                  <span className={`rounded-md border px-2 py-0.5 text-xs font-semibold ${lvlInfo.color}`}>
+                    {lvlInfo.label}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {LANG_FLAGS[exercise.language]} {exercise.language === "vi" ? "Tiếng Việt" : exercise.language === "en" ? "Tiếng Anh" : "Tiếng Nhật"}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
         </div>
-        {/* Timer */}
-        {exercise && (
-          <div className={`flex items-center gap-2 rounded-xl border px-4 py-2 font-mono text-base font-bold tabular-nums transition-colors
-            ${result ? "bg-muted/50 text-muted-foreground border-border" : "bg-primary/5 text-primary border-primary/20"}`}>
-            <Clock className="h-4 w-4" />
-            {formatTime(elapsed)}
-          </div>
-        )}
-        <Button variant="outline" size="sm" onClick={fetchExercise} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-          Bài khác
-        </Button>
+
+        {/* Timer & Refresh Row */}
+        <div className="flex items-center justify-end gap-3 animate-fade-in shrink-0">
+          {exercise && (
+            <div className={`flex items-center gap-2 rounded-xl border px-4 py-2 font-mono text-sm sm:text-base font-bold tabular-nums transition-colors
+              ${result ? "bg-muted/50 text-muted-foreground border-border" : "bg-primary/5 text-primary border-primary/20"}`}>
+              <Clock className="h-4 w-4" />
+              {formatTime(elapsed)}
+            </div>
+          )}
+          <Button variant="outline" size="sm" className="h-10 rounded-xl" onClick={fetchExercise} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+            Bài khác
+          </Button>
+        </div>
       </div>
 
       {/* Loading */}

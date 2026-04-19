@@ -14,8 +14,8 @@ Tài liệu này tổng hợp các mockup giao diện cho nhóm chức năng **X
 | 1 | Logo | Icon Library (#C08447) trên nền rounded-2xl |
 | 2 | App Name | "Smart Learn" — font bold, màu #2D9B63 |
 | 3 | Subtitle | "Đăng nhập để tiếp tục" — gray muted |
-| 4 | Input: Username | Label "Tên đăng nhập", rounded-xl border |
-| 5 | Input: Password | Label "Mật khẩu", có icon Eye toggle bên phải |
+| 4 | Input: Username | Label "Tên đăng nhập", placeholder "Nhập tên đăng nhập", rounded-xl border |
+| 5 | Input: Password | Label "Mật khẩu", placeholder "Nhập mật khẩu", có icon Eye toggle bên phải |
 | 6 | Error Block | Hiển thị khi có lỗi — nền đỏ nhạt, viền đỏ |
 | 7 | Button: Submit | "Đăng nhập" — full width, nền primary green |
 | 8 | Link: Forgot | "Quên mật khẩu?" — chuyển sang form Khôi phục |
@@ -53,7 +53,7 @@ Tài liệu này tổng hợp các mockup giao diện cho nhóm chức năng **X
 | 4 | Input: Email | Icon ✉️ bên trái, placeholder "name@example.com" |
 | 5 | Input: Password | Icon 🔒 bên trái + Eye toggle bên phải, placeholder "Tối thiểu 6 ký tự" |
 | 6 | Input: Confirm | Icon 🔒 bên trái, placeholder "Nhập lại mật khẩu" |
-| 7 | Select: Education | Icon 🎓 bên trái + Chevron bên phải, options: Tiểu học, THCS, THPT, ĐH/CĐ, Luyện thi chứng chỉ |
+| 7 | Select: Education | Icon 🎓 bên trái + Chevron bên phải, options: Tiểu học, Trung học cơ sở, Trung học Phổ Thông, Đại Học / Cao Đẳng, Luyện thi chứng chỉ |
 | 8 | Error Block | Hiển thị khi validation fail |
 | 9 | Button: Submit | "Đăng ký tài khoản" — full width, nền primary green |
 | 10 | Link: Login | "Đã có tài khoản? Đăng nhập ngay" |
@@ -87,6 +87,7 @@ Tài liệu này tổng hợp các mockup giao diện cho nhóm chức năng **X
 ### Spacing & Radius
 | Element | Value |
 |---------|-------|
+| Background Decoration | Hai khối tròn mờ (blur-3xl) màu primary/8 và secondary/8 |
 | Card padding | 32px (p-8) |
 | Card border radius | 16px (rounded-2xl) |
 | Input border radius | 12px (rounded-xl) |

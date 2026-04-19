@@ -953,66 +953,61 @@ export default function TeacherPage() {
         {view === "lessons" && selectedSubject && selectedCurriculum && (
           <div className="animate-fade-in space-y-8">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white/50 p-6 sm:p-8 rounded-[40px] border border-white/60 shadow-sm backdrop-blur-sm">
+              <div className="flex items-start gap-5">
                 <button
                   onClick={() => {
                     setView("curricula");
                     resetLessonForm();
                   }}
-                  className="group rounded-2xl bg-white/80 p-3 shadow-sm border border-white/60 hover:bg-white hover:shadow-md transition-all"
+                  className="group rounded-2xl bg-white/80 p-3 shadow-sm border border-white/60 hover:bg-white hover:shadow-md transition-all shrink-0"
                 >
                   <ArrowLeft className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </button>
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h2 className="text-3xl font-bold tracking-tight text-foreground">{selectedCurriculum.name}</h2>
-                    <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold text-primary uppercase tracking-widest border border-primary/20">
-                      Môn: {selectedSubject.name}
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h2 className="text-2xl font-bold tracking-tight text-[#112240]">{selectedCurriculum?.name}</h2>
+                    <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold text-primary uppercase tracking-widest border border-primary/20 whitespace-nowrap">
+                      Môn: {selectedSubject?.name}
                     </span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {lessonsSubView === "manage" ? "Chế độ quản trị nội dung" : "Bản xem trước dành cho học sinh"}
+                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    Quản lý bài học ({lessons.length} bài)
                   </p>
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    <Button onClick={() => { resetLessonForm(); setView("lesson_form"); }} className="rounded-2xl shadow-lg shadow-primary/20 font-bold bg-[#2D9B63] hover:bg-[#2D9B63]/90 h-10 px-6">
+                      <Plus className="mr-2 h-4 w-4" /> Tạo ghi chú mới
+                    </Button>
+                  </div>
                 </div>
               </div>
 
-              {lessonsSubView === "manage" && (
-                <Button 
-                  onClick={() => { resetLessonForm(); setView("lesson_form"); }}
-                  variant="outline"
-                  className="rounded-full border-[#2D9B63] text-[#2D9B63] hover:bg-emerald-50 font-bold h-11 px-8 shadow-sm transition-all hover:scale-[1.02]"
-                >
-                  <Plus className="mr-2 h-5 w-5" /> Tạo bài mới
-                </Button>
-              )}
-            </div>
-
-            {/* Premium Tab Switcher - Centered like Personal/Community */}
-            <div className="flex justify-center">
-              <div className="inline-flex rounded-full bg-muted/50 p-1.5 shadow-inner border border-white/60 backdrop-blur-sm">
-                <button
-                  onClick={() => setLessonsSubView("manage")}
-                  className={`flex items-center gap-2 rounded-full px-8 py-2.5 text-sm font-bold transition-all duration-400 ${
-                    lessonsSubView === "manage"
-                      ? "bg-[#2D9B63] text-white shadow-lg scale-[1.05]"
-                      : "text-muted-foreground hover:text-foreground hover:bg-white/50"
-                  }`}
-                >
-                  <Pencil className={`h-4 w-4 ${lessonsSubView === "manage" ? "text-white" : "text-muted-foreground"}`} />
-                  Quản lý bài học
-                </button>
-                <button
-                  onClick={() => setLessonsSubView("review")}
-                  className={`flex items-center gap-2 rounded-full px-8 py-2.5 text-sm font-bold transition-all duration-400 ${
-                    lessonsSubView === "review"
-                      ? "bg-[#2D9B63] text-white shadow-lg scale-[1.05]"
-                      : "text-muted-foreground hover:text-foreground hover:bg-white/50"
-                  }`}
-                >
-                  <Eye className={`h-4 w-4 ${lessonsSubView === "review" ? "text-white" : "text-muted-foreground"}`} />
-                  Ôn tập
-                </button>
+              {/* Premium Tab Switcher - Centered like Personal/Community */}
+              <div className="flex justify-center sm:justify-end">
+                <div className="inline-flex rounded-full bg-muted/50 p-1.5 shadow-inner border border-white/60 backdrop-blur-sm">
+                  <button
+                    onClick={() => setLessonsSubView("manage")}
+                    className={`flex items-center gap-2 rounded-full px-4 sm:px-8 py-2.5 text-xs sm:text-sm font-bold transition-all duration-400 ${
+                      lessonsSubView === "manage"
+                        ? "bg-[#2D9B63] text-white shadow-lg scale-[1.05]"
+                        : "text-muted-foreground hover:text-foreground hover:bg-white/50"
+                    }`}
+                  >
+                    <Pencil className={`h-4 w-4 ${lessonsSubView === "manage" ? "text-white" : "text-muted-foreground"}`} />
+                    Quản lý bài học
+                  </button>
+                  <button
+                    onClick={() => setLessonsSubView("review")}
+                    className={`flex items-center gap-2 rounded-full px-4 sm:px-8 py-2.5 text-xs sm:text-sm font-bold transition-all duration-400 ${
+                      lessonsSubView === "review"
+                        ? "bg-[#2D9B63] text-white shadow-lg scale-[1.05]"
+                        : "text-muted-foreground hover:text-foreground hover:bg-white/50"
+                    }`}
+                  >
+                    <Eye className={`h-4 w-4 ${lessonsSubView === "review" ? "text-white" : "text-muted-foreground"}`} />
+                    Ôn tập
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1460,9 +1455,9 @@ export default function TeacherPage() {
 
             {/* step: config */}
             {uploadStep === "config" && (
-              <div className="max-w-2xl space-y-6">
+              <div className="max-w-2xl space-y-6 pb-10">
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-semibold">Chế độ hiển thị</label>
                       <select 
@@ -1495,7 +1490,7 @@ export default function TeacherPage() {
                     <input value={curriculumName} onChange={e => setCurriculumName(e.target.value)}
                       className="mt-1 w-full rounded-xl border bg-background px-4 py-2.5 text-sm" />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-semibold">Lớp</label>
                       <input value={grade} onChange={e => setGrade(e.target.value)} placeholder="VD: 4"
@@ -1545,8 +1540,8 @@ export default function TeacherPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setView("curricula")}>Hủy</Button>
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <Button variant="outline" onClick={() => setView("curricula")} className="w-full sm:w-auto">Hủy</Button>
                   <Button onClick={() => setUploadStep("preview")} className="flex-1">Xem trước →</Button>
                 </div>
               </div>
@@ -1554,7 +1549,7 @@ export default function TeacherPage() {
 
             {/* step: preview */}
             {uploadStep === "preview" && (
-              <div className="max-w-2xl space-y-6">
+              <div className="max-w-2xl space-y-6 pb-10">
                 <div className="rounded-2xl border bg-card p-6 space-y-3">
                   {coverImageUrl && (
                     <div className="mb-4">
@@ -1562,8 +1557,8 @@ export default function TeacherPage() {
                     </div>
                   )}
                   <h3 className="font-bold text-lg">Thông tin giáo trình</h3>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div><span className="text-muted-foreground">Tên:</span> <span className="font-semibold">{curriculumName}</span></div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div className="min-w-0"><span className="text-muted-foreground">Tên:</span> <span className="font-semibold break-words">{curriculumName}</span></div>
                     <div><span className="text-muted-foreground">Lớp:</span> <span className="font-semibold">{grade}</span></div>
                     <div><span className="text-muted-foreground">Cấp độ:</span> <span className="font-semibold">{educationLevel || "Chưa chọn"}</span></div>
                     <div><span className="text-muted-foreground">Hiển thị:</span> <span className="font-semibold">{isPublic ? "Công khai" : "Riêng tư"}</span></div>
@@ -1574,8 +1569,8 @@ export default function TeacherPage() {
 
                 {/* Removed file preview logic as upload is no longer part of the flow */}
 
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setUploadStep("config")}>← Quay lại</Button>
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <Button variant="outline" onClick={() => setUploadStep("config")} className="w-full sm:w-auto">← Quay lại</Button>
                   <Button onClick={handleSaveCurriculum} className="flex-1">
                     <Upload className="h-4 w-4 mr-2" /> Lưu giáo trình
                   </Button>
@@ -1863,27 +1858,28 @@ function LessonReviewMode({
   if (!lesson) return <div className="py-20 text-center">Không tìm thấy bài học.</div>;
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto pb-20">
-      <div className="relative text-center px-12 py-4">
+    <div className="space-y-4 sm:space-y-8 max-w-4xl mx-auto pb-20">
+      {/* Responsive Header */}
+      <div className="flex flex-col items-center gap-4 sm:block sm:relative sm:text-center sm:px-12 sm:py-4">
         <button
           onClick={onBack}
-          className="absolute left-0 top-1/2 -translate-y-1/2 group flex items-center justify-center h-10 w-10 rounded-full border bg-white/50 text-muted-foreground hover:text-primary hover:border-primary/30 transition-all shadow-sm"
+          className="absolute left-2 top-2 sm:top-1/2 sm:left-0 sm:-translate-y-1/2 group flex items-center justify-center h-10 w-10 rounded-full border bg-white/50 text-muted-foreground hover:text-primary hover:border-primary/30 transition-all shadow-sm z-10"
           title="Quay lại danh sách"
         >
           <ArrowLeft className="h-5 w-5 group-hover:-translate-x-0.5 transition-transform" />
         </button>
         
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">{lesson.title}</h1>
-          <p className="text-muted-foreground max-w-lg mx-auto leading-relaxed">{lesson.description}</p>
+        <div className="space-y-1 pt-6 sm:pt-0">
+          <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-foreground px-4 sm:px-0">{lesson.title}</h1>
+          <p className="text-xs sm:text-base text-muted-foreground max-w-lg mx-auto leading-relaxed px-4 sm:px-0">{lesson.description}</p>
         </div>
 
-        <div className="absolute right-0 top-1/2 -translate-y-1/2">
+        <div className="sm:absolute sm:right-0 sm:top-1/2 sm:-translate-y-1/2 w-full sm:w-auto px-4 sm:px-0 mt-2 sm:mt-0">
           <Button
             variant={isDone ? "default" : "outline"}
             size="sm"
             onClick={handleToggleDone}
-            className={`rounded-2xl h-11 px-6 font-bold shadow-sm transition-all duration-300 ${
+            className={`rounded-2xl h-10 sm:h-11 w-full sm:w-auto px-6 font-bold shadow-sm transition-all duration-300 ${
               isDone 
                 ? 'bg-emerald-500 hover:bg-emerald-600 border-none text-white' 
                 : 'hover:border-primary/30'
@@ -1895,24 +1891,24 @@ function LessonReviewMode({
         </div>
       </div>
 
-      <div className="flex justify-center">
-        <div className="inline-flex items-center gap-1 overflow-x-auto rounded-2xl bg-muted/40 p-1.5 border border-white shadow-inner">
+      <div className="flex justify-center px-2 sm:px-4">
+        <div className="grid grid-cols-2 sm:flex items-center gap-1 sm:gap-1.5 rounded-2xl bg-muted/40 p-1 sm:p-1.5 border border-white shadow-inner w-full sm:w-auto">
           {tabs.map((tab) => {
              const isActive = activeTab === tab.id;
              return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-2.5 whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-300 ${
+                className={`relative flex items-center justify-center gap-2 rounded-xl px-2 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all duration-300 ${
                   isActive
-                    ? "bg-white text-primary shadow-sm scale-[1.03]"
+                    ? "bg-white text-primary shadow-sm scale-[1.02]"
                     : "text-muted-foreground hover:text-foreground hover:bg-white/40"
                 }`}
               >
-                <tab.icon className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground/70'}`} />
-                {tab.label}
+                <tab.icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isActive ? 'text-primary' : 'text-muted-foreground/70'}`} />
+                <span className="truncate">{tab.label}</span>
                 {isActive && (
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-primary rounded-full shadow-sm shadow-primary/20" />
+                  <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-primary rounded-full hidden sm:block" />
                 )}
               </button>
             );
@@ -1920,29 +1916,29 @@ function LessonReviewMode({
         </div>
       </div>
 
-      <div className="animate-fade-in">
+      <div className="animate-fade-in px-2 sm:px-0">
         {activeTab === "content" && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {images.length > 0 && (
-              <div className="rounded-3xl bg-card shadow-lg border-2 border-primary/5 overflow-hidden transition-all hover:shadow-xl">
-                <div className="flex items-center justify-between px-8 py-5 border-b bg-primary/5">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-primary/10">
-                      <ImageIcon className="h-5 w-5 text-primary" />
+              <div className="rounded-2xl sm:rounded-3xl bg-card shadow-lg border-2 border-primary/5 overflow-hidden transition-all hover:shadow-xl">
+                <div className="flex items-center justify-between px-4 sm:px-8 py-3 sm:py-5 border-b bg-primary/5">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-1 sm:p-2 rounded-xl bg-primary/10">
+                      <ImageIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
                     <div>
-                      <span className="block text-xs font-bold uppercase tracking-widest text-primary/70">Hình ảnh bài học</span>
-                      <span className="text-[10px] text-muted-foreground font-medium">Bản xem trước trực quan</span>
+                      <span className="block text-[10px] sm:text-xs font-bold uppercase tracking-widest text-primary/70">Hình ảnh bài học</span>
+                      <span className="hidden sm:block text-[10px] text-muted-foreground font-medium">Bản xem trước trực quan</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="px-3 py-1 rounded-full bg-white text-[10px] font-bold text-primary shadow-sm border border-primary/10">
+                    <div className="px-3 py-0.5 sm:py-1 rounded-full bg-white text-[10px] font-bold text-primary shadow-sm border border-primary/10">
                       {slideIndex + 1} / {images.length}
                     </div>
                   </div>
                 </div>
-                <div className="relative group bg-muted/5 p-6 text-center">
-                  <div className="aspect-[16/10] flex items-center justify-center bg-white rounded-2xl shadow-inner border border-muted/20 overflow-hidden">
+                <div className="relative group bg-muted/5 p-2 sm:p-6 text-center">
+                  <div className="aspect-[16/10] flex items-center justify-center bg-white rounded-xl sm:rounded-2xl shadow-inner border border-muted/20 overflow-hidden">
                      <img
                        src={(() => {
                          const url = images[slideIndex]?.file_url || "";

@@ -13,6 +13,7 @@ export default function AppHeader() {
   const [mgmtOpen, setMgmtOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const mgmtRef = useRef<HTMLDivElement>(null);
+  const isPlayPage = location.pathname.includes("/play");
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -56,7 +57,7 @@ export default function AppHeader() {
         <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {navItems.map((item: any) => {
             const active = item.path === "/" 
-              ? location.pathname === "/" 
+              ? (location.pathname === "/" || isPlayPage)
               : location.pathname.startsWith(item.path) || (item.subPaths?.some((sp: string) => location.pathname.startsWith(sp)));
             return (
               <Link key={item.path} to={item.path}
@@ -78,7 +79,7 @@ export default function AppHeader() {
             <div ref={mgmtRef} className="relative group">
               <button onClick={() => setMgmtOpen(!mgmtOpen)}
                 className={`flex shrink-0 items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-sm font-semibold transition-all duration-200 ${
-                  mgmtOpen || location.pathname.startsWith("/games") || location.pathname.startsWith("/teacher") || location.pathname.startsWith("/admin")
+                  (mgmtOpen || location.pathname.startsWith("/games") || location.pathname.startsWith("/teacher") || location.pathname.startsWith("/admin")) && !isPlayPage
                     ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}>

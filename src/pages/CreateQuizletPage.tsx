@@ -150,11 +150,11 @@ export default function CreateQuizletPage() {
   return (
     <div className="container py-8 max-w-5xl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold font-heading">Tạo một học phần mới</h1>
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold font-heading text-gray-900 leading-tight">Tạo một học phần mới</h1>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
           <Button 
-            className="bg-primary text-primary-foreground font-semibold rounded-full px-6 shadow-sm"
+            className="w-full sm:w-auto bg-[#2D9B63] hover:bg-[#2D9B63]/90 text-white font-bold rounded-xl h-11 px-8 shadow-lg shadow-[#2D9B63]/20 transition-all active:scale-95"
             onClick={handleSave}
             disabled={isSubmitting}
           >

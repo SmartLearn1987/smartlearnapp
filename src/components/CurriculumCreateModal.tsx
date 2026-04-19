@@ -107,7 +107,7 @@ import { toast } from "sonner";
 
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto custom-scrollbar max-w-2xl">
+      <DialogContent className="max-h-[90dvh] w-[95vw] sm:w-full overflow-y-auto custom-scrollbar max-w-2xl">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-2">
              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-xl shadow-inner">
@@ -262,9 +262,9 @@ import { toast } from "sonner";
               </div>
             )}
 
-            <div className="flex gap-3 pt-2">
-              <Button variant="outline" onClick={onCancel} className="flex-1 rounded-xl h-11 font-bold">Hủy</Button>
-              <Button onClick={() => setStep("preview")} className="flex-1 rounded-xl h-11 font-bold shadow-lg shadow-primary/20">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2 pb-6">
+              <Button variant="outline" onClick={onCancel} className="w-full sm:flex-1 rounded-xl h-11 font-bold">Hủy</Button>
+              <Button onClick={() => setStep("preview")} className="w-full sm:flex-1 rounded-xl h-11 font-bold shadow-lg shadow-primary/20">
                 Tiếp tục: Xem trước →
               </Button>
             </div>
@@ -285,8 +285,8 @@ import { toast } from "sonner";
                     </div>
                   )}
                 </div>
-                <div className="flex-1 space-y-1">
-                  <h3 className="font-bold text-xl text-primary">{name || "Chưa đặt tên"}</h3>
+                <div className="flex-1 space-y-1 min-w-0">
+                  <h3 className="font-bold text-xl text-primary break-words">{name || "Chưa đặt tên"}</h3>
                   <p className="text-sm font-semibold text-muted-foreground">{publisher || "Chưa chọn NXB"}</p>
                   <div className="flex flex-wrap gap-2 mt-2">
                     <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary italic">
@@ -302,7 +302,7 @@ import { toast } from "sonner";
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-border/50 grid grid-cols-2 gap-y-4 gap-x-8">
+              <div className="pt-4 border-t border-border/50 grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8">
                 <div>
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Môn học</p>
                   <p className="text-sm font-bold">{subjectName}</p>
@@ -320,21 +320,21 @@ import { toast } from "sonner";
               </div>
             )}
 
-            <div className="flex gap-3 pt-2">
-              <Button variant="ghost" onClick={() => setStep("config")} disabled={isLoading} className="rounded-xl h-11 font-bold">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2 pb-6">
+              <Button variant="ghost" onClick={() => setStep("config")} disabled={isLoading} className="w-full sm:w-auto rounded-xl h-11 font-bold">
                 ← Quay lại sửa
               </Button>
               <Button onClick={handleSave} disabled={isLoading} className="flex-1 rounded-xl h-11 font-bold shadow-lg shadow-primary/20">
                 {isLoading ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 justify-center">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                     Đang lưu...
                   </div>
                 ) : (
-                  <>
+                  <div className="flex items-center justify-center">
                     <Upload className="h-4 w-4 mr-2" />
                     Xác nhận & Lưu giáo trình
-                  </>
+                  </div>
                 )}
               </Button>
             </div>

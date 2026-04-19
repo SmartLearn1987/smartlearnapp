@@ -329,17 +329,17 @@ export default function QuizFormPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Sticky Header */}
-      <header className="sticky top-0 z-40 w-full border-b bg-white px-4 py-4 shadow-sm">
-        <div className="container max-w-5xl flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/quizzes")} className="rounded-full">
+      <header className="sticky top-0 z-40 w-full border-b bg-white/95 backdrop-blur-md px-4 py-3 sm:py-4 shadow-sm">
+        <div className="container max-w-5xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/quizzes")} className="rounded-xl shrink-0">
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="font-heading text-xl font-bold truncate max-w-[300px]">
-              {isEdit ? "Chỉnh sửa bài trắc nghiệm" : "Tạo bài trắc nghiệm mới"}
+            <h1 className="font-heading text-lg sm:text-xl font-bold truncate">
+              {isEdit ? "Chỉnh sửa bài thi" : "Tạo bài thi mới"}
             </h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-between sm:justify-end">
             <input
               type="file"
               id="quiz-import"
@@ -347,22 +347,24 @@ export default function QuizFormPage() {
               className="hidden"
               onChange={handleImportFile}
             />
-            <Button 
-              variant="outline" 
-              onClick={() => document.getElementById("quiz-import")?.click()}
-              className="rounded-xl h-10 px-4 font-bold border-primary text-primary hover:bg-primary/5 flex items-center gap-2"
-            >
-              <Upload className="h-4 w-4" /> Tải bài trắc nghiệm
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={handleDownloadTemplate}
-              className="rounded-xl h-10 px-4 font-bold border-amber-500 text-amber-600 hover:bg-amber-50 flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" /> Tải file mẫu
-            </Button>
-            <div className="w-px h-6 bg-gray-200 mx-1" />
-            <Button onClick={handleSave} disabled={saving} className="rounded-xl h-10 px-6 font-bold flex items-center gap-2 shadow-lg shadow-primary/10">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button 
+                variant="outline" 
+                onClick={() => document.getElementById("quiz-import")?.click()}
+                className="rounded-xl h-10 px-3 sm:px-4 font-bold border-primary text-primary hover:bg-primary/5 flex-1 sm:flex-none flex items-center gap-2 text-xs sm:text-sm"
+              >
+                <Upload className="h-4 w-4" /> <span className="sm:inline">Tải bài</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleDownloadTemplate}
+                className="rounded-xl h-10 px-3 sm:px-4 font-bold border-amber-500 text-amber-600 hover:bg-amber-50 flex-1 sm:flex-none flex items-center gap-2 text-xs sm:text-sm"
+              >
+                <Download className="h-4 w-4" /> <span className="sm:inline">File mẫu</span>
+              </Button>
+            </div>
+            <div className="hidden sm:block w-px h-6 bg-gray-200 mx-1" />
+            <Button onClick={handleSave} disabled={saving} className="rounded-xl h-10 px-6 font-bold flex items-center gap-2 shadow-lg shadow-primary/20 w-full sm:w-auto text-sm">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Lưu bài thi
             </Button>
@@ -370,11 +372,11 @@ export default function QuizFormPage() {
         </div>
       </header>
 
-      <main className="container max-w-4xl py-8 px-4 space-y-8">
+      <main className="container max-w-4xl py-6 sm:py-8 px-4 space-y-8">
         {/* Exam Meta Card */}
-        <section className="bg-white rounded-3xl p-8 shadow-sm border-2 border-transparent focus-within:border-primary/20 transition-all">
-          <div className="space-y-6">
-            <div className="max-w-md space-y-6">
+        <section className="bg-white rounded-[32px] p-6 sm:p-10 shadow-sm border border-gray-100 transition-all">
+          <div className="space-y-8">
+            <div className="max-w-xl space-y-8">
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest text-[10px]">Chế độ hiển thị</label>
                 <Select value={isPublic ? "public" : "private"} onValueChange={(val) => setIsPublic(val === "public")}>
@@ -404,11 +406,11 @@ export default function QuizFormPage() {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest text-[10px]">Cấp độ</label>
                   <Select value={educationLevel} onValueChange={setEducationLevel}>
-                    <SelectTrigger className="w-full bg-white border border-gray-200 rounded-xl h-10 focus:ring-2 focus:ring-primary/40 outline-none shadow-sm transition-all text-gray-900 font-medium">
+                    <SelectTrigger className="w-full bg-white border border-gray-100 rounded-2xl h-11 focus:ring-4 focus:ring-primary/10 transition-all text-gray-900 font-semibold shadow-sm">
                       <SelectValue placeholder="-- Chọn cấp độ --" />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-gray-100 shadow-xl">
@@ -441,7 +443,7 @@ export default function QuizFormPage() {
                   placeholder="Nhập tên bài thi ở đây..."
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full text-3xl font-bold bg-gray-50/50 border border-gray-100 rounded-2xl p-6 focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all placeholder:text-muted-foreground/30 shadow-inner"
+                  className="w-full text-2xl sm:text-3xl font-bold bg-gray-50/50 border border-gray-100 rounded-2xl p-5 sm:p-6 focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all placeholder:text-muted-foreground/30 shadow-inner"
                 />
               </div>
               <div className="space-y-2">

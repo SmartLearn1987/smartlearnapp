@@ -303,14 +303,14 @@ function TimetableTab({ userId }: { userId: string }) {
         )}
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-heading text-xl font-bold">{activeGroup.name}</h2>
           <p className="text-sm text-muted-foreground mt-0.5">Quản lý lịch học hàng tuần của bạn</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-emerald-600/20 transition-all hover:bg-emerald-700 hover:shadow-lg active:scale-95"
+          className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-emerald-600/20 transition-all hover:bg-emerald-700 hover:shadow-lg active:scale-95 w-full sm:w-auto"
         >
           <Plus className="h-4 w-4" />
           Thêm môn học
@@ -699,11 +699,11 @@ function TasksTab({ userId }: { userId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h2 className="font-heading text-xl font-bold">Nhiệm vụ</h2>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-lg active:scale-95"
+          className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-lg active:scale-95 w-full sm:w-auto"
         >
           <Plus className="h-4 w-4" />
           Thêm nhiệm vụ
@@ -1202,14 +1202,14 @@ function NotesTab({ userId }: { userId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-heading text-xl font-bold">Ghi chú</h2>
           <p className="text-sm text-muted-foreground mt-0.5">{notes.length} ghi chú</p>
         </div>
         <button
           onClick={() => setShowAdd(!showAdd)}
-          className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-lg active:scale-95"
+          className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-lg active:scale-95 w-full sm:w-auto"
         >
           <Plus className="h-4 w-4" />
           Thêm ghi chú

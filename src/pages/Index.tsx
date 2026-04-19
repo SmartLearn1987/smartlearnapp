@@ -69,7 +69,7 @@ interface SubjectData {
       <section className="relative overflow-hidden pt-2 pb-2">
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
         <div className="container flex flex-col items-center text-center">
-          <Library className="mb-2 h-10 w-10 text-[#C08447] opacity-0 animate-fade-up" style={{ animationDelay: "0ms" }} />
+          <Library className="mb-2 h-8 w-8 sm:h-10 sm:w-10 text-[#C08447] opacity-0 animate-fade-up" style={{ animationDelay: "0ms" }} />
           <h1
             className="font-heading text-2xl font-bold leading-tight tracking-tight md:text-3xl lg:text-4xl text-balance text-[#2D9B63] opacity-0 animate-fade-up"
             style={{ animationDelay: "80ms" }}
@@ -87,42 +87,42 @@ interface SubjectData {
 
       {/* Tab Switcher */}
       <div className="container mb-8 flex justify-center opacity-0 animate-fade-up" style={{ animationDelay: "200ms" }}>
-        <div className="inline-flex items-center p-1.5 bg-white/80 backdrop-blur-md rounded-2xl border border-[#2D9B63]/10 shadow-xl shadow-[#2D9B63]/5">
+        <div className="flex sm:inline-flex items-center w-full sm:w-auto p-1.5 bg-white/80 backdrop-blur-md rounded-2xl border border-[#2D9B63]/10 shadow-xl shadow-[#2D9B63]/5">
           <button
             onClick={() => setActiveTab("subjects")}
             className={cn(
-              "flex items-center gap-2 rounded-xl px-8 py-3 text-sm font-semibold transition-all duration-300",
+              "flex flex-1 flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 rounded-xl px-2 py-2.5 sm:px-8 sm:py-3 text-[10px] sm:text-sm font-semibold transition-all duration-300",
               activeTab === "subjects"
                 ? "bg-[#2D9B63] text-white shadow-lg shadow-[#2D9B63]/30 scale-[1.02]"
                 : "text-muted-foreground hover:bg-[#2D9B63]/5 hover:text-[#2D9B63]"
             )}
           >
-            <BookOpen className={cn("h-4 w-4", activeTab === "subjects" ? "text-white" : "text-[#2D9B63]")} />
-            Sổ tay môn học
+            <BookOpen className={cn("h-5 w-5 sm:h-4 sm:w-4", activeTab === "subjects" ? "text-white" : "text-[#2D9B63]")} />
+            <span className="text-center leading-tight">Sổ tay môn học</span>
           </button>
           <button
             onClick={() => setActiveTab("game")}
             className={cn(
-              "flex items-center gap-2 rounded-xl px-8 py-3 text-sm font-semibold transition-all duration-300 ml-1",
+              "flex flex-1 flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 rounded-xl px-2 py-2.5 sm:px-8 sm:py-3 text-[10px] sm:text-sm font-semibold transition-all duration-300 ml-1",
               activeTab === "game"
                 ? "bg-[#2D9B63] text-white shadow-lg shadow-[#2D9B63]/30 scale-[1.02]"
                 : "text-muted-foreground hover:bg-[#2D9B63]/5 hover:text-[#2D9B63]"
             )}
           >
-            <Gamepad2 className={cn("h-4 w-4", activeTab === "game" ? "text-white" : "text-[#2D9B63]")} />
-            Game
+            <Gamepad2 className={cn("h-5 w-5 sm:h-4 sm:w-4", activeTab === "game" ? "text-white" : "text-[#2D9B63]")} />
+            <span className="text-center leading-tight">Game</span>
           </button>
           <button
             onClick={() => setActiveTab("clock")}
             className={cn(
-              "flex items-center gap-2 rounded-xl px-8 py-3 text-sm font-semibold transition-all duration-300 ml-1",
+              "flex flex-1 flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 rounded-xl px-2 py-2.5 sm:px-8 sm:py-3 text-[10px] sm:text-sm font-semibold transition-all duration-300 ml-1",
               activeTab === "clock"
                 ? "bg-[#2D9B63] text-white shadow-lg shadow-[#2D9B63]/30 scale-[1.02]"
                 : "text-muted-foreground hover:bg-[#2D9B63]/5 hover:text-[#2D9B63]"
             )}
           >
-            <ClockIcon className={cn("h-4 w-4", activeTab === "clock" ? "text-white" : "text-[#2D9B63]")} />
-            Chuyên tâm
+            <ClockIcon className={cn("h-5 w-5 sm:h-4 sm:w-4", activeTab === "clock" ? "text-white" : "text-[#2D9B63]")} />
+            <span className="text-center leading-tight">Chuyên tâm</span>
           </button>
         </div>
       </div>

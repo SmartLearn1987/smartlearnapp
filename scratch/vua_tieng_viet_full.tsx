@@ -119,7 +119,7 @@ export default function VuaTiengVietPlayPage() {
   useEffect(() => {
     const fetchQs = async () => {
       try {
-        const data = await apiFetch<Question[]>( `/vuatiengviet/play?level=${level}&limit=${limit}`);
+        const data = await apiFetch<Question[]>(`/vuatiengviet/play?level=${level}&limit=${limit}`);
         setQuestions(data);
         setUserAnswers(data.map(() => ""));
         setCheckedAnswers(data.map(() => false));
@@ -222,12 +222,6 @@ export default function VuaTiengVietPlayPage() {
                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">
                       Câu {currentIdx + 1} / {questions.length}
                     </p>
-                    <div className="flex items-center gap-2 ml-2">
-                       <span className="px-2 py-0.5 rounded-lg bg-emerald-600 text-white text-[8px] font-black uppercase tracking-widest shadow-sm">
-                         Thử thách {currentIdx + 1}
-                       </span>
-                       <Info className="h-3 w-3 text-muted-foreground" />
-                    </div>
                  </div>
                </div>
             </div>
@@ -243,14 +237,21 @@ export default function VuaTiengVietPlayPage() {
            </div>
 
            <Button onClick={handleFinish} className="rounded-2xl h-10 sm:h-11 px-6 sm:px-8 font-black uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200 flex-1 sm:flex-none">
-             Kết thúc
-           </Button>
-        </div>
-      </div>
-
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 sm:gap-6 p-2 sm:p-8 min-h-0 container max-w-7xl mx-auto">
+             K�      <div className="flex-1 flex flex-col lg:flex-row gap-4 sm:gap-6 p-2 sm:p-8 min-h-0 container max-w-7xl mx-auto">
          {/* Main Game Area */}
          <div className="flex-1 flex flex-col gap-3 sm:gap-4 min-h-0 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            {/* Challenge Info Row - Moved Outside */}
+            <div className="flex items-center justify-between px-2 shrink-0">
+               <div className="flex items-center gap-3">
+                 <span className="px-3 sm:px-4 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl bg-emerald-600 text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200">
+                   Thử thách {currentIdx + 1}
+                 </span>
+                 <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg sm:rounded-xl bg-white border border-border shadow-sm text-muted-foreground">
+                   <Info className="h-4 w-4" />
+                 </div>
+               </div>
+            </div>
+
             {/* Question Card */}
             <div className="flex-1 min-h-0 bg-white rounded-3xl sm:rounded-[3rem] border-2 border-border/50 shadow-xl shadow-muted/50 flex flex-col relative overflow-hidden group">
                <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6">
@@ -334,7 +335,7 @@ export default function VuaTiengVietPlayPage() {
                </div>
             </div>
 
-            {/* Controls */}
+{/* Controls */}
             <div className="flex items-center justify-between px-4 shrink-0">
                <Button 
                  variant="ghost" 
@@ -350,7 +351,7 @@ export default function VuaTiengVietPlayPage() {
                     : "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                  )}
                >
-                 <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" /> Câu trước
+                 <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" /> Trước
                </Button>
 
                <div className="hidden sm:flex items-center gap-2">
@@ -380,7 +381,7 @@ export default function VuaTiengVietPlayPage() {
                     : "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                  )}
                >
-                 Câu sau <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                 Tiếp <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
                </Button>
             </div>
          </div>
@@ -461,4 +462,3 @@ export default function VuaTiengVietPlayPage() {
     </div>
   );
 }
-

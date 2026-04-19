@@ -32,9 +32,9 @@ Tài liệu này tổng hợp các mockup giao diện cho nhóm chức năng **T
 | # | Element | Chi tiết |
 |---|---------|----------|
 | 1 | Back + Heading | Arrow ← + "Tạo đề trắc nghiệm mới" (hoặc "Sửa đề trắc nghiệm") |
-| 2 | Metadata Grid | 2-col grid: Tiêu đề, Môn học (Select), Cấp độ (Select), Lớp, Thời gian (phút), Hiển thị (Public/Private) |
+| 2 | Metadata Grid | 2-col grid: Tiêu đề, Môn học (Select), Cấp độ (Select), Lớp, Thời gian (phút), Hiển thị (Công khai/Không công khai) |
 | 3 | Description | Textarea "Mô tả", rounded-xl |
-| 4 | Import Buttons | "Import Excel" (FileSpreadsheet icon) + "Import JSON" (FileJson icon) — outlined buttons |
+| 4 | Import Buttons | "Tải bài trắc nghiệm" (Upload icon) + "Tải file mẫu" (Download icon) — outlined buttons |
 | 5 | Question Card | White rounded-2xl card. Header: số thứ tự (bold) + Type selector (Single ○ / Multiple ☐ / Text ✎) + Delete/Drag icons. Body: Input câu hỏi + 4 option inputs với radio/checkbox đánh dấu đáp án đúng |
 | 6 | Add Question | "+ Thêm câu hỏi" — full width outlined button |
 | 7 | Save Button | "Lưu đề thi" — green primary button, Save icon |

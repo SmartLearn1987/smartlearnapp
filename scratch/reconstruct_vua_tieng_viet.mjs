@@ -1,104 +1,12 @@
-import { useEffect, useState, useRef } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import {
-  Gamepad2, Timer, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, X, Home, RotateCcw, Trophy, Check, Loader2, Info
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { apiFetch } from "@/lib/api";
-import { cn } from "@/lib/utils";
-import { createPortal } from "react-dom";
+import fs from 'fs';
+const content = fs.readFileSync('src/pages/VuaTiengVietPlayPage.tsx', 'utf8');
 
-interface Question {
-  id: string;
-  question: string;
-  answer: string;
-  hint: string;
-  level: string;
-}
+// The Goal: Ensure every <div or <Button or <p is properly closed.
+// I'll take a large block from line 190 to the end and rewrite it perfectly.
+const startIndex = content.indexOf('export default function VuaTiengVietPlayPage() {');
+const baseCode = content.substring(0, startIndex);
 
-interface ResultModalProps {
-  score: number;
-  total: number;
-  onRetry: () => void;
-  onHome: () => void;
-  questions: Question[];
-  userAnswers: string[];
-}
-
-function ResultOverlay({ score, total, onRetry, onHome, questions, userAnswers }: ResultModalProps) {
-  const percentage = Math.round((score / total) * 100);
-  
-  return createPortal(
-    <div className="fixed inset-0 z-[110] bg-black/70 backdrop-blur-md overflow-y-auto flex flex-col items-center justify-start sm:justify-center p-4 py-12">
-      <div className="w-full max-w-2xl bg-card border border-border shadow-2xl rounded-[2.5rem] p-6 sm:p-10 space-y-8 animate-scale-in relative">
-        {/* Header/Score */}
-        <div className="text-center space-y-4">
-          <div className="inline-flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full bg-primary/10 text-primary mb-2">
-            <Trophy className="h-10 w-10 sm:h-12 sm:w-12" />
-          </div>
-          <h2 className="font-heading text-2xl sm:text-3xl font-black uppercase tracking-tight">Kết quả lượt chơi</h2>
-          <div className="flex justify-center gap-3 sm:gap-4 font-mono">
-            <div className="bg-muted/50 px-6 sm:px-8 py-3 sm:py-4 rounded-3xl border border-border/50">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Chính xác</p>
-              <p className="text-2xl sm:text-3xl font-black text-primary">{score}/{total}</p>
-            </div>
-            <div className="bg-muted/50 px-6 sm:px-8 py-3 sm:py-4 rounded-3xl border border-border/50">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Tỉ lệ</p>
-              <p className="text-2xl sm:text-3xl font-black text-blue-600">{percentage}%</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Detailed Review */}
-        <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar border-y border-border/40 py-4">
-          {questions.map((q, idx) => {
-            const isCorrect = userAnswers[idx]?.trim().toLowerCase() === q.answer.trim().toLowerCase();
-            return (
-              <div key={idx} className={`flex items-center gap-4 p-5 rounded-3xl border transition-colors ${isCorrect ? 'border-emerald-100 bg-emerald-50/30' : 'border-red-100 bg-red-50/30'}`}>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[9px] font-black bg-white px-2 py-0.5 rounded-full border border-border/50 text-muted-foreground uppercase tracking-wider">Câu {idx + 1}</span>
-                    <p className="font-bold text-sm line-clamp-1 text-slate-700">{q.question}</p>
-                  </div>
-                  <div className="flex flex-col gap-1 text-sm">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase shrink-0">BẠN CHỌN:</span>
-                      <p className={`font-black uppercase tracking-wider ${isCorrect ? 'text-emerald-700' : 'text-red-700'}`}>
-                        {userAnswers[idx] || "(Bỏ trống)"}
-                      </p>
-                    </div>
-                    {!isCorrect && (
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase shrink-0">ĐÁP ÁN:</span>
-                        <p className="text-emerald-700 font-black uppercase tracking-wider">{q.answer}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className={`h-10 w-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
-                  {isCorrect ? <Check className="h-5 w-5 stroke-[4]" /> : <X className="h-5 w-5 stroke-[4]" />}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-4 pt-2">
-          <Button variant="outline" className="flex-1 h-14 rounded-2xl gap-2 font-black uppercase tracking-wider border-2 hover:bg-muted" onClick={onHome}>
-            <Home className="h-5 w-5" /> Trang chủ
-          </Button>
-          <Button className="flex-1 h-14 rounded-2xl gap-2 font-black uppercase tracking-wider text-base shadow-xl shadow-primary/20 bg-emerald-600 hover:bg-emerald-700" onClick={onRetry}>
-            <RotateCcw className="h-5 w-5" /> Chơi lại
-          </Button>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
-
-export default function VuaTiengVietPlayPage() {
+const componentCode = `export default function VuaTiengVietPlayPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const level = searchParams.get("level") || "medium";
@@ -119,7 +27,7 @@ export default function VuaTiengVietPlayPage() {
   useEffect(() => {
     const fetchQs = async () => {
       try {
-        const data = await apiFetch<Question[]>( `/vuatiengviet/play?level=${level}&limit=${limit}`);
+        const data = await apiFetch<Question[]>( \`/vuatiengviet/play?level=\${level}&limit=\${limit}\`);
         setQuestions(data);
         setUserAnswers(data.map(() => ""));
         setCheckedAnswers(data.map(() => false));
@@ -174,7 +82,7 @@ export default function VuaTiengVietPlayPage() {
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, "0")}`;
+    return \`\${m}:\${s.toString().padStart(2, "0")}\`;
   };
 
   if (loading) {
@@ -235,8 +143,8 @@ export default function VuaTiengVietPlayPage() {
         </div>
 
         <div className="flex items-center justify-between w-full sm:w-auto gap-3 sm:gap-6">
-           <div className={`flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-2.5 rounded-2xl border-2 transition-all duration-500 flex-1 sm:flex-none justify-center
-             ${timeLeft < 30 ? "border-red-200 bg-red-50 text-red-600 animate-pulse" : "border-border/50 bg-muted/30 text-muted-foreground"}`}
+           <div className={\`flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-2.5 rounded-2xl border-2 transition-all duration-500 flex-1 sm:flex-none justify-center
+             \${timeLeft < 30 ? "border-red-200 bg-red-50 text-red-600 animate-pulse" : "border-border/50 bg-muted/30 text-muted-foreground"}\`}
            >
              <Timer className="h-4 w-4 sm:h-5 sm:w-5" />
              <span className="font-mono text-lg sm:text-xl font-black tabular-nums">{formatTime(timeLeft)}</span>
@@ -285,15 +193,15 @@ export default function VuaTiengVietPlayPage() {
                           value={userAnswers[currentIdx]}
                           onChange={(e) => handleInputChange(e.target.value)}
                           placeholder="Nhập câu trả lời..."
-                          className={`w-full h-14 sm:h-18 px-4 sm:px-8 text-center text-xl sm:text-3xl font-black rounded-2xl sm:rounded-[2rem] border-2 sm:border-4 transition-all uppercase tracking-widest
-                            ${hasChecked 
+                          className={\`w-full h-14 sm:h-18 px-4 sm:px-8 text-center text-xl sm:text-3xl font-black rounded-2xl sm:rounded-[2rem] border-2 sm:border-4 transition-all uppercase tracking-widest
+                            \${hasChecked 
                                 ? isCorrect 
                                   ? "border-emerald-500 bg-emerald-50/50 text-emerald-700" 
                                   : "border-red-500 bg-red-50/50 text-red-700"
                                 : "border-border bg-muted/10 focus:border-emerald-500 focus:bg-white focus:ring-[12px] focus:ring-emerald-500/10"
                             }
                             placeholder:text-muted-foreground/30 focus:outline-none
-                          `}
+                          \`}
                           disabled={isFinished}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") checkCurrentAnswer();
@@ -304,14 +212,14 @@ export default function VuaTiengVietPlayPage() {
                            <Button 
                              onClick={checkCurrentAnswer}
                              disabled={!userAnswers[currentIdx].trim() || hasChecked}
-                             className={`h-11 sm:h-12 px-6 sm:px-10 rounded-xl sm:rounded-2xl font-black uppercase tracking-wider transition-all flex-1 sm:flex-none
-                               ${hasChecked 
+                             className={\`h-11 sm:h-12 px-6 sm:px-10 rounded-xl sm:rounded-2xl font-black uppercase tracking-wider transition-all flex-1 sm:flex-none
+                               \${hasChecked 
                                  ? isCorrect 
                                    ? "bg-emerald-500 hover:bg-emerald-600" 
                                    : "bg-red-500 hover:bg-red-600"
                                  : "bg-slate-800 hover:bg-slate-900 shadow-xl shadow-slate-200"
                                }
-                             `}
+                             \`}
                            >
                               {hasChecked ? (isCorrect ? <CheckCircle2 className="mr-2 h-4 w-4 sm:h-5 sm:w-5" /> : <X className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />) : <Check className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />}
                               {hasChecked ? (isCorrect ? "Chính xác" : "Sai rồi") : "Kiểm tra"}
@@ -321,9 +229,9 @@ export default function VuaTiengVietPlayPage() {
                              variant={showHint ? "secondary" : "outline"} 
                              onClick={() => setShowHint(!showHint)}
                              disabled={!q.hint}
-                             className={`h-11 sm:h-12 px-6 sm:px-8 rounded-xl sm:rounded-2xl border-2 font-black uppercase tracking-wider transition-all flex-1 sm:flex-none
-                               ${showHint ? 'bg-amber-100 border-amber-200 text-amber-700 hover:bg-amber-200' : 'text-muted-foreground hover:bg-muted'}
-                             `}
+                             className={\`h-11 sm:h-12 px-6 sm:px-8 rounded-xl sm:rounded-2xl border-2 font-black uppercase tracking-wider transition-all flex-1 sm:flex-none
+                               \${showHint ? 'bg-amber-100 border-amber-200 text-amber-700 hover:bg-amber-200' : 'text-muted-foreground hover:bg-muted'}
+                             \`}
                            >
                               <Info className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                               Gợi ý
@@ -350,7 +258,7 @@ export default function VuaTiengVietPlayPage() {
                     : "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                  )}
                >
-                 <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" /> Câu trước
+                 <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" /> Trước
                </Button>
 
                <div className="hidden sm:flex items-center gap-2">
@@ -361,7 +269,7 @@ export default function VuaTiengVietPlayPage() {
                        setCurrentIdx(idx);
                        setShowHint(false);
                      }}
-                     className={`h-2.5 rounded-full transition-all duration-500 ${idx === currentIdx ? 'w-10 bg-emerald-500' : 'w-2.5 bg-border hover:bg-muted-foreground/30'}`}
+                     className={\`h-2.5 rounded-full transition-all duration-500 \${idx === currentIdx ? 'w-10 bg-emerald-500' : 'w-2.5 bg-border hover:bg-muted-foreground/30'}\`}
                    />
                  ))}
                </div>
@@ -380,7 +288,7 @@ export default function VuaTiengVietPlayPage() {
                     : "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                  )}
                >
-                 Câu sau <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                 Tiếp <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
                </Button>
             </div>
          </div>
@@ -401,7 +309,7 @@ export default function VuaTiengVietPlayPage() {
                   <div className="h-3 w-full bg-muted rounded-full overflow-hidden border-2 border-white shadow-inner">
                      <div 
                        className="h-full bg-emerald-500 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(16,185,129,0.5)]" 
-                       style={{ width: `${(userAnswers.filter(a => a.trim() !== "").length / questions.length) * 100}%` }} 
+                       style={{ width: \`\${(userAnswers.filter(a => a.trim() !== "").length / questions.length) * 100}%\` }} 
                      />
                   </div>
                </div>
@@ -421,8 +329,8 @@ export default function VuaTiengVietPlayPage() {
                          setCurrentIdx(idx);
                          setShowHint(false);
                        }}
-                       className={`h-11 rounded-xl font-mono text-sm font-black transition-all flex items-center justify-center border-2 relative
-                         ${cur ? 'border-primary bg-primary text-white shadow-lg shadow-primary/20 z-10 scale-110' : 
+                       className={\`h-11 rounded-xl font-mono text-sm font-black transition-all flex items-center justify-center border-2 relative
+                         \${cur ? 'border-primary bg-primary text-white shadow-lg shadow-primary/20 z-10 scale-110' : 
                            checked 
                              ? cor 
                                ? 'border-emerald-200 bg-emerald-50 text-emerald-600' 
@@ -430,12 +338,12 @@ export default function VuaTiengVietPlayPage() {
                              : isAnswered 
                                ? 'border-slate-300 bg-slate-50 text-slate-800' 
                                : 'border-transparent bg-muted/40 text-muted-foreground hover:bg-muted'}
-                       `}
+                       \`}
                      >
                        {idx + 1}
                        {checked && (
-                         <div className={`absolute -top-1 -right-1 h-4 w-4 rounded-full border-2 border-white flex items-center justify-center
-                           ${cor ? 'bg-emerald-500' : 'bg-red-500'}`}
+                         <div className={\`absolute -top-1 -right-1 h-4 w-4 rounded-full border-2 border-white flex items-center justify-center
+                           \${cor ? 'bg-emerald-500' : 'bg-red-500'}\`}
                          >
                            {cor ? <Check className="h-2 w-2 text-white" /> : <X className="h-2 w-2 text-white" />}
                          </div>
@@ -461,4 +369,7 @@ export default function VuaTiengVietPlayPage() {
     </div>
   );
 }
+`;
 
+fs.writeFileSync('src/pages/VuaTiengVietPlayPage.tsx', baseCode + componentCode);
+console.log('Successfully reconstructed the entire component');

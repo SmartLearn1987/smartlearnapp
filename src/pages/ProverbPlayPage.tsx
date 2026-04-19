@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { createPortal } from "react-dom";
 import {
   DndContext,
@@ -281,7 +282,7 @@ export default function ProverbPlayPage() {
       {/* Top Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 bg-card border border-border p-2 sm:p-4 rounded-2xl sm:rounded-3xl shadow-sm z-40 mb-2 sm:mb-4 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
             <Gamepad2 className="h-5 w-5" />
           </div>
           <div>
@@ -300,7 +301,7 @@ export default function ProverbPlayPage() {
           <span className="font-mono text-xl font-black">{formatTime(timeLeft)}</span>
         </div>
 
-        <Button onClick={handleFinish} className="rounded-xl h-11 px-8 font-bold shadow-lg shadow-primary/20 bg-amber-600 hover:bg-amber-700">
+        <Button onClick={handleFinish} className="rounded-xl h-11 px-8 font-bold shadow-lg shadow-primary/20 bg-emerald-600 hover:bg-emerald-700">
           Hoàn thành
         </Button>
       </div>
@@ -309,8 +310,8 @@ export default function ProverbPlayPage() {
         {/* Main Game Area */}
         <div className="flex-1 flex flex-col gap-2 sm:gap-4 min-h-0 animate-fade-in order-2 lg:order-1">
           {/* Game Canvas */}
-          <div className="flex-1 min-h-[50vh] sm:min-h-0 relative bg-white/40 backdrop-blur-md rounded-[1.5rem] sm:rounded-[2.5rem] border-2 sm:border-4 border-dashed border-amber-200/50 shadow-inner flex flex-col items-center pt-16 p-4 sm:p-8">
-            <div className="absolute top-6 border border-amber-200 bg-amber-50 text-amber-600 shadow-sm px-5 py-1.5 rounded-2xl text-xs font-black uppercase tracking-wider">
+          <div className="flex-1 min-h-[50vh] sm:min-h-0 relative bg-white/40 backdrop-blur-md rounded-[1.5rem] sm:rounded-[2.5rem] border-2 sm:border-4 border-dashed border-emerald-200/50 shadow-inner flex flex-col items-center pt-16 p-4 sm:p-8">
+            <div className="absolute top-6 border border-emerald-200 bg-emerald-50 text-emerald-600 shadow-sm px-5 py-1.5 rounded-2xl text-xs font-black uppercase tracking-wider">
                Sắp xếp các từ để tạo thành câu đúng
             </div>
 
@@ -343,7 +344,7 @@ export default function ProverbPlayPage() {
                     className={`rounded-2xl h-14 px-10 font-bold text-lg transition-all duration-300 shadow-xl
                         ${checkStatus === "correct" ? "bg-green-600 hover:bg-green-700 shadow-green-600/20" : 
                           checkStatus === "incorrect" ? "bg-red-600 hover:bg-red-700 shadow-red-600/20" : 
-                          "bg-blue-600 hover:bg-blue-700 shadow-blue-600/20"}
+                          "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20"}
                     `}
                 >
                     {checkStatus === "correct" ? <><CheckCircle2 className="mr-2 h-6 w-6"/> Chính xác!</> : 
@@ -360,9 +361,14 @@ export default function ProverbPlayPage() {
                variant="ghost" 
                disabled={currentIdx === 0} 
                onClick={() => { setCurrentIdx(prev => prev - 1); setCheckStatus("idle"); }}
-               className="gap-2 rounded-2xl h-10 px-4 font-bold"
+               className={cn(
+                 "h-14 px-4 sm:px-8 rounded-2xl font-black uppercase tracking-widest gap-2 transition-all",
+                 currentIdx === 0 
+                   ? "text-gray-300 cursor-not-allowed" 
+                   : "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+               )}
              >
-               <ChevronLeft className="h-5 w-5" /> Câu trước
+               <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" /> Câu trước
              </Button>
 
              <div className="hidden sm:flex items-center gap-1.5 flex-wrap justify-center">
@@ -370,7 +376,7 @@ export default function ProverbPlayPage() {
                  <button
                    key={idx}
                    onClick={() => { setCurrentIdx(idx); setCheckStatus("idle"); }}
-                   className={`h-2 rounded-full transition-all duration-300 ${idx === currentIdx ? 'w-6 bg-amber-500' : 'w-2 bg-muted hover:bg-muted-foreground/30'}`}
+                   className={`h-2 rounded-full transition-all duration-300 ${idx === currentIdx ? 'w-6 bg-emerald-500' : 'w-2 bg-muted hover:bg-muted-foreground/30'}`}
                  />
                ))}
              </div>
@@ -379,9 +385,14 @@ export default function ProverbPlayPage() {
                variant="ghost" 
                disabled={currentIdx === questions.length - 1} 
                onClick={() => { setCurrentIdx(prev => prev + 1); setCheckStatus("idle"); }}
-               className="gap-2 rounded-2xl h-10 px-4 font-bold"
+               className={cn(
+                 "h-14 px-4 sm:px-8 rounded-2xl font-black uppercase tracking-widest gap-2 transition-all",
+                 currentIdx === questions.length - 1 
+                   ? "text-gray-300 cursor-not-allowed" 
+                   : "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+               )}
              >
-               Câu sau <ChevronRight className="h-5 w-5" />
+               Câu sau <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
              </Button>
           </div>
         </div>
@@ -393,7 +404,7 @@ export default function ProverbPlayPage() {
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Nhấn để chuyển nhanh</p>
           </div>
           
-          <div className="grid grid-cols-5 sm:grid-cols-10 lg:grid-cols-5 gap-1.5 overflow-y-auto pr-1 flex-1 custom-scrollbar">
+          <div className="grid grid-cols-5 sm:grid-cols-10 lg:grid-cols-5 gap-3 overflow-y-auto pr-1 flex-1 content-start custom-scrollbar">
             {questions.map((q, idx) => {
               const isCurrent = idx === currentIdx;
               
@@ -408,7 +419,7 @@ export default function ProverbPlayPage() {
                   key={idx}
                   onClick={() => { setCurrentIdx(idx); setCheckStatus("idle"); }}
                   className={`h-9 sm:h-10 rounded-xl font-mono text-xs sm:text-sm font-black transition-all flex items-center justify-center border-2
-                    ${isCurrent ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/20 z-10' : 
+                    ${isCurrent ? 'bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-500/20 z-10' : 
                       isCorrect ? 'bg-green-50 text-green-700 border-green-200' : 'bg-muted/40 text-muted-foreground border-transparent hover:bg-muted'}
                   `}
                 >
@@ -419,9 +430,9 @@ export default function ProverbPlayPage() {
           </div>
 
           <div className="hidden sm:block pt-4 mt-4 border-t border-border shrink-0">
-             <div className="bg-amber-50 rounded-2xl p-3 flex items-start gap-3">
-               <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-               <p className="text-[10px] sm:text-xs text-amber-700 leading-relaxed font-medium">
+             <div className="bg-emerald-50 rounded-2xl p-3 flex items-start gap-3">
+               <AlertCircle className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" />
+               <p className="text-[10px] sm:text-xs text-emerald-700 leading-relaxed font-medium">
                  Kéo thả các từ để ghép thành câu đúng. Bạn có thể kiểm tra từng câu và làm lại nếu sai.
                </p>
              </div>

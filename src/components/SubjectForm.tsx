@@ -72,7 +72,7 @@ export default function SubjectForm({ subject, onSave, onCancel }: SubjectFormPr
 
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? undefined : handleClose())}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto custom-scrollbar pt-12 sm:pt-6">
+      <DialogContent className="max-h-[85dvh] w-[95vw] sm:w-full overflow-y-auto custom-scrollbar pt-12 sm:pt-6 pb-8">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Chỉnh sửa môn học" : "Thêm môn học"}</DialogTitle>
           <DialogDescription>Điền thông tin môn học và chọn biểu tượng.</DialogDescription>
@@ -102,7 +102,7 @@ export default function SubjectForm({ subject, onSave, onCancel }: SubjectFormPr
 
           <div>
             <label className="mb-2 block text-sm font-semibold">Biểu tượng</label>
-            <div className="grid grid-cols-10 gap-2">
+            <div className="grid grid-cols-6 sm:grid-cols-10 gap-2">
               {icons.map((it) => (
                 <button
                   key={it}
@@ -125,11 +125,11 @@ export default function SubjectForm({ subject, onSave, onCancel }: SubjectFormPr
             </div>
           )}
 
-          <div className="flex gap-3">
-            <Button type="button" variant="outline" onClick={handleClose} className="flex-1">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={handleClose} className="w-full sm:flex-1 h-11 rounded-xl font-semibold">
               Hủy
             </Button>
-            <Button type="submit" className="flex-1">
+            <Button type="submit" className="w-full sm:flex-1 h-11 rounded-xl font-semibold shadow-lg shadow-primary/20">
               {isEditing ? "Lưu thay đổi" : "Thêm môn học"}
             </Button>
           </div>

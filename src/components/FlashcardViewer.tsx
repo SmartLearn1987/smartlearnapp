@@ -75,6 +75,21 @@ export default function FlashcardViewer({ flashcards }: { flashcards: Flashcard[
     return () => clearInterval(interval);
   }, [isAutoPlaying, displayCards.length]);
 
+  const getDynamicFontSize = (text: string, baseSize: number) => {
+    const length = text?.length || 0;
+    let size = baseSize;
+    if (length > 200) size = baseSize * 0.4;
+    else if (length > 100) size = baseSize * 0.5;
+    else if (length > 50) size = baseSize * 0.7;
+    else if (length > 30) size = baseSize * 0.85;
+
+    // Mobile adjustment
+    if (window.innerWidth < 640) {
+      size = size * 0.75;
+    }
+    return `${size}px`;
+  };
+
   return (
     <div 
       ref={playerRef}
@@ -88,7 +103,7 @@ export default function FlashcardViewer({ flashcards }: { flashcards: Flashcard[
           onClick={() => setFlipped(!flipped)}
           className={cn(
             "relative w-full cursor-pointer transition-all duration-500",
-            isFullscreen ? "h-96" : "h-56"
+            isFullscreen ? "h-[500px]" : "h-64 sm:h-80"
           )}
           style={{ 
             transformStyle: "preserve-3d", 
@@ -96,75 +111,75 @@ export default function FlashcardViewer({ flashcards }: { flashcards: Flashcard[
           }}
         >
           {/* Front */}
-          <div className="backface-hidden absolute inset-0 flex items-center justify-center rounded-3xl bg-primary p-12 text-primary-foreground shadow-xl border-4 border-white/20">
-            <span className={cn(
-              "text-center font-heading font-black",
-              isFullscreen ? "text-6xl" : "text-3xl"
-            )}>
+          <div className="backface-hidden absolute inset-0 flex items-center justify-center rounded-3xl bg-primary p-6 sm:p-12 text-primary-foreground shadow-xl border-4 border-white/20 overflow-hidden">
+            <span 
+              className="text-center font-heading font-black break-words w-full"
+              style={{ fontSize: getDynamicFontSize(card.front, isFullscreen ? 64 : 40) }}
+            >
               {card.front}
             </span>
           </div>
           {/* Back */}
-          <div className="backface-hidden rotate-y-180 absolute inset-0 flex items-center justify-center rounded-3xl bg-secondary p-12 text-secondary-foreground shadow-xl border-4 border-white/20">
-            <span className={cn(
-              "text-center font-heading font-bold",
-              isFullscreen ? "text-4xl" : "text-xl"
-            )}>
+          <div className="backface-hidden rotate-y-180 absolute inset-0 flex items-center justify-center rounded-3xl bg-secondary p-6 sm:p-12 text-secondary-foreground shadow-xl border-4 border-white/20 overflow-hidden">
+            <span 
+              className="text-center font-heading font-bold break-words w-full"
+              style={{ fontSize: getDynamicFontSize(card.back, isFullscreen ? 48 : 28) }}
+            >
               {card.back}
             </span>
           </div>
         </button>
       </div>
 
-      <div className="flex items-center justify-between w-full max-w-xl px-4 mt-4">
+      <div className="flex items-center justify-between w-full max-w-xl px-1 sm:px-4 mt-4 select-none flex-nowrap gap-0">
         {/* Play/Shuffle Left Group */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-0 sm:gap-2 shrink-0 flex-nowrap">
           <button 
             onClick={() => setIsAutoPlaying(!isAutoPlaying)}
             className={cn(
-              "h-12 w-12 rounded-full flex items-center justify-center transition-all",
+              "h-8 w-8 sm:h-12 sm:w-12 rounded-full flex items-center justify-center transition-all shrink-0",
               isAutoPlaying ? "bg-primary text-white shadow-lg" : "hover:bg-muted text-muted-foreground"
             )}
           >
-            {isAutoPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+            {isAutoPlaying ? <Pause className="w-4 h-4 sm:w-5 sm:h-5" /> : <Play className="w-4 h-4 sm:w-5 sm:h-5" />}
           </button>
           <button 
             onClick={toggleShuffle}
             className={cn(
-              "h-12 w-12 rounded-full flex items-center justify-center transition-all",
+              "h-8 w-8 sm:h-12 sm:w-12 rounded-full flex items-center justify-center transition-all shrink-0",
               isShuffled ? "bg-primary text-white shadow-lg" : "hover:bg-muted text-muted-foreground"
             )}
           >
-            <Shuffle className="w-5 h-5" />
+            <Shuffle className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
         {/* Navigation Middle Group */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-0.5 sm:gap-6 shrink-0 flex-nowrap mx-auto">
           <button 
             onClick={prev} 
-            className="h-12 w-12 rounded-full flex items-center justify-center bg-muted/50 hover:bg-muted text-foreground transition-colors"
+            className="h-9 w-9 sm:h-12 sm:w-12 rounded-full flex items-center justify-center bg-muted/50 hover:bg-muted text-foreground transition-colors shrink-0"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
-          <span className="font-heading text-lg font-bold min-w-[60px] text-center">
+          <span className="font-heading text-[12px] sm:text-lg font-black px-1 sm:px-4 text-center whitespace-nowrap shrink-0 tabular-nums leading-none min-w-[50px] sm:min-w-[100px]">
             {currentIndex + 1} / {displayCards.length}
           </span>
           <button 
             onClick={next} 
-            className="h-12 w-12 rounded-full flex items-center justify-center bg-muted/50 hover:bg-muted text-foreground transition-colors"
+            className="h-9 w-9 sm:h-12 sm:w-12 rounded-full flex items-center justify-center bg-muted/50 hover:bg-muted text-foreground transition-colors shrink-0"
           >
-            <ChevronRight className="w-6 h-6" />
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
 
         {/* Fullscreen/Reset Right Group */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-0 sm:gap-2 shrink-0 flex-nowrap">
           <button 
             onClick={toggleFullScreen}
-            className="h-12 w-12 rounded-full flex items-center justify-center hover:bg-muted text-muted-foreground transition-colors"
+            className="h-8 w-8 sm:h-12 sm:w-12 rounded-full flex items-center justify-center hover:bg-muted text-muted-foreground transition-colors shrink-0"
           >
-            {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+            {isFullscreen ? <Minimize2 className="w-4 h-4 sm:w-5 sm:h-5" /> : <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5" />}
           </button>
         </div>
       </div>

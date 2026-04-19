@@ -164,9 +164,13 @@ export default function SubjectsPage() {
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>Hủy</Button>
-            <Button onClick={handleSave} disabled={isSaving}>
+          <DialogFooter className="gap-3 sm:gap-2">
+            <Button variant="outline" onClick={() => setIsModalOpen(false)} className="h-11 rounded-xl border-gray-200 font-medium">Hủy</Button>
+            <Button 
+              onClick={handleSave} 
+              disabled={isSaving}
+              className="bg-[#2D9B63] hover:bg-[#2D9B63]/90 text-white font-bold h-11 px-8 rounded-xl shadow-lg shadow-[#2D9B63]/20 transition-all active:scale-95"
+            >
               {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
             </Button>
           </DialogFooter>

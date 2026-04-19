@@ -8,12 +8,13 @@ Tài liệu này mô tả chi tiết thiết kế cho hệ thống hiển thị 
 | :-- | :--- | :--- |
 | 1 | **Lưới Game (Game Grid)** | Hiển thị danh sách các trò chơi dưới dạng card (Icon, Tên, Mô tả ngắn). |
 | 2 | **Phân quyền truy cập** | Admin: Click vào game sẽ chuyển đến trang quản lý nội dung. User: Click vào game sẽ mở Modal cấu hình chơi. |
-| 3 | **Modal Chép chính tả** | Chọn Cấp độ (Dễ, TB, Khó, Cực khó) và Ngôn ngữ (Vi, En, Ja). |
-| 4 | **Modal Đuổi hình bắt chữ** | Chọn Cấp độ, Số lượng câu hỏi (5-30) và Thời gian chơi (1-15 phút). |
-| 5 | **Modal Ca dao tục ngữ** | Chọn Cấp độ, Số lượng câu hỏi và Thời gian chơi. |
-| 6 | **Modal Học cùng bé** | Load danh sách chủ đề (Categories) từ server. Chọn 1 chủ đề để bắt đầu bài học hình ảnh. |
-| 7 | **Modal Nhanh như chớp** | Chọn Cấp độ, Số lượng câu hỏi và Thời gian chơi. Có validate dữ liệu trước khi vào chơi. |
-| 8 | **Hiệu ứng giao diện** | Hiệu ứng Hover card, Animation Fade-in/Scale-in cho Modal, màu sắc đại diện cho từng game. |
+| 3 | **Modal Vua tiếng Việt** | Chọn Cấp độ (Dễ, TB, Khó, Cực khó), Số lượng câu hỏi (5-30) và Thời gian (1-15 phút). |
+| 4 | **Modal Chép chính tả** | Chọn Cấp độ (Dễ, TB, Khó, Cực khó) và Ngôn ngữ (Vi, En, Ja). |
+| 5 | **Modal Đuổi hình bắt chữ** | Chọn Cấp độ, Số lượng câu hỏi (5-30) và Thời gian chơi (1-15 phút). |
+| 6 | **Modal Ca dao tục ngữ** | Chọn Cấp độ, Số lượng câu hỏi và Thời gian chơi. |
+| 7 | **Modal Học cùng bé** | Load danh sách chủ đề (Categories) từ server. Chọn 1 chủ đề để bắt đầu bài học hình ảnh. |
+| 8 | **Modal Nhanh như chớp** | Chọn Cấp độ, Số lượng câu hỏi và Thời gian chơi. Có validate dữ liệu trước khi vào chơi. |
+| 9 | **Hiệu ứng giao diện** | Hiệu ứng Hover card, Animation Fade-in/Scale-in cho Modal, màu sắc đại diện cho từng game. |
 
 ---
 
@@ -46,6 +47,7 @@ Tài liệu này mô tả chi tiết thiết kế cho hệ thống hiển thị 
 
 | Method | Endpoint | Mô tả |
 | :--- | :--- | :--- |
+| `GET` | `/api/vuatiengviet/play?level=...&limit=...` | Lấy danh sách câu hỏi Vua tiếng Việt. |
 | `GET` | `/api/dictation/random?level=...&language=...` | Kiểm tra và lấy bài chép chính tả ngẫu nhiên. |
 | `GET` | `/api/pictogram/play?level=...&limit=...` | Lấy danh sách câu hỏi Đuổi hình bắt chữ. |
 | `GET` | `/api/proverbs/play?level=...&limit=...` | Lấy danh sách câu hỏi Ca dao tục ngữ. |
