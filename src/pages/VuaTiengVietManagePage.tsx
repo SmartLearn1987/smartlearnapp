@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Edit2, Loader2, Save, FileQuestion, Upload } from "lucide-react";
+import { Plus, Trash2, Edit2, Loader2, Save, FileQuestion, Upload, Download, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { apiFetch } from "@/lib/api";
@@ -37,6 +37,7 @@ export default function VuaTiengVietManagePage() {
   const [hintText, setHintText] = useState("");
   const [level, setLevel] = useState("medium");
   const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const fetchQuestions = async () => {
     try {
@@ -153,6 +154,85 @@ export default function VuaTiengVietManagePage() {
     reader.readAsArrayBuffer(file);
   };
 
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Bạn có chắc muốn xóa câu hỏi này không?")) return;
+    try {
+      await apiFetch(`/vuatiengviet/${id}`, { method: "DELETE" });
+      toast.success("Đã xóa câu hỏi thành công!");
+      fetchQuestions();
+    } catch (err: any) {
+      toast.error("Xóa thất bại: " + err.message);
+    }
+  };
+
+  const handleExcelExport = () => {
+    setExporting(true);
+    try {
+      const exportData = filteredQuestions.map(q => ({
+        "Cấp độ": LEVELS.find(l => l.value === q.level)?.label || q.level,
+        "Câu hỏi": q.question,
+        "Trả lời": q.answer,
+        "Gợi ý": q.hint || "",
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+      // Set column widths
+      worksheet["!cols"] = [
+        { wch: 12 },  // Cấp độ
+        { wch: 50 },  // Câu hỏi
+        { wch: 25 },  // Trả lời
+        { wch: 35 },  // Gợi ý
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Câu hỏi");
+
+      const filename = selectedFilter
+        ? `VuaTiengViet_${LEVELS.find(l => l.value === selectedFilter)?.label || selectedFilter}.xlsx`
+        : "VuaTiengViet_ToanBo.xlsx";
+
+      XLSX.writeFile(workbook, filename);
+      toast.success(`Đã xuất ${exportData.length} câu hỏi thành công!`);
+    } catch (err: any) {
+      toast.error("Lỗi khi xuất file Excel: " + err.message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    const templateData = [
+      { "Cấp độ": "Dễ",        "Câu hỏi": "Lá lành đùm lá...",          "Trả lời": "Rách",    "Gợi ý": "Câu tục ngữ về tinh thần tương trợ" },
+      { "Cấp độ": "Trung bình", "Câu hỏi": "Con chim hót tiếng... (điền từ)", "Trả lời": "líu lo", "Gợi ý": "Âm thanh vui tươi" },
+      { "Cấp độ": "Khó",        "Câu hỏi": "Thành ngữ: 'Uống nước nhớ...'?", "Trả lời": "nguồn",  "Gợi ý": "" },
+      { "Cấp độ": "Cực khó",    "Câu hỏi": "Từ đồng nghĩa với 'dũng cảm'?", "Trả lời": "can đảm", "Gợi ý": "" },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    worksheet["!cols"] = [
+      { wch: 12 },
+      { wch: 50 },
+      { wch: 25 },
+      { wch: 35 },
+    ];
+
+    // Add a note/instructions row at the top would require shifting – instead add a second sheet
+    const noteData = [
+      { "Hướng dẫn": "Điền câu hỏi vào sheet 'Câu hỏi'. Cột 'Cấp độ' nhận 1 trong 4 giá trị: Dễ | Trung bình | Khó | Cực khó" },
+      { "Hướng dẫn": "Cột 'Câu hỏi' và 'Trả lời' là bắt buộc. Cột 'Gợi ý' là tùy chọn." },
+    ];
+    const noteSheet = XLSX.utils.json_to_sheet(noteData);
+    noteSheet["!cols"] = [{ wch: 90 }];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Câu hỏi");
+    XLSX.utils.book_append_sheet(workbook, noteSheet, "Hướng dẫn");
+
+    XLSX.writeFile(workbook, "VuaTiengViet_Template.xlsx");
+    toast.success("Đã tải template thành công!");
+  };
+
   const levelStats = LEVELS.map(lv => ({
     ...lv,
     count: questions.filter(q => q.level === lv.value).length
@@ -177,7 +257,7 @@ export default function VuaTiengVietManagePage() {
           <h1 className="font-heading text-2xl font-bold">Vua Tiếng Việt</h1>
           <p className="text-muted-foreground mt-1">Quản lý ngân hàng câu hỏi game Vua Tiếng Việt</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <input
             type="file"
             id="excel-import"
@@ -186,6 +266,20 @@ export default function VuaTiengVietManagePage() {
             onChange={handleExcelImport}
             disabled={importing}
           />
+
+          {/* Export Excel */}
+          <Button
+            variant="outline"
+            className="gap-2 rounded-full border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700 bg-blue-50/30 font-semibold px-5 h-11"
+            onClick={handleExcelExport}
+            disabled={exporting || filteredQuestions.length === 0}
+            title={`Xuất ${filteredQuestions.length} câu hỏi ra file Excel`}
+          >
+            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            Xuất Excel{selectedFilter ? ` (${filteredQuestions.length})` : ""}
+          </Button>
+
+          {/* Import Excel */}
           <Button 
             variant="outline" 
             className="gap-2 rounded-full border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 bg-emerald-50/30 font-bold px-6 h-11" 
@@ -195,6 +289,7 @@ export default function VuaTiengVietManagePage() {
             {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             Thêm danh sách câu hỏi
           </Button>
+
           <Button onClick={openFormForAdd} className="gap-2 rounded-xl h-11">
             <Plus className="h-4 w-4" /> Thêm câu hỏi
           </Button>

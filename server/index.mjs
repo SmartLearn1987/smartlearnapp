@@ -37,7 +37,12 @@ const app = express();
 const PORT = Number(process.env.PORT || 4000);
 const API_PREFIX = "/api";
 
-app.use(cors());
+app.use(cors({
+  origin: true, // Allow all origins in development, or specify your production domain
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "x-api-key", "x-user-id", "x-session-token"],
+  credentials: true
+}));
 app.use(express.json({ limit: "10mb" }));
 app.use("/uploads", express.static(uploadsDir));
 app.use(express.static(distDir)); // Serve built frontend assets
@@ -56,9 +61,12 @@ app.use(`${API_PREFIX}`, (req, res, next) => {
   if (expectedKey && expectedKey.trim() !== "") {
     const providedKey = req.headers["x-api-key"];
     
-    // Log for production diagnostics (masked)
     if (!providedKey || providedKey !== expectedKey) {
-      console.warn(`[Security] API Key mismatch. Expected: ${expectedKey.substring(0, 4)}..., Provided: ${providedKey ? providedKey.substring(0, 4) + '...' : 'NONE'}`);
+      const maskedExpected = expectedKey.substring(0, 4) + "...";
+      const maskedProvided = providedKey ? providedKey.substring(0, 4) + "..." : "NONE";
+      console.warn(`[Security] API Key mismatch for ${req.method} ${req.path}. Expected: ${maskedExpected}, Provided: ${maskedProvided}. Header count: ${Object.keys(req.headers).length}`);
+      
+      // If the path is /api/upload, we might want to be extra careful but if the key is wrong it's wrong
       return res.status(403).json({ error: "Forbidden: Invalid API Key" });
     }
   }
@@ -174,12 +182,8 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// ── Generic File Upload ───────────────────────────────────────────────────
-app.post(`${API_PREFIX}/upload`, upload.single("file"), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-  const fileUrl = `/uploads/${req.file.filename}`;
-  res.json({ url: fileUrl });
-});
+// Note: /api/upload is registered BEFORE the session middleware above (line ~68)
+// to allow authenticated users to upload without session token issues.
 
 app.get(`${API_PREFIX}/health`, (_req, res) => {
   res.json({ ok: true });

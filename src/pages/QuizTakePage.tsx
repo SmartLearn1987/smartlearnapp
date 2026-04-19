@@ -210,31 +210,37 @@ export default function QuizTakePage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Header */}
-      <header className="sticky top-0 z-40 w-full border-b bg-white px-4 py-3 shadow-sm">
-        <div className="container max-w-6xl flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-primary/10 text-primary">
+      <header className="sticky top-0 z-40 w-full border-b bg-white px-4 shadow-sm">
+        <div className="container max-w-6xl py-3 flex flex-col gap-2">
+          {/* Row 1: Title Area */}
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-sm">
               <ShieldCheck className="h-6 w-6" />
             </div>
-            <div>
-              <h1 className="text-lg font-bold truncate max-w-[200px] sm:max-w-md">{exam.title}</h1>
-              <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Làm bài thi trắc nghiệm</p>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base sm:text-lg font-black truncate text-gray-800 leading-tight">{exam.title}</h1>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.1em]">Làm bài thi trắc nghiệm</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center">
+          {/* Row 2: Timer & Submit (Moved to new row) */}
+          <div className="flex items-center justify-between bg-slate-50/80 rounded-2xl p-2 pl-4 border border-slate-100">
+            <div className="flex items-center gap-1">
+              <Clock className="h-4 w-4 text-slate-400 mr-1" />
               <TimerCard 
                 value={getFormattedTime(timeLeft).minutes} 
                 isDanger={timeLeft < 60} 
               />
-              <div className={`text-2xl font-black mx-1 ${timeLeft < 60 ? "text-red-600" : "text-gray-400"}`}>:</div>
+              <div className={`text-xl font-bold mx-0.5 ${timeLeft < 60 ? "text-red-500" : "text-slate-300"}`}>:</div>
               <TimerCard 
                 value={getFormattedTime(timeLeft).seconds} 
                 isDanger={timeLeft < 60} 
               />
             </div>
-            <Button onClick={handleSubmit} className="rounded-2xl h-11 px-6 text-sm font-bold flex items-center gap-2 shadow-xl shadow-primary/20 bg-primary hover:scale-105 transition-transform active:scale-95">
+            <Button 
+              onClick={handleSubmit} 
+              className="rounded-xl h-10 px-6 text-sm font-bold flex items-center gap-2 shadow-md shadow-primary/20 bg-primary hover:bg-primary/90 transition-all active:scale-95"
+            >
               <Send className="h-4 w-4" />
               Nộp bài
             </Button>
