@@ -4,7 +4,7 @@ import {
   ArrowLeft, Plus, Pencil, Trash2, ImageIcon, Loader2, X, AlertCircle, Upload, CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { apiFetch, API_BASE_URL } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
@@ -67,13 +67,11 @@ function PictogramModal({
     setUploading(true);
     setError("");
     try {
-      const res = await fetch(`${API_BASE_URL}/upload`, {
+      const data = await apiFetch<{ url: string }>("/upload", {
         method: "POST",
         body: formData,
-        // Don't set Content-Type header when sending FormData, the browser will set it with boundary
+        // Do NOT set Content-Type — browser will set it with the correct multipart boundary
       });
-      if (!res.ok) throw new Error("Upload failed");
-      const data = await res.json();
       setForm({ ...form, image_url: data.url });
     } catch (err) {
       setError("Không thể tải ảnh lên. Vui lòng thử lại.");

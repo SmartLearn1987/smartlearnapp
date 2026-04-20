@@ -64,7 +64,7 @@ interface SubjectData {
     fetchData();
   }, [user?.id, isAuthLoading]);
   return (
-    <div className="min-h-[calc(100vh-64px)] flex flex-col">
+    <div className="min-h-[calc(100vh-64px)] flex flex-col overflow-x-hidden">
       {/* Hero */}
       <section className="relative overflow-hidden pt-2 pb-2">
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
@@ -86,8 +86,8 @@ interface SubjectData {
       </section>
 
       {/* Tab Switcher */}
-      <div className="container mb-8 flex justify-center opacity-0 animate-fade-up" style={{ animationDelay: "200ms" }}>
-        <div className="flex sm:inline-flex items-center w-full sm:w-auto p-1.5 bg-white/80 backdrop-blur-md rounded-2xl border border-[#2D9B63]/10 shadow-xl shadow-[#2D9B63]/5">
+      <div className="container px-4 mb-8 flex justify-center opacity-0 animate-fade-up" style={{ animationDelay: "200ms" }}>
+        <div className="flex sm:inline-flex items-center w-full sm:w-auto p-1.5 bg-white/80 backdrop-blur-md rounded-2xl border border-[#2D9B63]/10 shadow-xl shadow-[#2D9B63]/5 overflow-hidden">
           <button
             onClick={() => setActiveTab("subjects")}
             className={cn(

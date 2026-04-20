@@ -4,6 +4,7 @@ import { ArrowLeft, BookOpen, HelpCircle, Layers, FileText, CheckCircle2, Lightb
 import { Button } from "@/components/ui/button";
 import QuizRunner from "@/components/QuizRunner";
 import FlashcardViewer from "@/components/FlashcardViewer";
+import ImageLightbox from "@/components/ImageLightbox";
 
 import type { ContentBlock, Lesson } from "@/data/mockData";
 import { apiFetch, API_BASE_URL } from "@/lib/api";
@@ -74,6 +75,7 @@ export default function LessonDetailPage() {
   const [loading, setLoading] = useState(true);
   const [lessonImages, setLessonImages] = useState<LessonImage[]>([]);
   const [slideIndex, setSlideIndex] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -233,7 +235,7 @@ export default function LessonDetailPage() {
                   <h3 className="font-heading text-lg font-bold">Hình ảnh bài học</h3>
                   <span className="ml-auto text-sm text-muted-foreground">{slideIndex + 1} / {lessonImages.length}</span>
                 </div>
-                <div className="relative group">
+                <div className="relative group cursor-zoom-in" onClick={() => setIsLightboxOpen(true)}>
                   <div className="aspect-[16/9] w-full bg-muted/30 flex items-center justify-center">
                     <img
                       src={(() => {
@@ -247,13 +249,19 @@ export default function LessonDetailPage() {
                   {lessonImages.length > 1 && (
                     <>
                       <button
-                        onClick={() => setSlideIndex((p) => (p - 1 + lessonImages.length) % lessonImages.length)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSlideIndex((p) => (p - 1 + lessonImages.length) % lessonImages.length);
+                        }}
                         className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/40 backdrop-blur-sm p-2 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60"
                       >
                         <ChevronLeft className="h-5 w-5" />
                       </button>
                       <button
-                        onClick={() => setSlideIndex((p) => (p + 1) % lessonImages.length)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSlideIndex((p) => (p + 1) % lessonImages.length);
+                        }}
                         className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/40 backdrop-blur-sm p-2 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60"
                       >
                         <ChevronRight className="h-5 w-5" />
@@ -384,6 +392,17 @@ export default function LessonDetailPage() {
           </div>
         )}
       </div>
+
+      <ImageLightbox
+        isOpen={isLightboxOpen}
+        currentIndex={slideIndex}
+        onClose={() => setIsLightboxOpen(false)}
+        onNavigate={(idx) => setSlideIndex(idx)}
+        images={lessonImages.map(img => {
+          const url = img.file_url || "";
+          return url.startsWith("http") ? url : `${API_BASE_URL.replace("/api", "")}${url}`;
+        })}
+      />
     </div>
   );
 }

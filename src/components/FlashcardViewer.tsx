@@ -48,19 +48,46 @@ export default function FlashcardViewer({ flashcards }: { flashcards: Flashcard[
   };
 
   const toggleFullScreen = () => {
-    if (!playerRef.current) return;
-    if (!document.fullscreenElement) {
-      playerRef.current.requestFullscreen().catch(() => {});
+    const doc = document as any;
+    const element = playerRef.current as any;
+    if (!element) return;
+
+    if (!isFullscreen) {
+      if (element.requestFullscreen) {
+        element.requestFullscreen().catch(() => {});
+      } else if (element.webkitRequestFullscreen) {
+        element.webkitRequestFullscreen();
+      }
+      setIsFullscreen(true);
     } else {
-      document.exitFullscreen();
+      if (doc.exitFullscreen) {
+        doc.exitFullscreen().catch(() => {});
+      } else if (doc.webkitExitFullscreen) {
+        doc.webkitExitFullscreen();
+      }
+      setIsFullscreen(false);
     }
   };
 
   useEffect(() => {
-    const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    const handleFsChange = () => {
+      const doc = document as any;
+      const isNativeFs = !!(doc.fullscreenElement || doc.webkitFullscreenElement);
+      
+      if (!isNativeFs && isFullscreen) {
+        if (doc.fullscreenEnabled || doc.webkitFullscreenEnabled) {
+          setIsFullscreen(false);
+        }
+      }
+    };
+    
     document.addEventListener("fullscreenchange", handleFsChange);
-    return () => document.removeEventListener("fullscreenchange", handleFsChange);
-  }, []);
+    document.addEventListener("webkitfullscreenchange", handleFsChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFsChange);
+      document.removeEventListener("webkitfullscreenchange", handleFsChange);
+    };
+  }, [isFullscreen]);
 
   useEffect(() => {
     let interval: any;
@@ -94,16 +121,16 @@ export default function FlashcardViewer({ flashcards }: { flashcards: Flashcard[
     <div 
       ref={playerRef}
       className={cn(
-        "flex flex-col items-center gap-6 transition-all duration-300",
-        isFullscreen ? "fixed inset-0 z-50 bg-white justify-center p-10" : "w-full"
+        "flex flex-col items-center gap-4 sm:gap-6 transition-all duration-300",
+        isFullscreen ? "fixed inset-0 z-[100] bg-white h-screen w-screen p-4 sm:p-10 overflow-y-auto" : "w-full"
       )}
     >
-      <div className={cn("perspective-1000 w-full", isFullscreen ? "max-w-3xl" : "max-w-md")}>
+      <div className={cn("perspective-1000 w-full flex-1 flex flex-col items-center justify-center", isFullscreen ? "max-w-5xl" : "max-w-md")}>
         <button
           onClick={() => setFlipped(!flipped)}
           className={cn(
             "relative w-full cursor-pointer transition-all duration-500",
-            isFullscreen ? "h-[500px]" : "h-64 sm:h-80"
+            isFullscreen ? "flex-1 min-h-[300px] max-h-[75vh]" : "h-64 sm:h-80"
           )}
           style={{ 
             transformStyle: "preserve-3d", 

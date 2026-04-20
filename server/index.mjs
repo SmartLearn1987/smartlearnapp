@@ -31,7 +31,10 @@ const storage = multer.diskStorage({
     cb(null, `${unique}-${safe}`);
   },
 });
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+});
 
 const app = express();
 const PORT = Number(process.env.PORT || 4000);
@@ -44,6 +47,7 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use("/uploads", express.static(uploadsDir));
 app.use(express.static(distDir)); // Serve built frontend assets
 
@@ -76,17 +80,29 @@ app.use(`${API_PREFIX}`, (req, res, next) => {
   next();
 });
 
-app.post(`${API_PREFIX}/upload`, upload.single("file"), (req, res) => {
-  console.log(`[Upload] Received upload request: ${req.file?.originalname || 'No file'}`);
-  if (!req.file) {
-    console.error("[Upload Error] No file in request");
-    return res.status(400).json({ error: "No file uploaded" });
-  }
-  
-  // Trả về đường dẫn truy cập cho ảnh
-  const fileUrl = `/uploads/${req.file.filename}`;
-  console.log(`[Upload] File saved successfully: ${fileUrl}`);
-  res.json({ url: fileUrl });
+app.post(`${API_PREFIX}/upload`, (req, res) => {
+  upload.single("file")(req, res, (err) => {
+    if (err) {
+      // Multer error (e.g. file too large) – always send JSON so the
+      // connection is closed cleanly instead of being aborted.
+      if (err.code === "LIMIT_FILE_SIZE") {
+        return res.status(413).json({ error: "File quá lớn. Giới hạn tối đa là 10MB." });
+      }
+      console.error("[Upload Multer Error]", err.message);
+      return res.status(400).json({ error: err.message || "Upload thất bại." });
+    }
+
+    console.log(`[Upload] Received upload request: ${req.file?.originalname || 'No file'}`);
+    if (!req.file) {
+      console.error("[Upload Error] No file in request");
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    // Trả về đường dẫn truy cập cho ảnh
+    const fileUrl = `/uploads/${req.file.filename}`;
+    console.log(`[Upload] File saved successfully: ${fileUrl}`);
+    res.json({ url: fileUrl });
+  });
 });
 
 // Auto-migrate schema
@@ -823,54 +839,64 @@ app.get(`${API_PREFIX}/curricula/:id`, async (req, res) => {
   }
 });
 
- app.post(`${API_PREFIX}/curricula`, upload.single("file"), async (req, res) => {
-   const userId = getUserId(req);
-   if (!userId) return res.status(401).json({ error: "Unauthorized" });
+app.post(`${API_PREFIX}/curricula`, (req, res) => {
+  upload.single("file")(req, res, async (err) => {
+    if (err) {
+      if (err.code === "LIMIT_FILE_SIZE") {
+        return res.status(413).json({ error: "File quá lớn. Giới hạn tối đa là 10MB." });
+      }
+      return res.status(400).json({ error: err.message || "Upload thất bại." });
+    }
 
-  try {
-    const {
-      subject_id,
-      name,
-      grade = null,
-      education_level = null,
-      is_public = false,
-      publisher = null,
-      lesson_count = 0,
-      file_content = null,
-      created_by = null,
-      image_url = null,
-    } = req.body || {};
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    if (!subject_id) return res.status(400).json({ error: "subject_id is required" });
-    if (!name?.trim()) return res.status(400).json({ error: "name is required" });
-
-    const fileUrl = req.file ? `/uploads/${req.file.filename}` : null;
-
-    const { rows } = await query(
-      `insert into curricula
-       (subject_id, name, grade, education_level, is_public, publisher, lesson_count, file_url, file_content, image_url, user_id, created_by)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-       returning *`,
-      [
+    try {
+      const {
         subject_id,
-        name.trim(),
-        grade,
-        education_level,
-        is_public === "true" || is_public === true,
-        publisher,
-        Number(lesson_count) || 0,
-        fileUrl,
-        file_content,
-        image_url,
-        userId,
-        created_by,
-      ]
-    );
+        name,
+        grade = null,
+        education_level = null,
+        is_public = false,
+        publisher = null,
+        lesson_count = 0,
+        file_content = null,
+        created_by = null,
+        image_url = null,
+      } = req.body || {};
 
-    res.status(201).json(rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to create curriculum" });
-  }
+      if (!subject_id) return res.status(400).json({ error: "subject_id is required" });
+      if (!name?.trim()) return res.status(400).json({ error: "name is required" });
+
+      const fileUrl = req.file ? `/uploads/${req.file.filename}` : null;
+
+      const { rows } = await query(
+        `insert into curricula
+         (subject_id, name, grade, education_level, is_public, publisher, lesson_count, file_url, file_content, image_url, user_id, created_by)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         returning *`,
+        [
+          subject_id,
+          name.trim(),
+          grade,
+          education_level,
+          is_public === "true" || is_public === true,
+          publisher,
+          Number(lesson_count) || 0,
+          fileUrl,
+          file_content,
+          image_url,
+          userId,
+          created_by,
+        ]
+      );
+
+      res.status(201).json(rows[0]);
+    } catch (dbErr) {
+      console.error("POST /curricula Error:", dbErr.message);
+      res.status(500).json({ error: "Failed to create curriculum" });
+    }
+  });
 });
 
  app.put(`${API_PREFIX}/curricula/:id`, async (req, res) => {
@@ -1189,34 +1215,44 @@ app.get(`${API_PREFIX}/lessons/:id/images`, async (req, res) => {
   }
 });
 
-app.post(`${API_PREFIX}/lessons/:id/images`, upload.array("images", 20), async (req, res) => {
-  const { id } = req.params;
-  const files = req.files;
-  if (!files || files.length === 0) return res.status(400).json({ error: "No files uploaded" });
-
-  try {
-    // Get current max sort_order
-    const { rows: maxRows } = await query(
-      `select coalesce(max(sort_order), -1) as max_order from lesson_images where lesson_id = $1`,
-      [id]
-    );
-    let sortOrder = (maxRows[0]?.max_order ?? -1) + 1;
-
-    const inserted = [];
-    for (const file of files) {
-      const fileUrl = `/uploads/${file.filename}`;
-      const { rows } = await query(
-        `insert into lesson_images (lesson_id, file_url, sort_order)
-         values ($1, $2, $3)
-         returning id::text, lesson_id::text, file_url, caption, sort_order, created_at`,
-        [id, fileUrl, sortOrder++]
-      );
-      inserted.push(rows[0]);
+app.post(`${API_PREFIX}/lessons/:id/images`, (req, res) => {
+  upload.array("images", 20)(req, res, async (err) => {
+    if (err) {
+      if (err.code === "LIMIT_FILE_SIZE") {
+        return res.status(413).json({ error: "File quá lớn. Giới hạn tối đa là 10MB mỗi ảnh." });
+      }
+      return res.status(400).json({ error: err.message || "Upload thất bại." });
     }
-    res.status(201).json(inserted);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to upload lesson images" });
-  }
+
+    const { id } = req.params;
+    const files = req.files;
+    if (!files || files.length === 0) return res.status(400).json({ error: "No files uploaded" });
+
+    try {
+      // Get current max sort_order
+      const { rows: maxRows } = await query(
+        `select coalesce(max(sort_order), -1) as max_order from lesson_images where lesson_id = $1`,
+        [id]
+      );
+      let sortOrder = (maxRows[0]?.max_order ?? -1) + 1;
+
+      const inserted = [];
+      for (const file of files) {
+        const fileUrl = `/uploads/${file.filename}`;
+        const { rows } = await query(
+          `insert into lesson_images (lesson_id, file_url, sort_order)
+           values ($1, $2, $3)
+           returning id::text, lesson_id::text, file_url, caption, sort_order, created_at`,
+          [id, fileUrl, sortOrder++]
+        );
+        inserted.push(rows[0]);
+      }
+      res.status(201).json(inserted);
+    } catch (dbErr) {
+      console.error("POST /lessons/:id/images Error:", dbErr.message);
+      res.status(500).json({ error: "Failed to upload lesson images" });
+    }
+  });
 });
 
 app.delete(`${API_PREFIX}/lessons/:id/images/:imageId`, async (req, res) => {
@@ -2580,6 +2616,15 @@ async function initializeApp() {
     throw err;
   }
 }
+
+// ── Global Express Error Handler ───────────────────────────────────────────
+// Must have 4 parameters (err, req, res, next) for Express to treat it as
+// an error handler. This prevents unhandled errors from aborting connections.
+app.use((err, req, res, next) => {
+  console.error("[Unhandled Express Error]", err.stack || err.message);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ error: "Đã xảy ra lỗi máy chủ. Vui lòng thử lại." });
+});
 
 // Start the server only after the app is initialized
 initializeApp()

@@ -54,7 +54,7 @@ export default function AppHeader() {
           <span className="hidden md:inline text-[#2D9B63]">Smart Learn</span>
         </Link>
 
-        <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <nav className="flex-1 min-w-0 flex items-center justify-center gap-1 overflow-x-auto no-scrollbar scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden mx-2">
           {navItems.map((item: any) => {
             const active = item.path === "/" 
               ? (location.pathname === "/" || isPlayPage)

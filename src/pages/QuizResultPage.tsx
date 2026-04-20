@@ -126,12 +126,12 @@ export default function QuizResultPage() {
 
       {/* Action Bar */}
       <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b px-4 py-4 mb-12 shadow-sm">
-        <div className="container max-w-4xl flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="container max-w-4xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
             <Button 
               variant="ghost" 
               onClick={() => navigate("/quizzes")} 
-              className="rounded-2xl h-11 px-6 font-bold flex items-center gap-2"
+              className="rounded-2xl h-11 px-6 font-bold flex items-center gap-2 flex-1 sm:flex-none justify-center"
               disabled={isSaving}
             >
               <ChevronLeft className="h-5 w-5" /> Danh sách
@@ -164,7 +164,7 @@ export default function QuizResultPage() {
           </div>
           <Button 
             onClick={() => navigate(`/quizzes/take/${exam.id}`)} 
-            className="rounded-2xl h-11 px-8 font-bold flex items-center gap-2 bg-primary group"
+            className="rounded-2xl h-11 px-8 font-bold flex items-center gap-2 bg-primary group w-full sm:w-auto justify-center"
             disabled={isSaving}
           >
             <RefreshCcw className="h-4 w-4 transform transition-transform group-hover:rotate-180" />

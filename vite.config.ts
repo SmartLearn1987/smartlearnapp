@@ -15,10 +15,14 @@ export default defineConfig(({ mode }) => ({
       "/api": {
         target: "http://localhost:4000",
         changeOrigin: true,
+        proxyTimeout: 60000,  // 60s – prevents ERR_CONNECTION_ABORTED on file uploads
+        timeout: 60000,
       },
       "/uploads": {
         target: "http://localhost:4000",
         changeOrigin: true,
+        proxyTimeout: 60000,
+        timeout: 60000,
       },
     },
   },

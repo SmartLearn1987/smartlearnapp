@@ -3,6 +3,7 @@ import RichTextEditor, { type RichBlock } from "@/components/RichTextEditor";
 import { BookOpen, Plus, ArrowLeft, Upload, Trash2, Pencil, ImagePlus, X, Eye, EyeOff, CheckCircle2, HelpCircle, Layers, FileText, Lightbulb, BookMarked, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 import QuizRunner from "@/components/QuizRunner";
 import FlashcardViewer from "@/components/FlashcardViewer";
+import ImageLightbox from "@/components/ImageLightbox";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
@@ -1787,6 +1788,7 @@ function LessonReviewMode({
   const [isDone, setIsDone] = useState(false);
   const [images, setImages] = useState<any[]>([]);
   const [slideIndex, setSlideIndex] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   const tabs = [
     { id: "content", label: "Nội dung", icon: BookOpen },
@@ -1820,6 +1822,7 @@ function LessonReviewMode({
         const imgs = await apiFetch<any[]>(`/lessons/${lessonId}/images`);
         setImages(imgs || []);
         setSlideIndex(0);
+        setIsLightboxOpen(false);
       } catch (err) {
         console.error("Error loading lesson details:", err);
       } finally {
@@ -1937,7 +1940,10 @@ function LessonReviewMode({
                     </div>
                   </div>
                 </div>
-                <div className="relative group bg-muted/5 p-2 sm:p-6 text-center">
+                <div 
+                  className="relative group bg-muted/5 p-2 sm:p-6 text-center cursor-zoom-in"
+                  onClick={() => setIsLightboxOpen(true)}
+                >
                   <div className="aspect-[16/10] flex items-center justify-center bg-white rounded-xl sm:rounded-2xl shadow-inner border border-muted/20 overflow-hidden">
                      <img
                        src={(() => {
@@ -1951,13 +1957,19 @@ function LessonReviewMode({
                   {images.length > 1 && (
                     <>
                       <button
-                        onClick={() => setSlideIndex((p) => (p - 1 + images.length) % images.length)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSlideIndex((p) => (p - 1 + images.length) % images.length);
+                        }}
                         className="absolute left-10 top-1/2 -translate-y-1/2 h-12 w-12 flex items-center justify-center rounded-full bg-white/90 text-primary shadow-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-primary hover:text-white"
                       >
                         <ChevronLeft className="h-6 w-6" />
                       </button>
                       <button
-                        onClick={() => setSlideIndex((p) => (p + 1) % images.length)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSlideIndex((p) => (p + 1) % images.length);
+                        }}
                         className="absolute right-10 top-1/2 -translate-y-1/2 h-12 w-12 flex items-center justify-center rounded-full bg-white/90 text-primary shadow-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-primary hover:text-white"
                       >
                         <ChevronRight className="h-6 w-6" />
@@ -2057,6 +2069,14 @@ function LessonReviewMode({
           </div>
         )}
       </div>
+
+      <ImageLightbox
+        isOpen={isLightboxOpen}
+        onClose={() => setIsLightboxOpen(false)}
+        images={images.map(img => img.file_url.startsWith("http") ? img.file_url : `${API_BASE_URL.replace("/api", "")}${img.file_url}`)}
+        currentIndex={slideIndex}
+        onNavigate={setSlideIndex}
+      />
     </div>
   );
 }

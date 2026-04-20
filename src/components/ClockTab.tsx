@@ -102,20 +102,51 @@ export default function ClockTab() {
   };
 
   const toggleFS = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
+    const doc = document as any;
+    const element = document.documentElement as any;
+
+    if (!isFullscreen) {
+      // Attempt native fullscreen
+      if (element.requestFullscreen) {
+        element.requestFullscreen().catch(() => {});
+      } else if (element.webkitRequestFullscreen) {
+        element.webkitRequestFullscreen();
+      }
+      // Always toggle internal state to support Fake Fullscreen on iPhone
       setIsFullscreen(true);
     } else {
-      document.exitFullscreen();
+      // Attempt to exit native fullscreen
+      if (doc.exitFullscreen) {
+        doc.exitFullscreen().catch(() => {});
+      } else if (doc.webkitExitFullscreen) {
+        doc.webkitExitFullscreen();
+      }
+      // Always toggle internal state
       setIsFullscreen(false);
     }
   };
 
   useEffect(() => {
-    const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    const handleFsChange = () => {
+      const doc = document as any;
+      const isNativeFs = !!(doc.fullscreenElement || doc.webkitFullscreenElement);
+      
+      // If native fullscreen was exited (e.g. via ESC key), sync our state
+      if (!isNativeFs && isFullscreen) {
+        // Only auto-exit if the browser actually supports the API (to avoid breaking iPhone fake FS)
+        if (doc.fullscreenEnabled || doc.webkitFullscreenEnabled) {
+          setIsFullscreen(false);
+        }
+      }
+    };
+    
     document.addEventListener("fullscreenchange", handleFsChange);
-    return () => document.removeEventListener("fullscreenchange", handleFsChange);
-  }, []);
+    document.addEventListener("webkitfullscreenchange", handleFsChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFsChange);
+      document.removeEventListener("webkitfullscreenchange", handleFsChange);
+    };
+  }, [isFullscreen]);
 
   const days = ["Chủ nhật", "Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy"];
 
@@ -158,14 +189,14 @@ export default function ClockTab() {
               {days[time.getDay()]} · {time.getDate()}/{time.getMonth() + 1}
             </div>
             <div className="flex items-baseline justify-center leading-none">
-              <span className="text-[clamp(46px,12vw,240px)] font-bold tracking-tighter text-white drop-shadow-[0_0_60px_rgba(255,255,255,0.5)]">
+              <span className="text-[clamp(36px,12vw,240px)] font-bold tracking-tighter text-white drop-shadow-[0_0_60px_rgba(255,255,255,0.5)]">
                 {String(time.getHours() % 12 || 12).padStart(2, "0")}
                 <span className="animate-pulse text-[#4ade80]">:</span>
                 {String(time.getMinutes()).padStart(2, "0")}
                 <span className="animate-pulse text-[#4ade80]">:</span>
                 {String(time.getSeconds()).padStart(2, "0")}
               </span>
-              <span className="ml-2 sm:ml-4 w-[2ch] flex-shrink-0 text-left text-[clamp(20px,5vw,80px)] font-bold text-[#4ade80]">
+              <span className="ml-1 sm:ml-4 w-[2ch] flex-shrink-0 text-left text-[clamp(16px,5vw,80px)] font-bold text-[#4ade80]">
                 {String(Math.floor(time.getMilliseconds() / 10)).padStart(2, "0")}
               </span>
             </div>
@@ -175,10 +206,10 @@ export default function ClockTab() {
         {mode === "stopwatch" && (
           <div className="animate-fade-in">
             <div className="flex items-baseline justify-center leading-none">
-              <span className="text-[clamp(46px,12vw,240px)] font-bold tracking-tighter text-white drop-shadow-[0_0_60px_rgba(255,255,255,0.5)]">
+              <span className="text-[clamp(38px,12vw,240px)] font-bold tracking-tighter text-white drop-shadow-[0_0_60px_rgba(255,255,255,0.5)]">
                 {formatTime(swTime).base}
               </span>
-              <span className="ml-2 sm:ml-4 w-[2ch] flex-shrink-0 text-left text-[clamp(20px,5vw,80px)] font-bold text-[#4ade80]">
+              <span className="ml-1 sm:ml-4 w-[2ch] flex-shrink-0 text-left text-[clamp(16px,5vw,80px)] font-bold text-[#4ade80]">
                 {formatTime(swTime).ms}
               </span>
             </div>
@@ -202,10 +233,10 @@ export default function ClockTab() {
         {mode === "timer" && (
           <div className="animate-fade-in">
             <div className="flex items-baseline justify-center leading-none">
-              <span className="text-[clamp(46px,12vw,240px)] font-bold tracking-tighter text-white drop-shadow-[0_0_60px_rgba(255,255,255,0.5)]">
+              <span className="text-[clamp(38px,12vw,240px)] font-bold tracking-tighter text-white drop-shadow-[0_0_60px_rgba(255,255,255,0.5)]">
                 {formatTime(tmTimeLeft).base}
               </span>
-              <span className="ml-2 sm:ml-4 w-[2ch] flex-shrink-0 text-left text-[clamp(20px,5vw,80px)] font-bold text-[#4ade80]">
+              <span className="ml-1 sm:ml-4 w-[2ch] flex-shrink-0 text-left text-[clamp(16px,5vw,80px)] font-bold text-[#4ade80]">
                 {formatTime(tmTimeLeft).ms}
               </span>
             </div>

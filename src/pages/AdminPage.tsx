@@ -71,6 +71,37 @@ function RoleBadge({ role }: { role: Role }) {
   );
 }
 
+function StatusBadge({ active }: { active: boolean }) {
+  if (active) {
+    return (
+      <div className="flex justify-center" title="Đang hoạt động">
+        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+      </div>
+    );
+  }
+  return (
+    <div className="flex justify-center" title="Đã bị khóa">
+      <AlertCircle className="h-5 w-5 text-destructive" />
+    </div>
+  );
+}
+
+function PlanBadge({ plan }: { plan?: string }) {
+  const p = plan || "Miễn phí";
+  if (p === "Miễn phí") {
+    return (
+      <span className="inline-flex items-center rounded-lg bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground border border-border/50">
+        {p}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center rounded-lg bg-emerald-500 px-2.5 py-1 text-xs font-bold text-white shadow-sm shadow-emerald-500/20">
+      {p}
+    </span>
+  );
+}
+
 // ── Create user screen ──────────────────────────────────────────
 function UserCreateScreen({ onBack, onCreated }: { onBack: () => void; onCreated: () => void }) {
   const [username, setUsername] = useState("");
@@ -499,7 +530,7 @@ export default function AdminPage() {
   // Sub-screens
   if (view === "create") {
     return (
-      <div className="container max-w-4xl py-10">
+      <div className="container py-10 px-4">
         <UserCreateScreen onBack={() => setView("list")} onCreated={refresh} />
       </div>
     );
@@ -507,14 +538,14 @@ export default function AdminPage() {
 
   if (view === "edit" && editUserTarget) {
     return (
-      <div className="container max-w-4xl py-10">
+      <div className="container py-10 px-4">
         <UserEditScreen user={editUserTarget} onBack={() => setView("list")} onUpdated={refresh} />
       </div>
     );
   }
 
   return (
-    <div className="container max-w-4xl py-10">
+    <div className="container py-10 px-4">
       {changePwTarget && <ChangePwModal user={changePwTarget} onClose={() => setChangePwTarget(null)} />}
           {/* Header */}
           <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 opacity-0 animate-fade-up">
@@ -532,55 +563,72 @@ export default function AdminPage() {
             </Button>
           </div>
 
-          {/* User list */}
-          <div className="space-y-3 opacity-0 animate-fade-up" style={{ animationDelay: "80ms" }}>
-            {users.map((u) => (
-              <div key={u.id} className={`flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-4 rounded-2xl px-4 sm:px-5 py-4 shadow-sm border border-border ${u.isActive === false ? "bg-muted/60 opacity-80" : "bg-card"}`}>
-                <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                  {/* Avatar */}
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${u.role === "admin" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
-                    {u.displayName.charAt(0).toUpperCase()}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-sm truncate">{u.displayName}</span>
-                      <RoleBadge role={u.role} />
-                      {u.id === currentUser?.id && (
-                        <span className="rounded-lg bg-secondary/10 px-2 py-0.5 text-xs font-semibold text-secondary">Bạn</span>
-                      )}
-                      {u.isActive === false && (
-                        <span className="rounded-lg bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive">Đã khóa</span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 mt-1 sm:mt-0.5 flex-wrap">
-                      <span className="text-xs text-muted-foreground truncate">@{u.username}</span>
-                      <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
-                        <Calendar className="h-3 w-3" />
-                        {new Date(u.createdAt).toLocaleDateString("vi-VN")}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex flex-wrap items-center gap-2 shrink-0 sm:ml-auto">
-                  <Button variant="outline" size="sm" onClick={() => { setEditUserTarget(u); setView("edit"); }} className="h-8 px-3 text-xs gap-1.5">
-                    <Edit3 className="h-3.5 w-3.5" /> Chỉnh sửa
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setChangePwTarget(u)} className="h-8 px-3 text-xs gap-1.5">
-                    <KeyRound className="h-3.5 w-3.5" /> Đổi mật khẩu
-                  </Button>
-                  {u.username !== "admin" && u.id !== currentUser?.id && (
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(u)}
-                      className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
+          {/* User list table */}
+          <div className="rounded-3xl border border-border bg-card shadow-sm overflow-hidden opacity-0 animate-fade-up" style={{ animationDelay: "80ms" }}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left border-collapse">
+                <thead>
+                  <tr className="bg-muted/50 border-b border-border">
+                    <th className="px-4 py-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">Tên hiển thị</th>
+                    <th className="px-3 py-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] whitespace-nowrap">Tên đăng nhập</th>
+                    <th className="px-3 py-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] whitespace-nowrap">Cấp độ</th>
+                    <th className="px-3 py-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] whitespace-nowrap">Gói cước</th>
+                    <th className="px-3 py-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] whitespace-nowrap">Ngày hết hạn</th>
+                    <th className="px-3 py-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] whitespace-nowrap text-center">Trạng thái</th>
+                    <th className="px-3 py-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] whitespace-nowrap text-center">Vai trò</th>
+                    <th className="px-4 py-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] text-right whitespace-nowrap">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {users.map((u) => (
+                    <tr key={u.id} className={`hover:bg-muted/30 transition-colors border-b border-border/50 ${u.isActive === false ? "bg-muted/20" : ""}`}>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${u.role === "admin" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
+                            {u.displayName.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-bold text-foreground truncate max-w-[150px]" title={u.displayName}>{u.displayName}</span>
+                            {u.id === currentUser?.id && (
+                              <span className="text-[9px] font-bold text-secondary uppercase">Bạn</span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-4 text-muted-foreground font-medium truncate max-w-[120px]" title={`@${u.username}`}>@{u.username}</td>
+                      <td className="px-3 py-4 text-foreground font-medium truncate max-w-[150px]" title={u.educationLevel || ""}>{u.educationLevel || "—"}</td>
+                      <td className="px-3 py-4">
+                        <PlanBadge plan={u.plan} />
+                      </td>
+                      <td className="px-3 py-4 font-medium text-muted-foreground tabular-nums text-xs">
+                        {u.planEndDate ? new Date(u.planEndDate).toLocaleDateString("vi-VN") : "—"}
+                      </td>
+                      <td className="px-3 py-4">
+                        <StatusBadge active={u.isActive !== false} />
+                      </td>
+                      <td className="px-3 py-4 text-center">
+                        <RoleBadge role={u.role} />
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => { setEditUserTarget(u); setView("edit"); }} className="h-8 w-8 p-0" title="Chỉnh sửa">
+                            <Edit3 className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => setChangePwTarget(u)} className="h-8 w-8 p-0" title="Đổi mật khẩu">
+                            <KeyRound className="h-4 w-4" />
+                          </Button>
+                          {u.username !== "admin" && u.id !== currentUser?.id && (
+                            <Button variant="ghost" size="sm" onClick={() => handleDelete(u)} className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10" title="Xóa">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Info box */}
