@@ -309,9 +309,12 @@ export default function ProverbPlayPage() {
       <div className="flex-1 flex flex-col lg:flex-row gap-2 sm:gap-6 min-h-0">
         {/* Main Game Area */}
         <div className="flex-1 flex flex-col gap-2 sm:gap-4 min-h-0 animate-fade-in order-2 lg:order-1">
+          
+
+
           {/* Game Canvas */}
-          <div className="flex-1 min-h-[50vh] sm:min-h-0 relative bg-white/40 backdrop-blur-md rounded-[1.5rem] sm:rounded-[2.5rem] border-2 sm:border-4 border-dashed border-emerald-200/50 shadow-inner flex flex-col items-center pt-16 p-4 sm:p-8">
-            <div className="absolute top-6 border border-emerald-200 bg-emerald-50 text-emerald-600 shadow-sm px-5 py-1.5 rounded-2xl text-xs font-black uppercase tracking-wider">
+          <div className="flex-1 min-h-0 relative bg-white/40 backdrop-blur-md rounded-[1.5rem] sm:rounded-[2.5rem] border-2 sm:border-4 border-dashed border-emerald-200/50 shadow-inner flex flex-col items-center pt-12 sm:pt-16 p-4 sm:p-8">
+            <div className="absolute top-4 sm:top-6 border border-emerald-200 bg-emerald-50 text-emerald-600 shadow-sm px-4 sm:px-5 py-1 sm:py-1.5 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-wider">
                Sắp xếp các từ để tạo thành câu đúng
             </div>
 
@@ -354,21 +357,20 @@ export default function ProverbPlayPage() {
             </div>
           </div>
 
-
           {/* Nav Controls */}
-          <div className="flex items-center justify-between px-4 pb-2 shrink-0">
+          <div className="flex items-center justify-between px-4 py-2 shrink-0">
              <Button 
                variant="ghost" 
                disabled={currentIdx === 0} 
                onClick={() => { setCurrentIdx(prev => prev - 1); setCheckStatus("idle"); }}
                className={cn(
-                 "h-14 px-4 sm:px-8 rounded-2xl font-black uppercase tracking-widest gap-2 transition-all",
+                 "h-10 sm:h-14 px-4 sm:px-8 rounded-2xl font-black uppercase tracking-widest gap-2 transition-all",
                  currentIdx === 0 
                    ? "text-gray-300 cursor-not-allowed" 
                    : "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                )}
              >
-               <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" /> Câu trước
+               <ChevronLeft className="h-4 w-4 sm:h-6 sm:w-6" /> <span className="text-xs sm:text-base">Câu trước</span>
              </Button>
 
              <div className="hidden sm:flex items-center gap-1.5 flex-wrap justify-center">
@@ -386,21 +388,21 @@ export default function ProverbPlayPage() {
                disabled={currentIdx === questions.length - 1} 
                onClick={() => { setCurrentIdx(prev => prev + 1); setCheckStatus("idle"); }}
                className={cn(
-                 "h-14 px-4 sm:px-8 rounded-2xl font-black uppercase tracking-widest gap-2 transition-all",
+                 "h-10 sm:h-14 px-4 sm:px-8 rounded-2xl font-black uppercase tracking-widest gap-2 transition-all",
                  currentIdx === questions.length - 1 
                    ? "text-gray-300 cursor-not-allowed" 
                    : "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
                )}
              >
-               Câu sau <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+               <span className="text-xs sm:text-base">Câu sau</span> <ChevronRight className="h-4 w-4 sm:h-6 sm:w-6" />
              </Button>
           </div>
         </div>
 
         {/* Sidebar Navigation */}
-        <div className="w-full lg:w-[300px] shrink-0 bg-card border border-border rounded-2xl sm:rounded-[2rem] p-3 sm:p-5 shadow-sm flex flex-col min-h-0 order-1 lg:order-2">
-          <div className="space-y-1 mb-4">
-            <h3 className="font-heading text-base font-bold leading-none">Danh sách câu hỏi</h3>
+        <div className="w-full lg:w-[300px] shrink-0 bg-card border border-border rounded-2xl sm:rounded-[2rem] p-4 sm:p-5 shadow-sm flex flex-col min-h-0 order-1 lg:order-2">
+          <div className="space-y-1 mb-3 sm:mb-4">
+            <h3 className="font-heading text-base font-bold leading-none uppercase">Danh sách câu hỏi</h3>
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Nhấn để chuyển nhanh</p>
           </div>
           

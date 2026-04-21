@@ -290,9 +290,6 @@ export default function PictogramPlayPage() {
                alt="Pictogram" 
                className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-700 group-hover:scale-105"
              />
-             <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-md shadow-sm px-4 py-1.5 rounded-2xl text-xs font-black text-primary border border-primary/10">
-               CÂU ĐỐ {currentIdx + 1}
-             </div>
           </div>
 
           {/* Answer Boxes - Prominent & Large */}
@@ -320,7 +317,7 @@ export default function PictogramPlayPage() {
                       handleInputChange(e.currentTarget.value, charIdx, true);
                     }}
                     disabled={isFinished}
-                    className={`w-12 h-14 sm:w-14 sm:h-16 text-center rounded-2xl border-2 font-heading text-2xl sm:text-3xl font-black transition-all
+                    className={`w-12 h-14 sm:w-14 sm:h-16 text-center rounded-none border-2 font-heading text-2xl sm:text-3xl font-black transition-all
                       ${currentAnswerState[charIdx] 
                         ? "border-primary bg-primary/10 text-primary shadow-xl shadow-primary/20 scale-105" 
                         : "border-border bg-card hover:border-primary/40 focus:border-primary focus:ring-8 focus:ring-primary/10"

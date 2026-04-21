@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Users, Plus, Trash2, KeyRound, ShieldCheck, User as UserIcon,
   Loader2, CheckCircle2, AlertCircle, X, Calendar, Edit3, BookOpen,
-  ArrowLeft
+  ArrowLeft, Search, Filter, XCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -501,13 +501,54 @@ export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [changePwTarget, setChangePwTarget] = useState<User | null>(null);
   const [editUserTarget, setEditUserTarget] = useState<User | null>(null);
+  
+  // Pagination & Data state
+  const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [stats, setStats] = useState({ adminCount: 0, userCount: 0, totalCount: 0 });
+
+  // Filter state
+  const [filterUsername, setFilterUsername] = useState("");
+  const [filterLevel, setFilterLevel] = useState("");
+  const [filterRole, setFilterRole] = useState("");
+  const [filterPlan, setFilterPlan] = useState("");
+
+  const fetchUsers = async () => {
+    if (!isAdmin) return;
+    setLoading(true);
+    try {
+      const res = await listUsers({
+        page: currentPage,
+        limit: 30,
+        username: filterUsername,
+        level: filterLevel,
+        role: filterRole,
+        plan: filterPlan
+      });
+      setUsers(res.users);
+      setTotalCount(res.total);
+      setTotalPages(res.totalPages);
+      setStats(res.stats);
+    } catch (error) {
+      toast.error("Không thể tải danh sách tài khoản");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!isAdmin) { navigate("/"); return; }
-    listUsers().then(setUsers);
-  }, [isAdmin]);
+    fetchUsers();
+  }, [isAdmin, currentPage, filterUsername, filterLevel, filterRole, filterPlan]);
 
-  const refresh = async () => setUsers(await listUsers());
+  const refresh = async () => fetchUsers();
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterUsername, filterLevel, filterRole, filterPlan]);
 
 
   const handleDelete = async (u: User) => {
@@ -522,10 +563,17 @@ export default function AdminPage() {
   };
 
 
-  if (!isAdmin) return null;
+  const clearFilters = () => {
+    setFilterUsername("");
+    setFilterLevel("");
+    setFilterRole("");
+    setFilterPlan("");
+    setCurrentPage(1);
+  };
 
-  const admins = users.filter((u) => u.role === "admin");
-  const normalUsers = users.filter((u) => u.role === "user");
+  const isFiltered = filterUsername || filterLevel || filterRole || filterPlan;
+
+  if (!isAdmin) return null;
 
   // Sub-screens
   if (view === "create") {
@@ -556,11 +604,77 @@ export default function AdminPage() {
                 </span>
                 Quản lý tài khoản
               </h1>
-              <p className="mt-2 sm:mt-1 text-muted-foreground text-sm">{users.length} tài khoản • {admins.length} admin, {normalUsers.length} user</p>
+              <p className="mt-2 sm:mt-1 text-muted-foreground text-sm">{stats.totalCount} tài khoản • {stats.adminCount} admin, {stats.userCount} user</p>
             </div>
-            <Button onClick={() => setView("create")} className="w-full sm:w-auto h-12 px-6 rounded-xl shadow-lg shadow-primary/10">
+            <Button onClick={() => setView("create")} className="w-full sm:w-auto h-12 px-6 rounded-xl shadow-lg shadow-primary/20">
               <Plus className="mr-2 h-4 w-4" /> Tạo tài khoản
             </Button>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 opacity-0 animate-fade-up" style={{ animationDelay: "40ms" }}>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input 
+                type="text" 
+                placeholder="Tìm tên đăng nhập/hiển thị..."
+                value={filterUsername}
+                onChange={(e) => setFilterUsername(e.target.value)}
+                className="w-full h-11 pl-9 pr-4 rounded-xl border border-border bg-card text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+              />
+            </div>
+            
+            <select 
+              value={filterLevel}
+              onChange={(e) => setFilterLevel(e.target.value)}
+              className="h-11 px-3 rounded-xl border border-border bg-card text-sm focus:border-primary outline-none"
+            >
+              <option value="">-- Tất cả cấp độ --</option>
+              <option value="Tiểu học">Tiểu học</option>
+              <option value="Trung học cơ sở">Trung học cơ sở</option>
+              <option value="Trung học Phổ Thông">Trung học Phổ Thông</option>
+              <option value="Đại Học / Cao Đẳng">Đại Học / Cao Đẳng</option>
+              <option value="Luyện thi chứng chỉ">Luyện thi chứng chỉ</option>
+            </select>
+
+            <select 
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              className="h-11 px-3 rounded-xl border border-border bg-card text-sm focus:border-primary outline-none"
+            >
+              <option value="">-- Tất cả vai trò --</option>
+              <option value="admin">Quản trị viên (Admin)</option>
+              <option value="teacher">Giáo viên (Teacher)</option>
+              <option value="user">Người dùng (User)</option>
+            </select>
+
+            <div className="flex gap-2">
+              <select 
+                value={filterPlan}
+                onChange={(e) => setFilterPlan(e.target.value)}
+                className="flex-1 h-11 px-3 rounded-xl border border-border bg-card text-sm focus:border-primary outline-none"
+              >
+                <option value="">-- Tất cả gói cước --</option>
+                <option value="Miễn phí">Miễn phí</option>
+                <option value="1 tháng">1 tháng</option>
+                <option value="2 tháng">2 tháng</option>
+                <option value="3 tháng">3 tháng</option>
+                <option value="6 tháng">6 tháng</option>
+                <option value="12 tháng">12 tháng</option>
+              </select>
+
+              {isFiltered && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={clearFilters}
+                  className="h-11 w-11 shrink-0 rounded-xl hover:bg-destructive/10 hover:text-destructive"
+                  title="Xóa bộ lọc"
+                >
+                  <XCircle className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* User list table */}
@@ -580,7 +694,7 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {users.map((u) => (
+                  {users.length > 0 ? users.map((u) => (
                     <tr key={u.id} className={`hover:bg-muted/30 transition-colors border-b border-border/50 ${u.isActive === false ? "bg-muted/20" : ""}`}>
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
@@ -625,10 +739,77 @@ export default function AdminPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )) : (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-20 text-center">
+                        <div className="flex flex-col items-center justify-center space-y-3 text-muted-foreground">
+                          {loading ? (
+                            <Loader2 className="h-10 w-10 animate-spin opacity-40" />
+                          ) : (
+                            <>
+                              <Filter className="h-10 w-10 opacity-20" />
+                              <p className="font-medium">Không tìm thấy tài khoản phù hợp</p>
+                              {isFiltered && <Button variant="link" onClick={clearFilters} className="text-primary font-bold">Xóa tất cả bộ lọc</Button>}
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="px-6 py-4 bg-muted/20 border-t border-border flex items-center justify-between">
+                <p className="text-xs text-muted-foreground font-medium">
+                  Hiển thị <span className="text-foreground">{users.length}</span> / <span className="text-foreground">{totalCount}</span> tài khoản
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1 || loading}
+                    className="h-8 px-4 rounded-lg font-bold"
+                  >
+                    Trước
+                  </Button>
+                  <div className="flex items-center gap-1 mx-2">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) pageNum = i + 1;
+                      else if (currentPage <= 3) pageNum = i + 1;
+                      else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                      else pageNum = currentPage - 2 + i;
+                      
+                      return (
+                        <Button 
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "ghost"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`h-8 w-8 p-0 rounded-lg font-bold ${currentPage === pageNum ? "bg-primary shadow-md shadow-primary/20" : "text-muted-foreground hover:text-foreground"}`}
+                          disabled={loading}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages || loading}
+                    className="h-8 px-4 rounded-lg font-bold"
+                  >
+                    Sau
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Info box */}

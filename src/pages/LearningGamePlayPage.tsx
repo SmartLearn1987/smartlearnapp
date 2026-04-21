@@ -109,10 +109,10 @@ export default function LearningGamePlayPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#FDFCF6]">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-16 w-16 animate-bounce rounded-full bg-cyan-500 shadow-lg flex items-center justify-center text-white">
+          <div className="h-16 w-16 animate-bounce rounded-full bg-primary shadow-lg flex items-center justify-center text-white">
             <ImageIcon className="h-8 w-8" />
           </div>
-          <p className="font-heading text-xl font-bold text-cyan-700 animate-pulse">Bé chờ một chút nhé...</p>
+          <p className="font-heading text-xl font-bold text-primary animate-pulse">Bé chờ một chút nhé...</p>
         </div>
       </div>
     );
@@ -126,17 +126,17 @@ export default function LearningGamePlayPage() {
       <div className="mx-auto max-w-4xl flex items-center justify-between mb-8">
         <button
           onClick={() => navigate("/")}
-          className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm hover:shadow-md transition-all active:scale-95 group border border-cyan-100"
+          className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm hover:shadow-md transition-all active:scale-95 group border border-emerald-100"
         >
-          <ArrowLeft className="h-5 w-5 text-cyan-600 group-hover:-translate-x-1 transition-transform" />
+          <ArrowLeft className="h-5 w-5 text-primary group-hover:-translate-x-1 transition-transform" />
         </button>
         
         <div className="flex flex-col items-center">
-          <h1 className="font-heading text-lg font-black text-cyan-700 uppercase tracking-wide">
+          <h1 className="font-heading text-lg font-black text-primary uppercase tracking-wide">
             {category?.name}
           </h1>
-          <div className="flex items-center gap-2 mt-1 px-3 py-1 rounded-full bg-cyan-100 border border-cyan-200">
-            <span className="text-[10px] font-black text-cyan-700">
+          <div className="flex items-center gap-2 mt-1 px-3 py-1 rounded-full bg-emerald-100 border border-emerald-200">
+            <span className="text-[10px] font-black text-primary">
               CÂU {currentIndex + 1} / {questions.length}
             </span>
           </div>
@@ -153,9 +153,9 @@ export default function LearningGamePlayPage() {
         >
           <div className={`relative w-full h-full transition-all duration-700 preserve-3d shadow-2xl rounded-[2.5rem] ${isFlipped ? 'rotate-y-180' : ''}`}>
             {/* Front Side */}
-            <div className="absolute inset-0 backface-hidden w-full h-full bg-white rounded-[2.5rem] border-4 border-cyan-400 p-8 flex flex-col items-center">
+            <div className="absolute inset-0 backface-hidden w-full h-full bg-white rounded-[2.5rem] border-4 border-primary/50 p-8 flex flex-col items-center">
               <div className="w-full text-center space-y-4 flex flex-col items-center justify-center flex-1">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-cyan-50 text-cyan-600 border border-cyan-100 mb-2">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-50 text-primary border border-emerald-100 mb-2">
                   <HelpCircle className="h-5 w-5" />
                   <span className="font-bold text-sm">{category?.general_question || "Đây là gì nào?"}</span>
                 </div>
@@ -222,7 +222,7 @@ export default function LearningGamePlayPage() {
             className={`h-14 w-14 rounded-2xl border transition-all duration-300 shadow-sm
               ${isPlaying 
                 ? "bg-rose-50 border-rose-200 text-rose-600 shadow-rose-100" 
-                : "bg-cyan-50 border-cyan-200 text-cyan-600 shadow-cyan-100"}`}
+                : "bg-emerald-50 border-emerald-200 text-primary shadow-emerald-100"}`}
             onClick={() => setIsPlaying(!isPlaying)}
             title={isPlaying ? "Dừng tự chạy" : "Bắt đầu tự chạy"}
           >

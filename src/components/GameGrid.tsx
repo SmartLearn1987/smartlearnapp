@@ -32,7 +32,7 @@ export const GAMES = [
     title: "Học cùng bé",
     image: "/images/game_hoccungbe.png",
     description: "Khám phá thế giới tri thức cùng những bài học vui nhộn cho bé",
-    color: "bg-emerald-500/10 text-emerald-600",
+    color: "bg-primary/10 text-primary",
   },
   {
     id: "cadao",
@@ -46,7 +46,7 @@ export const GAMES = [
     title: "Nhanh như chớp",
     image: "/images/game_nhanhchớp.png",
     description: "Thử thách phản xạ và kiến thức cực nhanh với các câu hỏi hóc búa",
-    color: "bg-emerald-500/10 text-emerald-600",
+    color: "bg-primary/10 text-primary",
   },
 ];
 
@@ -406,7 +406,7 @@ function LearningSelectModal({ onClose }: { onClose: () => void }) {
       <div className="w-full max-w-md rounded-[2rem] bg-card border border-border shadow-2xl p-6 space-y-5 animate-scale-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <BookOpen className="h-5 w-5" />
             </div>
             <div>
@@ -439,11 +439,12 @@ function LearningSelectModal({ onClose }: { onClose: () => void }) {
                   onClick={() => setSelectedId(cat.id)}
                   className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left
                     ${selectedId === cat.id 
-                      ? "border-emerald-500 bg-emerald-50/50 shadow-md ring-4 ring-emerald-500/5" 
+                      ? "border-primary bg-emerald-50 shadow-md ring-4 ring-primary/5" 
                       : "border-border bg-muted/20 hover:border-emerald-200 hover:bg-white"}`}
-                >
+
+                                  >
                   <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0
-                    ${selectedId === cat.id ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}
+                    ${selectedId === cat.id ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}
                   >
                     <LayoutGrid className="h-5 w-5" />
                   </div>
@@ -452,7 +453,7 @@ function LearningSelectModal({ onClose }: { onClose: () => void }) {
                     <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">{cat.item_count} hình ảnh</p>
                   </div>
                   {selectedId === cat.id && (
-                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                   )}
                 </button>
               ))}
@@ -461,7 +462,7 @@ function LearningSelectModal({ onClose }: { onClose: () => void }) {
             <div className="flex gap-3 pt-2">
               <Button variant="outline" className="flex-1 h-12 rounded-2xl font-bold" onClick={onClose}>Hủy</Button>
               <Button 
-                className="flex-1 h-12 rounded-2xl font-bold text-base bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200" 
+                className="flex-1 h-12 rounded-2xl font-bold text-base bg-primary hover:bg-primary/90 shadow-lg shadow-primary/10" 
                 onClick={handlePlay}
                 disabled={!selectedId}
               >

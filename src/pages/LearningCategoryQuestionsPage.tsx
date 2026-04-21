@@ -172,7 +172,7 @@ export default function LearningCategoryQuestionsPage() {
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-600">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <BookOpen className="h-6 w-6" />
             </div>
             <div>
@@ -183,19 +183,19 @@ export default function LearningCategoryQuestionsPage() {
             </div>
           </div>
         </div>
-        <Button onClick={() => openQuestionDialog()} className="h-12 px-6 rounded-2xl shadow-lg shadow-cyan-200 bg-cyan-600 hover:bg-cyan-700 font-bold gap-2">
+        <Button onClick={() => openQuestionDialog()} className="h-12 px-6 rounded-2xl shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 font-bold gap-2">
           <Plus className="h-5 w-5" /> Thêm hình ảnh mới
         </Button>
       </div>
 
       {/* Info Banner */}
-      <div className="bg-cyan-50/50 border border-cyan-100 rounded-[2rem] p-6 flex flex-col sm:flex-row sm:items-center gap-4">
-        <div className="h-10 w-10 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600 shrink-0">
+      <div className="bg-emerald-50/50 border border-emerald-100 rounded-[2rem] p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-primary shrink-0">
           <ImageIcon className="h-5 w-5" />
         </div>
         <div>
-          <p className="text-sm font-bold text-cyan-900">Câu hỏi chung cho bé:</p>
-          <p className="text-cyan-700 font-medium italic">"{category.general_question}"</p>
+          <p className="text-sm font-bold text-emerald-900">Câu hỏi chung cho bé:</p>
+          <p className="text-primary font-medium italic">"{category.general_question}"</p>
         </div>
       </div>
 
@@ -216,7 +216,7 @@ export default function LearningCategoryQuestionsPage() {
                 <div className="flex gap-1">
                   <button 
                     onClick={() => openQuestionDialog(q)} 
-                    className="p-1.5 text-muted-foreground hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors"
+                    className="p-1.5 text-muted-foreground hover:text-primary hover:bg-emerald-50 rounded-lg transition-colors"
                   >
                     <Edit2 className="h-4 w-4" />
                   </button>
@@ -264,7 +264,7 @@ export default function LearningCategoryQuestionsPage() {
               <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">Hình ảnh minh họa <span className="text-red-500">*</span></Label>
               <div 
                 className={`relative h-48 w-full rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center overflow-hidden
-                  ${questImageUrl ? "border-cyan-500/20 bg-cyan-50/10" : "border-border hover:border-cyan-500/40 hover:bg-muted/40"}
+                  ${questImageUrl ? "border-primary/20 bg-emerald-50/10" : "border-border hover:border-primary/40 hover:bg-muted/40"}
                 `}
               >
                 {questImageUrl ? (
@@ -300,11 +300,11 @@ export default function LearningCategoryQuestionsPage() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex flex-col items-center gap-3 text-muted-foreground hover:text-cyan-600 transition-colors w-full h-full"
+                    className="flex flex-col items-center gap-3 text-muted-foreground hover:text-primary transition-colors w-full h-full"
                     disabled={uploading}
                   >
                     {uploading ? (
-                      <Loader2 className="h-10 w-10 animate-spin text-cyan-500/40" />
+                      <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
                     ) : (
                       <div className="h-12 w-12 rounded-2xl bg-muted flex items-center justify-center mb-1 transition-transform hover:scale-110">
                         <Upload className="h-6 w-6" />
@@ -334,7 +334,7 @@ export default function LearningCategoryQuestionsPage() {
                   value={questAnswer}
                   onChange={(e) => setQuestAnswer(e.target.value)}
                   placeholder="VD: Con mèo"
-                  className="h-12 rounded-2xl border-2 focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 font-bold pr-10"
+                  className="h-12 rounded-2xl border-2 focus:ring-4 focus:ring-primary/10 focus:border-primary font-bold pr-10"
                 />
                 {questAnswer.trim().length > 0 && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500">
@@ -349,7 +349,7 @@ export default function LearningCategoryQuestionsPage() {
           <DialogFooter className="mt-4">
             <Button variant="ghost" className="rounded-xl px-6" onClick={() => setIsQuestionModalOpen(false)}>Hủy</Button>
             <Button 
-              className="bg-cyan-600 hover:bg-cyan-700 rounded-2xl px-10 font-bold shadow-lg shadow-cyan-100" 
+              className="bg-primary hover:bg-primary/90 rounded-2xl px-10 font-bold shadow-lg shadow-primary/10" 
               onClick={handleSaveQuestion}
               disabled={savingQuest || uploading || !questImageUrl || !questAnswer.trim()}
             >

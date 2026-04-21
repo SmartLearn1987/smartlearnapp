@@ -256,15 +256,15 @@ export default function NhanhNhuChopPlayPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-6 p-4 sm:p-8 min-h-0 container max-w-6xl mx-auto">
+      <div className="flex-1 flex flex-col lg:flex-row gap-2 sm:gap-6 p-2 sm:p-8 min-h-0 container max-w-6xl mx-auto">
          {/* Main Game Area */}
-         <div className="flex-1 flex flex-col gap-6 min-h-0 animate-in fade-in slide-in-from-bottom-4 duration-700">
+         <div className="flex-1 flex flex-col gap-4 sm:gap-6 min-h-0 animate-in fade-in slide-in-from-bottom-4 duration-700 order-2 lg:order-1">
             {/* Question Card */}
             <div className="flex-1 min-h-0 bg-slate-50 border-2 border-border/50 rounded-[3rem] shadow-xl shadow-muted/20 flex flex-col relative overflow-y-auto custom-scrollbar group">
 
-                <div className="flex-1 flex flex-col items-center justify-start sm:justify-center p-3 sm:p-12 min-h-full">
+                <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 min-h-full">
                    <div className="w-full max-w-2xl text-center space-y-4 sm:space-y-10">
-                      <h2 className="relative font-heading text-xl sm:text-5xl font-black text-slate-800 leading-tight">
+                      <h2 className="relative font-heading text-lg sm:text-3xl font-black text-red-600 leading-tight">
                          {q.question}
                       </h2>
 
@@ -341,14 +341,14 @@ export default function NhanhNhuChopPlayPage() {
          </div>
 
          {/* Sidebar - Progress Tracking */}
-         <div className="w-full lg:w-[320px] shrink-0 flex flex-col gap-6">
-            <div className="bg-slate-50 border-2 border-border/50 rounded-[2.5rem] p-6 shadow-xl shadow-muted/20 flex flex-col flex-1 min-h-0">
-               <div className="space-y-1 mb-6">
-                 <h3 className="font-heading text-lg font-black leading-none text-slate-800">Tiến trình tia chớp</h3>
+         <div className="w-full lg:w-[320px] shrink-0 flex flex-col gap-4 sm:gap-6 order-1 lg:order-2">
+            <div className="bg-slate-50 border-2 border-border/50 rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 shadow-xl shadow-muted/20 flex flex-col flex-1 min-h-0">
+               <div className="space-y-1 mb-4 sm:mb-6">
+                 <h3 className="font-heading text-base sm:text-lg font-black leading-none text-slate-800 uppercase">Tiến trình tia chớp</h3>
                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[.15em]">Phản xạ nhanh!</p>
                </div>
                
-               <div className="mb-8 space-y-4">
+               <div className="mb-4 sm:mb-8 space-y-2 sm:space-y-4">
                   <div className="flex items-center justify-between">
                      <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">Hoàn thành</span>
                      <span className="text-sm font-black text-emerald-600">

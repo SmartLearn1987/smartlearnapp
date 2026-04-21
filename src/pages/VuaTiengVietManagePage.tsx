@@ -29,6 +29,13 @@ export default function VuaTiengVietManagePage() {
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Pagination State
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(30);
+  const [totalPages, setTotalPages] = useState(1);
+  const [stats, setStats] = useState<any>({ total: 0, easy: 0, medium: 0, hard: 0, extreme: 0 });
   
   // Form State
   const [editId, setEditId] = useState<string | null>(null);
@@ -39,10 +46,15 @@ export default function VuaTiengVietManagePage() {
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  const fetchQuestions = async () => {
+  const fetchQuestions = async (page = currentPage, filter = selectedFilter) => {
+    setLoading(true);
     try {
-      const data = await apiFetch<VTQuestion[]>("/vuatiengviet");
-      setQuestions(data);
+      const query = `/vuatiengviet?page=${page}&limit=${pageSize}${filter ? `&level=${filter}` : ""}`;
+      const response = await apiFetch<any>(query);
+      setQuestions(response.data);
+      setTotalCount(response.total);
+      setTotalPages(response.totalPages);
+      setStats(response.stats);
     } catch (err: any) {
       setError("Không thể tải danh sách câu hỏi.");
     } finally {
@@ -51,8 +63,13 @@ export default function VuaTiengVietManagePage() {
   };
 
   useEffect(() => {
-    fetchQuestions();
-  }, []);
+    fetchQuestions(currentPage, selectedFilter);
+  }, [currentPage, selectedFilter]);
+
+  const handleFilterChange = (filter: string | null) => {
+    setSelectedFilter(filter);
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
 
   const openFormForAdd = () => {
     setEditId(null);
@@ -168,7 +185,8 @@ export default function VuaTiengVietManagePage() {
   const handleExcelExport = () => {
     setExporting(true);
     try {
-      const exportData = filteredQuestions.map(q => ({
+      // Note: This exports only the current page (30 records)
+      const exportData = questions.map(q => ({
         "Cấp độ": LEVELS.find(l => l.value === q.level)?.label || q.level,
         "Câu hỏi": q.question,
         "Trả lời": q.answer,
@@ -235,12 +253,8 @@ export default function VuaTiengVietManagePage() {
 
   const levelStats = LEVELS.map(lv => ({
     ...lv,
-    count: questions.filter(q => q.level === lv.value).length
+    count: stats[lv.value] || 0
   }));
-
-  const filteredQuestions = selectedFilter 
-    ? questions.filter(q => q.level === selectedFilter) 
-    : questions;
 
   if (loading) {
     return (
@@ -272,11 +286,11 @@ export default function VuaTiengVietManagePage() {
             variant="outline"
             className="gap-2 rounded-full border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700 bg-blue-50/30 font-semibold px-5 h-11"
             onClick={handleExcelExport}
-            disabled={exporting || filteredQuestions.length === 0}
-            title={`Xuất ${filteredQuestions.length} câu hỏi ra file Excel`}
+            disabled={exporting || questions.length === 0}
+            title={`Xuất ${questions.length} câu hỏi đang hiển thị ra file Excel`}
           >
             {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            Xuất Excel{selectedFilter ? ` (${filteredQuestions.length})` : ""}
+            Xuất Excel (Trang này)
           </Button>
 
           {/* Import Excel */}
@@ -306,17 +320,17 @@ export default function VuaTiengVietManagePage() {
             <div className="space-y-3">
               <div 
                 className={`flex items-center justify-between p-2 -mx-2 rounded-lg cursor-pointer transition-colors ${selectedFilter === null ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-muted'}`}
-                onClick={() => setSelectedFilter(null)}
+                onClick={() => handleFilterChange(null)}
               >
                 <span className="text-sm font-medium">Tổng câu hỏi</span>
-                <span className="font-bold text-primary">{questions.length}</span>
+                <span className="font-bold text-primary">{stats.total}</span>
               </div>
               <div className="h-px bg-border my-2" />
               {levelStats.map(stat => (
                 <div 
                   key={stat.value} 
                   className={`flex items-center justify-between p-2 -mx-2 rounded-lg cursor-pointer transition-colors ${selectedFilter === stat.value ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-muted'}`}
-                  onClick={() => setSelectedFilter(stat.value)}
+                  onClick={() => handleFilterChange(stat.value)}
                 >
                   <div className="flex items-center gap-2">
                     <div className={`h-2.5 w-2.5 rounded-full ${stat.color.split(' ')[0]}`} />
@@ -350,7 +364,7 @@ export default function VuaTiengVietManagePage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {filteredQuestions.map((q) => {
+                  {questions.map((q) => {
                     const lvInfo = LEVELS.find(l => l.value === q.level) || LEVELS[0];
                     return (
                       <tr key={q.id} className="hover:bg-muted/30 transition-colors group">
@@ -387,7 +401,7 @@ export default function VuaTiengVietManagePage() {
                       </tr>
                     );
                   })}
-                  {filteredQuestions.length === 0 && !error && (
+                  {questions.length === 0 && !error && (
                     <tr>
                       <td colSpan={5} className="py-12 text-center">
                         <p className="text-muted-foreground mb-4">
@@ -402,6 +416,58 @@ export default function VuaTiengVietManagePage() {
                 </tbody>
               </table>
             </div>
+            
+            {/* Pagination UI */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-border bg-muted/20 px-4 py-3 sm:px-6">
+                <div className="flex flex-1 justify-between sm:hidden">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1 || loading}
+                  >
+                    Trước
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages || loading}
+                  >
+                    Sau
+                  </Button>
+                </div>
+                <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      Hiển thị <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> đến{" "}
+                      <span className="font-medium">{Math.min(currentPage * pageSize, totalCount)}</span> trong{" "}
+                      <span className="font-medium">{totalCount}</span> kết quả
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1 || loading}
+                    >
+                      Trước
+                    </Button>
+                    <div className="flex items-center px-4 text-sm font-medium">
+                      Trang {currentPage} / {totalPages}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages || loading}
+                    >
+                      Sau
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

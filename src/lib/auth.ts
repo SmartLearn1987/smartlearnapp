@@ -21,6 +21,19 @@ export interface User {
   accessTokenExpiresAt?: string;
 }
 
+export interface ListUsersResponse {
+  users: User[];
+  total: number;
+  totalPages: number;
+  page: number;
+  limit: number;
+  stats: {
+    adminCount: number;
+    userCount: number;
+    totalCount: number;
+  };
+}
+
 // ── Session ───────────────────────────────────────────────────
 const SESSION_KEY = "hvui-session-v1";
 
@@ -133,14 +146,42 @@ export async function forgotPassword(email: string): Promise<{ ok: boolean; mess
 }
 
 
-// Admin: list all users
-export async function listUsers(): Promise<User[]> {
+// Admin: list all users with pagination and filtering
+export async function listUsers(params?: { 
+  page?: number; 
+  limit?: number;
+  username?: string;
+  level?: string;
+  role?: string;
+  plan?: string;
+}): Promise<ListUsersResponse> {
   try {
-    const users = await apiFetch<any[]>("/users");
-    return users.map(transformUser);
+    const query = new URLSearchParams();
+    if (params?.page) query.append("page", params.page.toString());
+    if (params?.limit) query.append("limit", params.limit.toString());
+    if (params?.username) query.append("username", params.username);
+    if (params?.level) query.append("level", params.level);
+    if (params?.role) query.append("role", params.role);
+    if (params?.plan) query.append("plan", params.plan);
+
+    const queryString = query.toString();
+    const url = `/users${queryString ? `?${queryString}` : ""}`;
+    
+    const response = await apiFetch<any>(url);
+    return {
+      ...response,
+      users: (response.users || []).map(transformUser)
+    };
   } catch (err) {
     console.error("ListUsers Error:", err);
-    return [];
+    return {
+      users: [],
+      total: 0,
+      totalPages: 0,
+      page: 1,
+      limit: 30,
+      stats: { adminCount: 0, userCount: 0, totalCount: 0 }
+    };
   }
 }
 

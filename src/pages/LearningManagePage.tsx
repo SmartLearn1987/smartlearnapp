@@ -133,7 +133,7 @@ export default function LearningManagePage() {
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-600">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <BookOpen className="h-6 w-6" />
             </div>
             <div>
@@ -144,7 +144,7 @@ export default function LearningManagePage() {
             </div>
           </div>
         </div>
-        <Button onClick={() => openCategoryDialog()} className="h-12 px-6 rounded-2xl shadow-lg shadow-cyan-200 bg-cyan-600 hover:bg-cyan-700 font-bold gap-2">
+        <Button onClick={() => openCategoryDialog()} className="h-12 px-6 rounded-2xl shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 font-bold gap-2">
           <Plus className="h-5 w-5" /> Thêm chủ đề mới
         </Button>
       </div>
@@ -158,14 +158,14 @@ export default function LearningManagePage() {
             onClick={() => navigate(`/games/learning/${cat.id}`)}
           >
             <div className="flex items-start justify-between mb-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600 group-hover:scale-110 transition-transform">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-primary group-hover:scale-110 transition-transform">
                 <LayoutGrid className="h-6 w-6" />
               </div>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-8 w-8 rounded-lg hover:bg-cyan-100 hover:text-cyan-700"
+                  className="h-8 w-8 rounded-lg hover:bg-emerald-100 hover:text-primary"
                   onClick={(e) => { e.stopPropagation(); openCategoryDialog(cat); }}
                 >
                   <Edit2 className="h-4 w-4" />
@@ -182,7 +182,7 @@ export default function LearningManagePage() {
             </div>
 
             <div className="space-y-2">
-              <h3 className="font-heading text-xl font-bold group-hover:text-cyan-600 transition-colors">{cat.name}</h3>
+              <h3 className="font-heading text-xl font-bold group-hover:text-primary transition-colors">{cat.name}</h3>
               <p className="text-sm text-muted-foreground line-clamp-2 min-h-[40px]">{cat.description || "Chưa có mô tả cho chủ đề này."}</p>
             </div>
 
@@ -191,7 +191,7 @@ export default function LearningManagePage() {
                 <ImageIcon className="h-3.5 w-3.5" />
                 <span>{cat.item_count || 0} Hình ảnh</span>
               </div>
-              <div className="flex items-center gap-1 text-cyan-600 text-sm font-bold opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
+              <div className="flex items-center gap-1 text-primary text-sm font-bold opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
                 Chi tiết <ChevronRight className="h-4 w-4" />
               </div>
             </div>
@@ -232,7 +232,7 @@ export default function LearningManagePage() {
                 value={catName}
                 onChange={(e) => setCatName(e.target.value)}
                 placeholder="VD: Thế giới động vật"
-                className="h-12 rounded-2xl border-2 focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 font-bold"
+                className="h-12 rounded-2xl border-2 focus:ring-4 focus:ring-primary/10 focus:border-primary font-bold"
               />
             </div>
             <div className="space-y-2">
@@ -242,7 +242,7 @@ export default function LearningManagePage() {
                 value={catGenQuest}
                 onChange={(e) => setCatGenQuest(e.target.value)}
                 placeholder="VD: Mẹ đố bé đây là gì?"
-                className="h-12 rounded-2xl border-2 focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500"
+                className="h-12 rounded-2xl border-2 focus:ring-4 focus:ring-primary/10 focus:border-primary"
               />
               <p className="text-[10px] text-muted-foreground ml-1 italic">Đây là câu hỏi người dẫn (hoặc AI) sẽ hỏi bé cho mọi hình ảnh trong chủ đề này.</p>
             </div>
@@ -253,7 +253,7 @@ export default function LearningManagePage() {
                 value={catDesc}
                 onChange={(e) => setCatDesc(e.target.value)}
                 placeholder="Một vài dòng giới thiệu về chủ đề này..."
-                className="rounded-2xl border-2 focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 min-h-[100px]"
+                className="rounded-2xl border-2 focus:ring-4 focus:ring-primary/10 focus:border-primary min-h-[100px]"
               />
             </div>
           </div>
@@ -261,7 +261,7 @@ export default function LearningManagePage() {
           <DialogFooter className="gap-2 sm:gap-0 mt-4">
             <Button variant="ghost" className="rounded-xl px-6" onClick={() => setIsCategoryModalOpen(false)}>Hủy</Button>
             <Button 
-              className="bg-cyan-600 hover:bg-cyan-700 rounded-2xl px-8 font-bold shadow-lg shadow-cyan-100" 
+              className="bg-primary hover:bg-primary/90 rounded-2xl px-8 font-bold shadow-lg shadow-primary/10" 
               onClick={handleSaveCategory}
               disabled={savingCat || !catName.trim() || !catGenQuest.trim()}
             >

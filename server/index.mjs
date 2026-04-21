@@ -498,15 +498,82 @@ app.get(`${API_PREFIX}/me`, async (req, res) => {
 
 // ── User Management (Admin) ────────────────────────────────────────────────
 app.get(`${API_PREFIX}/users`, async (req, res) => {
-  // In a real app, check if the requester is an admin here
   try {
-    const { rows } = await query(
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 30;
+    const offset = (page - 1) * limit;
+    
+    const { username, level, role, plan } = req.query;
+    
+    let whereClause = [];
+    let params = [];
+    let paramIdx = 1;
+    
+    if (username) {
+      whereClause.push(`(username ILIKE $${paramIdx} OR display_name ILIKE $${paramIdx})`);
+      params.push(`%${username}%`);
+      paramIdx++;
+    }
+    if (level) {
+      whereClause.push(`education_level = $${paramIdx}`);
+      params.push(level);
+      paramIdx++;
+    }
+    if (role) {
+      whereClause.push(`role = $${paramIdx}`);
+      params.push(role);
+      paramIdx++;
+    }
+    if (plan) {
+      if (plan === "Miễn phí") {
+        whereClause.push(`(plan = $${paramIdx} OR plan IS NULL)`);
+      } else {
+        whereClause.push(`plan = $${paramIdx}`);
+      }
+      params.push(plan);
+      paramIdx++;
+    }
+    
+    const whereStr = whereClause.length > 0 ? `WHERE ${whereClause.join(" AND ")}` : "";
+    
+    // Fetch users with data transformation
+    const { rows: users } = await query(
       `select id, username, email, display_name as "displayName", role, education_level as "educationLevel", is_active as "isActive", plan, plan_start_date::text as "planStartDate", plan_end_date::text as "planEndDate", created_at as "createdAt"
-       from users order by created_at desc`
+       from users 
+       ${whereStr}
+       order by created_at desc 
+       LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
+      [...params, limit, offset]
     );
 
-    res.json(rows);
+    // Fetch total count for pagination
+    const { rows: countRows } = await query(`SELECT count(*) as count FROM users ${whereStr}`, params);
+    const totalCount = parseInt(countRows[0].count);
+    
+    // Fetch statistics (global totals)
+    const { rows: statsRows } = await query(
+      `SELECT 
+        COUNT(*) FILTER (WHERE role = 'admin') as admins,
+        COUNT(*) FILTER (WHERE role = 'user') as users,
+        COUNT(*) as total
+       FROM users`
+    );
+    const stats = {
+      adminCount: parseInt(statsRows[0].admins),
+      userCount: parseInt(statsRows[0].users),
+      totalCount: parseInt(statsRows[0].total)
+    };
+
+    res.json({
+      users,
+      total: totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      page,
+      limit,
+      stats
+    });
   } catch (err) {
+    console.error("GET /users Error:", err);
     res.status(500).json({ error: "Failed to fetch users" });
   }
 });
@@ -1952,9 +2019,57 @@ app.delete(`${API_PREFIX}/proverbs/:id`, async (req, res) => {
 });
 // ── Vua Tiếng Việt Endpoints ─────────────────────────────────────
 app.get(`${API_PREFIX}/vuatiengviet`, async (req, res) => {
+  const { page = 1, limit = 30, level } = req.query;
+  const p = Math.max(1, Number(page));
+  const l = Math.max(1, Number(limit));
+  const offset = (p - 1) * l;
+
   try {
-    const { rows } = await query(`select * from vua_tieng_viet_questions order by created_at desc`);
-    res.json(rows);
+    let whereClause = "";
+    const params = [];
+    if (level) {
+      whereClause = "where level = $1";
+      params.push(level);
+    }
+
+    // Fetch data
+    const querySql = `select * from vua_tieng_viet_questions ${whereClause} order by created_at desc limit $${params.length + 1} offset $${params.length + 2}`;
+    const { rows } = await query(querySql, [...params, l, offset]);
+
+    // Fetch total matching
+    const countSql = `select count(*)::int from vua_tieng_viet_questions ${whereClause}`;
+    const { rows: countRows } = await query(countSql, params);
+    const total = countRows[0].count;
+
+    // Fetch stats for all levels
+    const { rows: statRows } = await query(
+      `select level, count(*)::int as count from vua_tieng_viet_questions group by level`
+    );
+    
+    // Total of everything (to show in sidebar)
+    const { rows: globalCountRows } = await query(`select count(*)::int as count from vua_tieng_viet_questions`);
+    
+    const stats = {
+      total: globalCountRows[0].count,
+      easy: 0,
+      medium: 0,
+      hard: 0,
+      extreme: 0
+    };
+    statRows.forEach(row => {
+      if (stats.hasOwnProperty(row.level)) {
+        stats[row.level] = row.count;
+      }
+    });
+
+    res.json({
+      data: rows,
+      total,
+      page: p,
+      limit: l,
+      totalPages: Math.ceil(total / l),
+      stats
+    });
   } catch (err) {
     console.error("Vua Tieng Viet List API Error:", err);
     res.status(500).json({ error: "Failed to fetch questions" });
@@ -2214,11 +2329,48 @@ app.delete(`${API_PREFIX}/learning/questions/:id`, async (req, res) => {
 
 app.get(`${API_PREFIX}/nhanhnhuchop/questions`, async (req, res) => {
   try {
-    const { rows } = await query(
-      `SELECT * FROM nhanh_nhu_chop_questions ORDER BY created_at DESC`
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 30;
+    const offset = (page - 1) * limit;
+    
+    const { searchTerm, level } = req.query;
+    
+    let whereClause = [];
+    let params = [];
+    let paramIdx = 1;
+    
+    if (searchTerm) {
+      whereClause.push(`question ILIKE $${paramIdx}`);
+      params.push(`%${searchTerm}%`);
+      paramIdx++;
+    }
+    if (level) {
+      whereClause.push(`level = $${paramIdx}`);
+      params.push(level);
+      paramIdx++;
+    }
+    
+    const whereStr = whereClause.length > 0 ? `WHERE ${whereClause.join(" AND ")}` : "";
+    
+    // Fetch questions
+    const { rows: questions } = await query(
+      `SELECT * FROM nhanh_nhu_chop_questions ${whereStr} ORDER BY created_at DESC LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
+      [...params, limit, offset]
     );
-    res.json(rows);
+
+    // Fetch total count for pagination
+    const { rows: countRows } = await query(`SELECT count(*) as count FROM nhanh_nhu_chop_questions ${whereStr}`, params);
+    const totalCount = parseInt(countRows[0].count);
+    
+    res.json({
+      questions,
+      total: totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      page,
+      limit
+    });
   } catch (err) {
+    console.error("GET /nhanhnhuchop/questions Error:", err);
     res.status(500).json({ error: "Failed to fetch questions" });
   }
 });

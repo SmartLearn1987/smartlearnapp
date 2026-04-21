@@ -248,9 +248,9 @@ export default function VuaTiengVietPlayPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 sm:gap-6 p-2 sm:p-8 min-h-0 container max-w-7xl mx-auto">
+      <div className="flex-1 flex flex-col lg:flex-row gap-2 sm:gap-6 p-2 sm:p-8 min-h-0 container max-w-7xl mx-auto">
          {/* Main Game Area */}
-         <div className="flex-1 flex flex-col gap-3 sm:gap-4 min-h-0 animate-in fade-in slide-in-from-bottom-4 duration-700">
+         <div className="flex-1 flex flex-col gap-3 sm:gap-4 min-h-0 animate-in fade-in slide-in-from-bottom-4 duration-700 order-2 lg:order-1">
             {/* Question Card */}
             <div className="flex-1 min-h-0 bg-white rounded-3xl sm:rounded-[3rem] border-2 border-border/50 shadow-xl shadow-muted/50 flex flex-col relative overflow-hidden group">
                <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6">
@@ -386,14 +386,14 @@ export default function VuaTiengVietPlayPage() {
          </div>
 
          {/* Sidebar */}
-         <div className="w-full lg:w-[320px] shrink-0 flex flex-col gap-6">
-            <div className="bg-white border-2 border-border/50 rounded-[2.5rem] p-6 shadow-xl shadow-muted/50 flex flex-col flex-1 min-h-0">
-               <div className="space-y-1 mb-6">
-                 <h3 className="font-heading text-lg font-black leading-none">Danh sách câu hỏi</h3>
+         <div className="w-full lg:w-[320px] shrink-0 flex flex-col gap-4 sm:gap-6 order-1 lg:order-2">
+            <div className="bg-white border-2 border-border/50 rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 shadow-xl shadow-muted/50 flex flex-col flex-1 min-h-0">
+               <div className="space-y-1 mb-4 sm:mb-6">
+                 <h3 className="font-heading text-base sm:text-lg font-black leading-none uppercase">Danh sách câu hỏi</h3>
                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[.15em]">Tiến trình của bạn</p>
                </div>
                
-               <div className="mb-6 space-y-4">
+               <div className="mb-4 sm:mb-6 space-y-2 sm:space-y-4">
                   <div className="flex items-center justify-between">
                      <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">Tiến độ hoàn thành</span>
                      <span className="text-sm font-black text-emerald-600">{Math.round((userAnswers.filter(a => a.trim() !== "").length / questions.length) * 100)}%</span>

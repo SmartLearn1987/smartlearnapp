@@ -17,7 +17,16 @@ interface NCQuestion {
   correct_index: number;
   explanation: string | null;
   level: string;
+  level: string;
   created_at: string;
+}
+
+interface PaginatedResponse {
+  questions: NCQuestion[];
+  total: number;
+  totalPages: number;
+  page: number;
+  limit: number;
 }
 
 const LEVELS = [
@@ -33,6 +42,11 @@ export default function NhanhNhuChopManagePage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Form State
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -49,8 +63,16 @@ export default function NhanhNhuChopManagePage() {
   const fetchQuestions = async () => {
     try {
       setLoading(true);
-      const data = await apiFetch<NCQuestion[]>("/nhanhnhuchop/questions");
-      setQuestions(data);
+      const query = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: "30",
+        searchTerm: searchTerm,
+        level: selectedLevel || ""
+      });
+      const data = await apiFetch<PaginatedResponse>(`/nhanhnhuchop/questions?${query.toString()}`);
+      setQuestions(data.questions);
+      setTotalPages(data.totalPages);
+      setTotalCount(data.total);
     } catch (err: any) {
       toast.error("Không thể tải danh sách câu hỏi.");
     } finally {
@@ -60,7 +82,21 @@ export default function NhanhNhuChopManagePage() {
 
   useEffect(() => {
     fetchQuestions();
-  }, []);
+  }, [currentPage, selectedLevel]);
+
+  // Handle search with a small delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentPage !== 1) setCurrentPage(1);
+      else fetchQuestions();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset page when level changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedLevel]);
 
   const openFormForAdd = () => {
     setEditId(null);
@@ -213,11 +249,11 @@ export default function NhanhNhuChopManagePage() {
     XLSX.writeFile(wb, "SmartLearn_NhanhNhuChop_Template.xlsx");
   };
 
-  const filteredQuestions = questions.filter(q => {
-    const matchesSearch = q.question.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesLevel = selectedLevel ? q.level === selectedLevel : true;
-    return matchesSearch && matchesLevel;
-  });
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedLevel(null);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 animate-fade-in pb-20 px-4">
@@ -289,7 +325,7 @@ export default function NhanhNhuChopManagePage() {
         </div>
       ) : (
         <>
-          {filteredQuestions.length > 0 ? (
+          {questions.length > 0 ? (
             <div className="rounded-3xl border border-border bg-white overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
@@ -303,7 +339,7 @@ export default function NhanhNhuChopManagePage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {filteredQuestions.map((q) => {
+                    {questions.map((q) => {
                       const lvInfo = LEVELS.find(l => l.value === q.level) || LEVELS[0];
                       const correctAnswer = q.options[q.correct_index] || "-";
                       return (
@@ -349,6 +385,57 @@ export default function NhanhNhuChopManagePage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="px-6 py-4 bg-slate-50/50 border-t border-border flex items-center justify-between">
+                  <p className="text-xs text-slate-500 font-bold">
+                    Hiển thị <span className="text-emerald-600">{questions.length}</span> / <span className="text-emerald-600">{totalCount}</span> câu hỏi
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1 || loading}
+                      className="h-9 px-4 rounded-xl font-bold border-border hover:bg-white transition-all"
+                    >
+                      Trước
+                    </Button>
+                    <div className="flex items-center gap-1 mx-2">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) pageNum = i + 1;
+                        else if (currentPage <= 3) pageNum = i + 1;
+                        else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                        else pageNum = currentPage - 2 + i;
+                        
+                        return (
+                          <Button 
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "ghost"}
+                            size="sm"
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`h-9 w-9 p-0 rounded-xl font-black ${currentPage === pageNum ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200" : "text-slate-400 hover:text-slate-600 hover:bg-white"}`}
+                            disabled={loading}
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages || loading}
+                      className="h-9 px-4 rounded-xl font-bold border-border hover:bg-white transition-all"
+                    >
+                      Sau
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="py-20 flex flex-col items-center justify-center border-4 border-dashed border-muted rounded-[3rem] text-center space-y-4">
@@ -356,7 +443,12 @@ export default function NhanhNhuChopManagePage() {
                 <LayoutGrid className="h-10 w-10" />
               </div>
               <p className="text-lg font-bold text-muted-foreground">Không tìm thấy câu hỏi nào</p>
-              <Button onClick={openFormForAdd} variant="outline" className="rounded-xl border-emerald-500 text-emerald-600 hover:bg-emerald-50">Tạo câu hỏi đầu tiên</Button>
+              <div className="flex gap-3">
+                {(searchTerm || selectedLevel) && (
+                  <Button onClick={clearFilters} variant="ghost" className="rounded-xl font-bold">Xóa bộ lọc</Button>
+                )}
+                <Button onClick={openFormForAdd} variant="outline" className="rounded-xl border-emerald-500 text-emerald-600 hover:bg-emerald-50 font-bold">Tạo câu hỏi đầu tiên</Button>
+              </div>
             </div>
           )}
         </>
