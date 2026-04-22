@@ -105,6 +105,32 @@ export default function LearningGamePlayPage() {
     setIsFlipped(!isFlipped);
   };
 
+  // Swipe Logic
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+    touchEndX.current = null;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) {
+      handleNext();
+    } else if (isRightSwipe) {
+      handlePrev();
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#FDFCF6]">
@@ -121,9 +147,10 @@ export default function LearningGamePlayPage() {
   const currentQuestion = questions[currentIndex];
 
   return (
-    <div className="min-h-screen bg-[#FDFCF6] pb-20 overflow-x-hidden pt-4 px-4">
+    <div className="h-screen flex flex-col bg-[#FDFCF6] overflow-hidden">
       {/* Header */}
-      <div className="mx-auto max-w-4xl flex items-center justify-between mb-8">
+      <div className="flex-none pt-4 px-6">
+        <div className="mx-auto max-w-4xl flex items-center justify-between">
         <button
           onClick={() => navigate("/")}
           className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm hover:shadow-md transition-all active:scale-95 group border border-emerald-100"
@@ -144,12 +171,16 @@ export default function LearningGamePlayPage() {
 
         <div className="w-10" />
       </div>
+    </div>
 
       {/* Main Card Area */}
-      <div className="mx-auto max-w-sm px-4">
+      <div className="flex-1 flex items-center justify-center p-4">
         <div 
-          className="relative perspective-1000 w-full aspect-[4/5] group cursor-pointer"
+          className="relative perspective-1000 w-full max-w-xl aspect-[4/5] group cursor-pointer"
           onClick={toggleFlip}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           <div className={`relative w-full h-full transition-all duration-700 preserve-3d shadow-2xl rounded-[2.5rem] ${isFlipped ? 'rotate-y-180' : ''}`}>
             {/* Front Side */}
@@ -204,6 +235,8 @@ export default function LearningGamePlayPage() {
           </div>
         </div>
       </div>
+
+      <div className="flex-none h-32" />
 
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-white/90 backdrop-blur-xl border-t border-slate-100 z-[50]">
         <div className="mx-auto max-w-sm flex items-center justify-center gap-3 sm:gap-6">

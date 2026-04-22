@@ -256,15 +256,15 @@ export default function NhanhNhuChopPlayPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-2 sm:gap-6 p-2 sm:p-8 min-h-0 container max-w-6xl mx-auto">
+      <div className="flex-1 flex flex-col lg:flex-row gap-0 sm:gap-6 p-0 sm:p-8 min-h-0 container max-w-6xl mx-auto">
          {/* Main Game Area */}
          <div className="flex-1 flex flex-col gap-4 sm:gap-6 min-h-0 animate-in fade-in slide-in-from-bottom-4 duration-700 order-2 lg:order-1">
             {/* Question Card */}
-            <div className="flex-1 min-h-0 bg-slate-50 border-2 border-border/50 rounded-[3rem] shadow-xl shadow-muted/20 flex flex-col relative overflow-y-auto custom-scrollbar group">
+            <div className="flex-1 min-h-0 bg-slate-50 border-x-0 sm:border-2 border-border/50 rounded-none sm:rounded-[3rem] shadow-xl shadow-muted/20 flex flex-col relative overflow-y-auto custom-scrollbar group">
 
                 <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 min-h-full">
-                   <div className="w-full max-w-2xl text-center space-y-4 sm:space-y-10">
-                      <h2 className="relative font-heading text-lg sm:text-3xl font-black text-red-600 leading-tight">
+                    <div className="w-full max-w-2xl text-center space-y-4 sm:space-y-6">
+                      <h2 className="relative font-heading text-xl sm:text-3xl font-black text-red-600 leading-tight">
                          {q.question}
                       </h2>
 
@@ -341,21 +341,21 @@ export default function NhanhNhuChopPlayPage() {
          </div>
 
          {/* Sidebar - Progress Tracking */}
-         <div className="w-full lg:w-[320px] shrink-0 flex flex-col gap-4 sm:gap-6 order-1 lg:order-2">
-            <div className="bg-slate-50 border-2 border-border/50 rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 shadow-xl shadow-muted/20 flex flex-col flex-1 min-h-0">
-               <div className="space-y-1 mb-4 sm:mb-6">
-                 <h3 className="font-heading text-base sm:text-lg font-black leading-none text-slate-800 uppercase">Tiến trình tia chớp</h3>
-                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[.15em]">Phản xạ nhanh!</p>
+          <div className="w-full lg:w-[320px] shrink-0 flex flex-col gap-2 sm:gap-6 order-1 lg:order-2">
+            <div className="bg-white border-b lg:border-2 border-border/50 lg:rounded-[2.5rem] p-3 sm:p-6 shadow-xl shadow-muted/20 flex flex-col flex-1 min-h-0">
+               <div className="space-y-1 mb-2 sm:mb-6">
+                 <h3 className="font-heading text-sm sm:text-lg font-black leading-none text-slate-800 uppercase">Danh sách câu hỏi</h3>
+                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[.15em] hidden sm:block">Phản xạ nhanh!</p>
                </div>
                
-               <div className="mb-4 sm:mb-8 space-y-2 sm:space-y-4">
+               <div className="mb-2 sm:mb-8 space-y-1 sm:space-y-4">
                   <div className="flex items-center justify-between">
-                     <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">Hoàn thành</span>
-                     <span className="text-sm font-black text-emerald-600">
+                     <span className="text-[10px] sm:text-xs font-black text-muted-foreground uppercase tracking-widest">Hoàn thành</span>
+                     <span className="text-xs sm:text-sm font-black text-emerald-600">
                        {Math.round((userAnswers.filter(a => a !== -1).length / questions.length) * 100)}%
                      </span>
                   </div>
-                  <div className="h-4 w-full bg-slate-200 rounded-full overflow-hidden border-2 border-white shadow-inner">
+                  <div className="h-2 sm:h-4 w-full bg-slate-200 rounded-full overflow-hidden border-2 border-white shadow-inner">
                      <div 
                        className="h-full bg-emerald-500 transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(16,185,129,0.3)]" 
                        style={{ width: `${(userAnswers.filter(a => a !== -1).length / questions.length) * 100}%` }} 
@@ -372,12 +372,12 @@ export default function NhanhNhuChopPlayPage() {
                      <button
                        key={idx}
                        onClick={() => setCurrentIdx(idx)}
-                       className={`h-11 rounded-2xl font-mono text-sm font-black transition-all flex items-center justify-center border-2 relative
-                         ${cur ? 'border-emerald-500 bg-emerald-500 text-white shadow-lg shadow-emerald-200 z-10 scale-110' : 
-                           isAnswered 
-                               ? 'border-emerald-100 bg-emerald-100/50 text-emerald-600' 
-                               : 'border-white bg-white text-muted-foreground hover:bg-slate-100'}
-                       `}
+                        className={`h-9 sm:h-11 rounded-xl sm:rounded-2xl font-mono text-xs sm:text-sm font-black transition-all flex items-center justify-center border-2 relative
+                          ${cur ? 'border-emerald-500 bg-emerald-500 text-white shadow-lg shadow-emerald-200 z-10 scale-110' : 
+                            isAnswered 
+                                ? 'border-emerald-100 bg-emerald-100/50 text-emerald-600' 
+                                : 'border-slate-100 bg-slate-50 text-muted-foreground hover:bg-slate-100'}
+                        `}
                      >
                        {idx + 1}
                        {isAnswered && !cur && (

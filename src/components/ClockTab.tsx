@@ -182,21 +182,24 @@ export default function ClockTab() {
       </div>
 
       {/* Main Content */}
-      <div className="container relative z-1 flex flex-1 flex-col items-center justify-center pb-12 pt-24 text-center">
+      <div className={cn(
+        "container relative z-1 flex flex-1 flex-col items-center justify-center text-center px-8",
+        isFullscreen ? "pt-0 pb-0" : "pb-12 pt-24"
+      )}>
         {mode === "clock" && (
           <div className="animate-fade-in">
-            <div className="mb-2 font-['Rubik'] text-lg font-medium tracking-[0.3em] text-[#bbfcce] md:text-2xl uppercase">
+            <div className="mb-4 font-['Rubik'] text-xl font-medium tracking-[0.3em] text-[#bbfcce] md:text-3xl uppercase">
               {days[time.getDay()]} · {time.getDate()}/{time.getMonth() + 1}
             </div>
             <div className="flex items-baseline justify-center leading-none">
-              <span className="text-[clamp(36px,12vw,240px)] font-bold tracking-tighter text-white drop-shadow-[0_0_60px_rgba(255,255,255,0.5)]">
+              <span className="text-[clamp(63px,18vw,300px)] font-bold tracking-tighter text-white drop-shadow-[0_0_80px_rgba(255,255,255,0.5)]">
                 {String(time.getHours() % 12 || 12).padStart(2, "0")}
                 <span className="animate-pulse text-[#4ade80]">:</span>
                 {String(time.getMinutes()).padStart(2, "0")}
                 <span className="animate-pulse text-[#4ade80]">:</span>
                 {String(time.getSeconds()).padStart(2, "0")}
               </span>
-              <span className="ml-1 sm:ml-4 w-[2ch] flex-shrink-0 text-left text-[clamp(16px,5vw,80px)] font-bold text-[#4ade80]">
+              <span className="ml-1 sm:ml-4 w-[2ch] flex-shrink-0 text-left text-[clamp(23px,6vw,100px)] font-bold text-[#4ade80]">
                 {String(Math.floor(time.getMilliseconds() / 10)).padStart(2, "0")}
               </span>
             </div>
@@ -206,10 +209,10 @@ export default function ClockTab() {
         {mode === "stopwatch" && (
           <div className="animate-fade-in">
             <div className="flex items-baseline justify-center leading-none">
-              <span className="text-[clamp(38px,12vw,240px)] font-bold tracking-tighter text-white drop-shadow-[0_0_60px_rgba(255,255,255,0.5)]">
+              <span className="text-[clamp(63px,18vw,300px)] font-bold tracking-tighter text-white drop-shadow-[0_0_80px_rgba(255,255,255,0.5)]">
                 {formatTime(swTime).base}
               </span>
-              <span className="ml-1 sm:ml-4 w-[2ch] flex-shrink-0 text-left text-[clamp(16px,5vw,80px)] font-bold text-[#4ade80]">
+              <span className="ml-1 sm:ml-4 w-[2ch] flex-shrink-0 text-left text-[clamp(23px,6vw,100px)] font-bold text-[#4ade80]">
                 {formatTime(swTime).ms}
               </span>
             </div>
@@ -233,10 +236,10 @@ export default function ClockTab() {
         {mode === "timer" && (
           <div className="animate-fade-in">
             <div className="flex items-baseline justify-center leading-none">
-              <span className="text-[clamp(38px,12vw,240px)] font-bold tracking-tighter text-white drop-shadow-[0_0_60px_rgba(255,255,255,0.5)]">
+              <span className="text-[clamp(63px,18vw,300px)] font-bold tracking-tighter text-white drop-shadow-[0_0_80px_rgba(255,255,255,0.5)]">
                 {formatTime(tmTimeLeft).base}
               </span>
-              <span className="ml-1 sm:ml-4 w-[2ch] flex-shrink-0 text-left text-[clamp(16px,5vw,80px)] font-bold text-[#4ade80]">
+              <span className="ml-1 sm:ml-4 w-[2ch] flex-shrink-0 text-left text-[clamp(23px,6vw,100px)] font-bold text-[#4ade80]">
                 {formatTime(tmTimeLeft).ms}
               </span>
             </div>
@@ -276,10 +279,13 @@ export default function ClockTab() {
       {/* Fullscreen Button */}
       <button
         onClick={toggleFS}
-        className="absolute bottom-6 right-6 flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm text-[#bbfcce] font-medium transition-all hover:bg-white/10"
+        className={cn(
+          "absolute flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm text-[#bbfcce] font-medium transition-all hover:bg-white/10 z-20",
+          isFullscreen ? "bottom-14 right-6 sm:bottom-6 sm:right-6" : "bottom-6 right-6"
+        )}
       >
         {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-        <span className="hidden sm:inline">FULLSCREEN</span>
+        <span className="hidden sm:inline">{isFullscreen ? "THU NHỎ" : "FULLSCREEN"}</span>
       </button>
 
       {/* Completion Popup Overlay */}
