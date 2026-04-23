@@ -174,9 +174,9 @@ export default function LearningGamePlayPage() {
     </div>
 
       {/* Main Card Area */}
-      <div className="flex-1 flex items-center justify-center p-4">
+      <div className="flex-1 flex items-center justify-center p-4 min-h-0">
         <div 
-          className="relative perspective-1000 w-full max-w-xl aspect-[4/5] group cursor-pointer"
+          className="relative perspective-1000 w-full max-w-xl aspect-[4/5] max-h-full group cursor-pointer"
           onClick={toggleFlip}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -184,14 +184,14 @@ export default function LearningGamePlayPage() {
         >
           <div className={`relative w-full h-full transition-all duration-700 preserve-3d shadow-2xl rounded-[2.5rem] ${isFlipped ? 'rotate-y-180' : ''}`}>
             {/* Front Side */}
-            <div className="absolute inset-0 backface-hidden w-full h-full bg-white rounded-[2.5rem] border-4 border-primary/50 p-8 flex flex-col items-center">
+            <div className="absolute inset-0 backface-hidden w-full h-full bg-white rounded-[2.5rem] border-4 border-primary/50 p-4 sm:p-8 flex flex-col items-center">
               <div className="w-full text-center space-y-4 flex flex-col items-center justify-center flex-1">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-50 text-primary border border-emerald-100 mb-2">
                   <HelpCircle className="h-5 w-5" />
                   <span className="font-bold text-sm">{category?.general_question || "Đây là gì nào?"}</span>
                 </div>
                 
-                <div className="w-full aspect-square rounded-3xl overflow-hidden bg-[#F8FAFC] p-2 border border-slate-100 shadow-inner">
+                <div className="w-full flex-1 min-h-0 rounded-3xl overflow-hidden bg-[#F8FAFC] p-2 border border-slate-100 shadow-inner">
                   <img 
                     src={currentQuestion?.image_url} 
                     alt="Illustration"
@@ -200,16 +200,13 @@ export default function LearningGamePlayPage() {
                 </div>
               </div>
               
-              <div className="mt-4 flex items-center gap-2 text-slate-400 text-xs font-medium bg-slate-50 px-4 py-2 rounded-full border border-slate-100">
-                <RotateCcw className="h-3 w-3 animate-reverse-spin" />
-                <span>Chạm để xem đáp án</span>
-              </div>
+
             </div>
 
             {/* Back Side */}
             <div className="absolute inset-0 backface-hidden w-full h-full bg-white rounded-[2.5rem] border-4 border-emerald-400 p-6 flex flex-col items-center rotate-y-180">
                <div className="w-full flex-1 flex flex-col items-center justify-center space-y-6">
-                 <div className="w-full aspect-[4/3] rounded-3xl overflow-hidden bg-white">
+                 <div className="w-full flex-1 min-h-0 rounded-3xl overflow-hidden bg-white">
                     <img 
                       src={currentQuestion?.image_url} 
                       alt="Illustration"
@@ -227,18 +224,14 @@ export default function LearningGamePlayPage() {
                    </div>
                  </div>
                </div>
-
-               <div className="mt-2 text-emerald-400">
-                 <Volume2 className="h-8 w-8 animate-pulse" />
-               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex-none h-32" />
 
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-white/90 backdrop-blur-xl border-t border-slate-100 z-[50]">
+
+      <div className="flex-none p-6 bg-white/90 backdrop-blur-xl border-t border-slate-100 z-[50]">
         <div className="mx-auto max-w-sm flex items-center justify-center gap-3 sm:gap-6">
           <Button
             variant="ghost"

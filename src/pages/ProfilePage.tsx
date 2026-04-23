@@ -251,7 +251,7 @@ export default function ProfilePage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="rounded-3xl border border-border bg-card p-6 shadow-sm space-y-6">
+            <div className="rounded-3xl border border-border bg-card p-4 sm:p-6 shadow-sm space-y-6">
               <div className="flex items-center gap-2 border-b border-border pb-4">
                 <UserIcon className="h-5 w-5 text-primary" />
                 <h2 className="font-heading text-lg font-bold">Thông tin tài khoản</h2>
@@ -346,7 +346,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-border bg-card p-6 shadow-sm space-y-6">
+            <div className="rounded-3xl border border-border bg-card p-4 sm:p-6 shadow-sm space-y-6">
               <div className="flex items-center gap-2 border-b border-border pb-4">
                 <ShieldCheck className="h-5 w-5 text-primary" />
                 <h2 className="font-heading text-lg font-bold">Thông tin gói hội viên</h2>
@@ -368,8 +368,12 @@ export default function ProfilePage() {
                     </label>
                     <div className="relative">
                       <Calendar className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <input type="date" value={planStartDate ? planStartDate.split('T')[0] : ""} disabled
-                        className="w-full rounded-xl border-2 border-input bg-muted pl-11 pr-4 py-3 text-sm font-medium text-muted-foreground focus:outline-none" />
+                      <input 
+                        type="text" 
+                        value={planStartDate ? new Date(planStartDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ""} 
+                        disabled
+                        className="w-full rounded-xl border-2 border-input bg-muted pl-11 pr-4 py-3 text-sm font-medium text-muted-foreground focus:outline-none" 
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -378,15 +382,19 @@ export default function ProfilePage() {
                     </label>
                     <div className="relative">
                       <Calendar className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <input type="date" value={planEndDate ? planEndDate.split('T')[0] : ""} disabled
-                        className="w-full rounded-xl border-2 border-input bg-muted pl-11 pr-4 py-3 text-sm font-medium text-muted-foreground focus:outline-none" />
+                      <input 
+                        type="text" 
+                        value={planEndDate ? new Date(planEndDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ""} 
+                        disabled
+                        className="w-full rounded-xl border-2 border-input bg-muted pl-11 pr-4 py-3 text-sm font-medium text-muted-foreground focus:outline-none" 
+                      />
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-3xl border border-border bg-card p-6 shadow-sm space-y-6">
+            <div className="rounded-3xl border border-border bg-card p-4 sm:p-6 shadow-sm space-y-6">
               <div className="flex items-center gap-2 border-b border-border pb-4">
                 <Lock className="h-5 w-5 text-primary" />
                 <h2 className="font-heading text-lg font-bold">Thay đổi mật khẩu</h2>
