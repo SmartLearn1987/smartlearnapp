@@ -154,26 +154,69 @@ Upload a single file (generic).
 
 ## 👥 User Management
 
-### `GET /api/users`
-List all users. (Admin use)
+### `GET /api/statistics/users`
+Get aggregated statistics of all users, including their activity metrics (lesson, flashcard, and quiz counts) and last login time. (Admin use)
 
-**Response:** `200 OK` — Array of user objects (without password).
+**Response:** `200 OK` — Array of user objects with statistics.
 ```json
 [
   {
     "id": "uuid",
     "username": "string",
-    "email": "string",
     "displayName": "string",
-    "role": "admin | user | teacher",
-    "educationLevel": "string | null",
-    "isActive": true,
     "plan": "string",
-    "planStartDate": "string | null",
-    "planEndDate": "string | null",
-    "createdAt": "timestamp"
+    "planEndDate": "timestamp | null",
+    "lastLogin": "timestamp | null",
+    "lessonCount": 0,
+    "flashcardCount": 0,
+    "quizCount": 0
   }
 ]
+```
+
+---
+
+### `GET /api/users`
+List all users with pagination and filtering. (Admin use)
+
+**Query Params:**
+| Param      | Type   | Required | Default | Description             |
+|------------|--------|----------|---------|-------------------------|
+| `page`     | number | ❌       | 1       |                         |
+| `limit`    | number | ❌       | 30      |                         |
+| `username` | string | ❌       |         | Search by username/name |
+| `level`    | string | ❌       |         | Filter by education level|
+| `role`     | string | ❌       |         | Filter by role          |
+| `plan`     | string | ❌       |         | Filter by plan          |
+
+**Response:** `200 OK` — Paginated user objects and global stats.
+```json
+{
+  "users": [
+    {
+      "id": "uuid",
+      "username": "string",
+      "email": "string",
+      "displayName": "string",
+      "role": "admin | user | teacher",
+      "educationLevel": "string | null",
+      "isActive": true,
+      "plan": "string",
+      "planStartDate": "timestamp | null",
+      "planEndDate": "timestamp | null",
+      "createdAt": "timestamp"
+    }
+  ],
+  "total": 100,
+  "totalPages": 4,
+  "page": 1,
+  "limit": 30,
+  "stats": {
+    "adminCount": 2,
+    "userCount": 98,
+    "totalCount": 100
+  }
+}
 ```
 
 ---
@@ -834,7 +877,7 @@ Get a single exam with all questions and options (permission-checked).
     {
       "id": "uuid",
       "content": "string",
-      "type": "single",
+      "type": "single | multiple | text | ordering",
       "sort_order": 0,
       "options": [
         { "id": "uuid", "content": "string", "is_correct": false, "sort_order": 0 }
@@ -861,7 +904,7 @@ Create a new exam with questions and options (transactional).
 | `is_public`        | boolean | ❌       |
 | `questions`        | array   | ❌       |
 
-Each question: `{ content, type, options: [{ content, is_correct }] }`.
+Each question: `{ content, type, options: [{ content, is_correct }] }`. (Note: type can be `single`, `multiple`, `text`, or `ordering`).
 
 **Response:** `201 Created` — `{ "id": "uuid" }`.
 

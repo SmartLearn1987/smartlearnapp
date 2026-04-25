@@ -130,6 +130,7 @@ export default function NhanhNhuChopPlayPage() {
         const data = await apiFetch<Question[]>(`/nhanhnhuchop/play?level=${level}&limit=${limit}`);
         setQuestions(data);
         setUserAnswers(data.map(() => -1));
+        setCurrentIdx(0); // Reset to first question on fetch
         // Simulate "Lightning" loading
         setTimeout(() => setShuffling(false), 1200);
       } catch (err) {
@@ -264,7 +265,7 @@ export default function NhanhNhuChopPlayPage() {
 
                 <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 min-h-full">
                     <div className="w-full max-w-2xl text-center space-y-4 sm:space-y-6">
-                      <h2 className="relative font-heading text-xl sm:text-3xl font-black text-red-600 leading-tight">
+                      <h2 key={`q-${currentIdx}`} className="relative font-heading text-xl sm:text-3xl font-black text-red-600 leading-tight">
                          {q.question}
                       </h2>
 
@@ -272,7 +273,7 @@ export default function NhanhNhuChopPlayPage() {
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 w-full">
                         {q.options.map((option, idx) => (
                            <button
-                             key={idx}
+                             key={`${currentIdx}-${idx}`}
                              onClick={() => handleSelectOption(idx)}
                              className={`group/opt relative flex items-center gap-3 sm:gap-4 p-3 sm:p-5 rounded-2xl sm:rounded-[2rem] border-2 sm:border-4 text-left transition-all duration-300
                                ${selectedIdx === idx 
@@ -363,7 +364,7 @@ export default function NhanhNhuChopPlayPage() {
                   </div>
                </div>
                
-               <div className="grid grid-cols-5 sm:grid-cols-10 lg:grid-cols-5 gap-3 overflow-y-auto pr-1 flex-1 custom-scrollbar min-h-0">
+               <div className="grid grid-cols-5 sm:grid-cols-10 lg:grid-cols-5 gap-3 overflow-y-auto pr-1 flex-1 content-start custom-scrollbar min-h-0">
                  {questions.map((_, idx) => {
                    const isAnswered = userAnswers[idx] !== -1;
                    const cur = idx === currentIdx;
@@ -372,7 +373,7 @@ export default function NhanhNhuChopPlayPage() {
                      <button
                        key={idx}
                        onClick={() => setCurrentIdx(idx)}
-                        className={`h-9 sm:h-11 rounded-xl sm:rounded-2xl font-mono text-xs sm:text-sm font-black transition-all flex items-center justify-center border-2 relative
+                       className={`aspect-square h-9 sm:h-11 rounded-full font-mono text-xs sm:text-sm font-black transition-all flex items-center justify-center border-2 relative
                           ${cur ? 'border-emerald-500 bg-emerald-500 text-white shadow-lg shadow-emerald-200 z-10 scale-110' : 
                             isAnswered 
                                 ? 'border-emerald-100 bg-emerald-100/50 text-emerald-600' 

@@ -123,6 +123,7 @@ export default function VuaTiengVietPlayPage() {
         setQuestions(data);
         setUserAnswers(data.map(() => ""));
         setCheckedAnswers(data.map(() => false));
+        setCurrentIdx(0);
       } catch (err) {
         console.error(err);
       } finally {
@@ -406,7 +407,7 @@ export default function VuaTiengVietPlayPage() {
                   </div>
                </div>
                
-               <div className="grid grid-cols-5 sm:grid-cols-10 lg:grid-cols-5 gap-3 overflow-y-auto pr-1 custom-scrollbar min-h-0">
+               <div className="grid grid-cols-5 sm:grid-cols-10 lg:grid-cols-5 gap-3 overflow-y-auto pr-1 flex-1 content-start custom-scrollbar min-h-0">
                  {questions.map((_, idx) => {
                    const ans = userAnswers[idx];
                    const isAnswered = ans.trim() !== "";
@@ -421,7 +422,7 @@ export default function VuaTiengVietPlayPage() {
                          setCurrentIdx(idx);
                          setShowHint(false);
                        }}
-                       className={`h-11 rounded-xl font-mono text-sm font-black transition-all flex items-center justify-center border-2 relative
+                       className={`aspect-square h-11 rounded-full font-mono text-sm font-black transition-all flex items-center justify-center border-2 relative
                          ${cur ? 'border-primary bg-primary text-white shadow-lg shadow-primary/20 z-10 scale-110' : 
                            checked 
                              ? cor 

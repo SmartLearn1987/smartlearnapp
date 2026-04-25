@@ -13,7 +13,7 @@ export default function ProfilePage() {
   const { user, refresh } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const streakData = getStreakStats();
+  const streakData = getStreakStats(user?.id);
   
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");

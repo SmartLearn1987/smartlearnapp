@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const updateActivity = () => {
       if (throttleTimeout) return;
       sessionStorage.setItem(ACTIVITY_KEY, Date.now().toString());
-      recordTodayActivity(); // Track streak/daily activity (still uses localStorage for persistence)
+      recordTodayActivity(user.id); // Track streak/daily activity for this specific user
       throttleTimeout = setTimeout(() => {
         throttleTimeout = null;
       }, 5000); // Throttle writes to sessionStorage

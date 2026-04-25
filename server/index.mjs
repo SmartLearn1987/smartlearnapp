@@ -126,6 +126,7 @@ app.post(`${API_PREFIX}/upload`, (req, res) => {
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token text;`,
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS access_token_expires_at timestamp;`,
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_expires_at timestamp;`,
+      `ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login timestamptz;`,
       `CREATE TABLE IF NOT EXISTS system_pages (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         slug text UNIQUE NOT NULL,
@@ -221,7 +222,7 @@ async function generateTokens(userId) {
   const refreshTokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
   await query(
-    `update users set session_token = $1, refresh_token = $2, access_token_expires_at = $3, refresh_token_expires_at = $4 where id = $5`,
+    `update users set session_token = $1, refresh_token = $2, access_token_expires_at = $3, refresh_token_expires_at = $4, last_login = NOW() where id = $5`,
     [accessToken, refreshToken, accessTokenExpiresAt, refreshTokenExpiresAt, userId]
   );
 
@@ -493,6 +494,46 @@ app.get(`${API_PREFIX}/me`, async (req, res) => {
   } catch (err) {
     console.error("GET /me Error:", err.message);
     res.status(500).json({ error: "Failed to fetch user profile" });
+  }
+});
+
+// ── Statistics (Admin) ─────────────────────────────────────────────────────
+app.get(`${API_PREFIX}/statistics/users`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden: Admins only" });
+
+  try {
+    const { rows } = await query(`
+      SELECT 
+        u.id, 
+        u.username, 
+        u.display_name as "displayName", 
+        u.plan, 
+        u.plan_end_date::text as "planEndDate", 
+        u.last_login::text as "lastLogin",
+        COALESCE(c_counts.lesson_count, 0)::int as "lessonCount",
+        COALESCE(q_counts.flashcard_count, 0)::int as "flashcardCount",
+        COALESCE(e_counts.quiz_count, 0)::int as "quizCount"
+      FROM users u
+      LEFT JOIN (
+        SELECT c.user_id, COUNT(l.id) as lesson_count
+        FROM curricula c
+        JOIN lessons l ON c.id = l.curriculum_id
+        GROUP BY c.user_id
+      ) c_counts ON u.id = c_counts.user_id
+      LEFT JOIN (
+        SELECT user_id, COUNT(id) as flashcard_count FROM quizlet_sets GROUP BY user_id
+      ) q_counts ON u.id = q_counts.user_id
+      LEFT JOIN (
+        SELECT user_id, COUNT(id) as quiz_count FROM exams GROUP BY user_id
+      ) e_counts ON u.id = e_counts.user_id
+      ORDER BY u.created_at DESC
+    `);
+    
+    res.json(rows);
+  } catch (err) {
+    console.error("GET /statistics/users Error:", err);
+    res.status(500).json({ error: "Failed to fetch user statistics" });
   }
 });
 

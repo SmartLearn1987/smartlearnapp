@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { List, ListOrdered, AlignLeft, Type, Palette } from "lucide-react";
 
 export interface RichBlock {
@@ -31,11 +31,10 @@ const COLORS = [
 ];
 
 export function textToBlocks(text: string): RichBlock[] {
+  if (!text) return [];
   return text
     .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((text) => ({ type: "paragraph" as const, text }));
+    .map((line) => ({ type: "paragraph" as const, text: line }));
 }
 
 const DEFAULT_BLOCK: Omit<RichBlock, "text"> = {
@@ -58,6 +57,22 @@ export default function RichTextEditor({ value, onChange }: RichTextEditorProps)
   const [blockType, setBlockType] = useState<RichBlock["type"]>("paragraph");
   const [bold, setBold] = useState(false);
   const [italic, setItalic] = useState(false);
+
+  // Auto-resize textareas on mount and value change
+  useEffect(() => {
+    const textareas = document.querySelectorAll(".rich-text-textarea");
+    textareas.forEach((el: any) => {
+      el.style.height = "auto";
+      el.style.height = el.scrollHeight + "px";
+    });
+  }, [value]);
+
+  // Ensure at least one block exists on mount
+  useEffect(() => {
+    if (value.length === 0) {
+      onChange([{ ...DEFAULT_BLOCK, text: "" }]);
+    }
+  }, []);
 
   /** When a block receives focus, sync toolbar to that block's style */
   const handleFocus = useCallback((idx: number) => {
@@ -237,15 +252,7 @@ export default function RichTextEditor({ value, onChange }: RichTextEditorProps)
           </button>
         ))}
 
-        <div className="ml-auto">
-          <button
-            type="button"
-            onMouseDown={(e) => { e.preventDefault(); addBlock(); }}
-            className="rounded-lg bg-primary/10 px-3 py-0.5 text-xs font-bold text-primary hover:bg-primary/20 transition-colors whitespace-nowrap"
-          >
-            + Thêm đoạn
-          </button>
-        </div>
+
       </div>
 
       {/* ── Block list ── */}
@@ -288,7 +295,7 @@ export default function RichTextEditor({ value, onChange }: RichTextEditorProps)
                 }}
                 placeholder={block.type === "heading" ? "Nhập tiêu đề..." : "Nhập nội dung..."}
                 rows={1}
-                className="flex-1 rounded-lg border-0 bg-transparent px-2 py-1 outline-none placeholder:text-muted-foreground/40 resize-none overflow-hidden leading-relaxed"
+                className="flex-1 rounded-lg border-0 bg-transparent px-2 py-1 outline-none placeholder:text-muted-foreground/40 resize-none overflow-hidden leading-relaxed rich-text-textarea"
                 style={{ ...getStyle(block), minHeight: "32px" }}
               />
               <button
@@ -301,6 +308,16 @@ export default function RichTextEditor({ value, onChange }: RichTextEditorProps)
             </div>
           );
         })}
+
+        <div className="mt-4 flex justify-center border-t border-dashed pt-4">
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); addBlock(); }}
+            className="flex items-center gap-2 rounded-xl bg-primary/5 px-6 py-2 text-sm font-bold text-primary hover:bg-primary/10 transition-all active:scale-95 border border-primary/20"
+          >
+            <span className="text-lg">+</span> Thêm đoạn mới
+          </button>
+        </div>
       </div>
 
       {focusedIdx >= 0 && (

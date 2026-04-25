@@ -1148,24 +1148,30 @@ export default function TeacherPage() {
 
         {/* ── LESSON_FORM VIEW ── */}
         {view === "lesson_form" && selectedSubject && selectedCurriculum && (
-          <div className="space-y-6 pt-2">
-            <div className="flex items-center gap-4 ml-2 mb-4">
-              <h1 className="text-4xl md:text-5xl font-extrabold text-[#112240] tracking-tight">{selectedCurriculum.name}</h1>
-              <span className="rounded-full bg-emerald-50 px-4 py-1.5 text-xs font-bold text-emerald-600 border border-emerald-200 uppercase tracking-widest">
-                Môn: {selectedSubject.name}
-              </span>
-            </div>
-            <div className="flex items-center gap-4 mb-2">
-              <button
-                onClick={() => {
-                  setView("lessons");
-                  resetLessonForm();
-                }}
-                className="rounded-xl p-2 hover:bg-muted"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-              <h2 className="text-2xl font-bold">{editingLessonId ? "Sửa bài học" : "Tạo bài học mới"}</h2>
+          <div className="space-y-8 pt-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white/50 p-6 sm:p-8 rounded-[40px] border border-white/60 shadow-sm backdrop-blur-sm mb-8 mt-4">
+              <div className="flex items-start gap-5">
+                <button
+                  onClick={() => {
+                    setView("lessons");
+                    resetLessonForm();
+                  }}
+                  className="group rounded-2xl bg-white/80 p-3 shadow-sm border border-white/60 hover:bg-white hover:shadow-md transition-all shrink-0"
+                >
+                  <ArrowLeft className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </button>
+                <div className="space-y-1 text-left">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h2 className="text-2xl font-bold tracking-tight text-[#112240]">{selectedCurriculum?.name}</h2>
+                    <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold text-primary uppercase tracking-widest border border-primary/20 whitespace-nowrap">
+                      Môn: {selectedSubject?.name}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground font-bold">
+                    {editingLessonId ? "Sửa bài học" : "Tạo bài học mới"}
+                  </p>
+                </div>
+              </div>
             </div>
             
             <div className="space-y-4 rounded-2xl border bg-card p-5">
@@ -1299,7 +1305,9 @@ export default function TeacherPage() {
                     value={lessonSummary}
                     onChange={(e) => setLessonSummary(e.target.value)}
                     rows={3}
-                    className="mt-1 w-full rounded-xl border bg-background px-4 py-2.5 text-sm"
+                    onInput={(e) => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = e.currentTarget.scrollHeight + "px"; }}
+                    ref={(el) => { if (el) { el.style.height = "auto"; el.style.height = el.scrollHeight + "px"; } }}
+                    className="mt-1 w-full rounded-xl border bg-background px-4 py-2.5 text-sm resize-none overflow-hidden"
                     placeholder="Tóm tắt ngắn bài học"
                   />
                 </div>
@@ -1309,7 +1317,9 @@ export default function TeacherPage() {
                     value={lessonKeyPoints}
                     onChange={(e) => setLessonKeyPoints(e.target.value)}
                     rows={3}
-                    className="mt-1 w-full rounded-xl border bg-background px-4 py-2.5 text-sm"
+                    onInput={(e) => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = e.currentTarget.scrollHeight + "px"; }}
+                    ref={(el) => { if (el) { el.style.height = "auto"; el.style.height = el.scrollHeight + "px"; } }}
+                    className="mt-1 w-full rounded-xl border bg-background px-4 py-2.5 text-sm resize-none overflow-hidden"
                     placeholder="Ý 1&#10;Ý 2&#10;Ý 3"
                   />
                 </div>
@@ -1861,7 +1871,7 @@ function LessonReviewMode({
   if (!lesson) return <div className="py-20 text-center">Không tìm thấy bài học.</div>;
 
   return (
-    <div className="space-y-4 sm:space-y-8 max-w-4xl mx-auto pb-20">
+    <div className="space-y-4 sm:space-y-8 max-w-7xl mx-auto pb-20">
       {/* Responsive Header */}
       <div className="flex flex-col items-center gap-4 sm:block sm:relative sm:text-center sm:px-12 sm:py-4">
         <button
@@ -2049,7 +2059,7 @@ function LessonReviewMode({
                       <div className="mt-1 h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 font-bold text-xs text-primary">
                         {idx + 1}
                       </div>
-                      <p className="text-foreground/90 font-medium leading-relaxed">{point}</p>
+                      <p className="text-foreground/90 font-medium leading-relaxed whitespace-pre-wrap">{point}</p>
                     </div>
                   ))}
                </div>

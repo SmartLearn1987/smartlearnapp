@@ -18,6 +18,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import AdminPage from "./pages/AdminPage";
 import AdminContentPage from "./pages/AdminContentPage";
+import StatisticsPage from "./pages/StatisticsPage";
 import ProverbManagePage from "./pages/ProverbManagePage";
 import GamePage from "./pages/GamePage";
 import VuaTiengVietManagePage from "./pages/VuaTiengVietManagePage";
@@ -98,6 +99,7 @@ const App = () => (
             {/* Admin only */}
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminPage /></ProtectedRoute>} />
             <Route path="/admin/content" element={<ProtectedRoute requiredRole="admin"><AdminContentPage /></ProtectedRoute>} />
+            <Route path="/admin/statistics" element={<ProtectedRoute requiredRole="admin"><StatisticsPage /></ProtectedRoute>} />
             <Route path="/games" element={<ProtectedRoute requiredRole="admin"><GamePage /></ProtectedRoute>} />
             <Route path="/games/proverbs" element={<ProtectedRoute requiredRole="admin"><ProverbManagePage /></ProtectedRoute>} />
             <Route path="/games/vuatiengviet" element={<ProtectedRoute requiredRole="admin"><VuaTiengVietManagePage /></ProtectedRoute>} />

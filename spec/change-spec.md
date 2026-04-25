@@ -97,6 +97,57 @@ Khắc phục các lỗi phát sinh (authentication lỗi JSON, missing componen
 - [x] Bổ sung tài liệu API `Vua Tiếng Việt` vào thư mục đặc tả API (`spec/api.md`).
 
 ### Nội dung thay đổi
-- **Backend / Routing**: Cấu hình route trả đúng chuẩn JSON khi lỗi diễn ra, cập nhật đăng ký endpoint `/api/contact` thành công ở `server/index.mjs`.
-- **Frontend**: Fix lỗi import component cho `VuaTiengVietSelectModal`.
 - **Documentation**: Đồng bộ hóa file `spec/api.md`.
+
+---
+
+## 6. Vua Tiếng Việt & Sentence Ordering Quiz
+
+**Date:** 2026-04-19
+
+### Task Content
+Tích hợp Game Vua Tiếng Việt vào hệ thống quản lý và thêm dạng câu hỏi Sắp xếp câu (ordering) vào hệ thống Trắc nghiệm chung.
+
+### Checklist
+- [x] Phát triển tính năng Quản lý Game Vua Tiếng Việt (Export Excel, Xóa, Thêm hàng loạt).
+- [x] Thêm định dạng câu hỏi `ordering` (Sắp xếp câu) cho các bài thi trắc nghiệm (Exams).
+- [x] Cập nhật giao diện `QuizFormPage`, hiển thị hướng dẫn làm bài ở `QuizTakePage`.
+
+### Nội dung thay đổi
+- **Backend**: Các endpoint Quản lý Vua Tiếng Việt và sửa lỗi Delete handler.
+- **Frontend**: Nâng cấp module Trắc nghiệm và Quản lý Vua Tiếng Việt.
+
+---
+
+## 7. Admin Account Management Redesign
+
+**Date:** 2026-04-20
+
+### Task Content
+Nâng cấp giao diện Quản lý Tài khoản sang dạng Table View, bổ sung các trường thông tin như Education Level, Plan, Expiration, Status.
+
+### Checklist
+- [x] Cập nhật CSDL model `users` thêm `education_level`, `plan`, `plan_start_date`, `plan_end_date`, `is_active`.
+- [x] Cập nhật API `GET /api/users` hỗ trợ Pagination, phân trang và Filter.
+- [x] Thiết kế UI quản lý User kiểu Table, bỏ dạng Card.
+
+### Nội dung thay đổi
+- **Database**: Add user metadata columns.
+- **Backend**: Update API User list trả về `total`, `page`, và `stats`.
+
+---
+
+## 8. Admin Statistics Dashboard
+
+**Date:** 2026-04-24
+
+### Task Content
+Cung cấp màn hình Thống kê để Admin theo dõi số lượng bài học, flashcard, quiz đã tạo và lịch sử đăng nhập của học viên.
+
+### Checklist
+- [x] Ghi nhận `last_login` vào CSDL mỗi khi người dùng đăng nhập.
+- [x] Phát triển API `GET /api/statistics/users` tập hợp số liệu lesson_count, flashcard_count, quiz_count.
+- [x] Cập nhật Navigation thêm menu Thống kê.
+
+### Nội dung thay đổi
+- **Backend**: Thêm endpoint `GET /api/statistics/users`. Thêm trường `last_login` cho bảng `users`.

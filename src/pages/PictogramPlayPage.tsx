@@ -117,6 +117,7 @@ export default function PictogramPlayPage() {
         setUserAnswers(data.map(q => Array(q.answer.length).fill("")));
         // Initialize refs matrix
         inputRefs.current = data.map(q => Array(q.answer.length).fill(null));
+        setCurrentIdx(0);
       } catch (err) {
         console.error(err);
       } finally {
@@ -388,7 +389,7 @@ export default function PictogramPlayPage() {
                 <button
                   key={idx}
                   onClick={() => setCurrentIdx(idx)}
-                  className={`h-9 sm:h-10 rounded-xl font-mono text-xs sm:text-sm font-black transition-all flex items-center justify-center border-2
+                  className={`aspect-square h-9 sm:h-10 rounded-full font-mono text-xs sm:text-sm font-black transition-all flex items-center justify-center border-2
                     ${isCurrent ? 'bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20 z-10' : 
                       isAnswered ? 'bg-primary/5 text-primary border-primary/20' : 'bg-muted/40 text-muted-foreground border-transparent hover:bg-muted'}
                   `}

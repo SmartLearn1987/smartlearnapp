@@ -1,20 +1,27 @@
-const STREAK_KEY = "hvui-streak-dates";
+const STREAK_KEY_DEFAULT = "hvui-streak-dates";
+const STREAK_KEY_PREFIX = "hvui-streak-dates-";
 
-export function recordTodayActivity() {
+function getStreakKey(userId?: string) {
+  return userId ? `${STREAK_KEY_PREFIX}${userId}` : STREAK_KEY_DEFAULT;
+}
+
+export function recordTodayActivity(userId?: string) {
   const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-  const raw = localStorage.getItem(STREAK_KEY);
+  const key = getStreakKey(userId);
+  const raw = localStorage.getItem(key);
   const dates: string[] = raw ? JSON.parse(raw) : [];
   
   if (!dates.includes(today)) {
     dates.push(today);
     // Keep only last 100 days to prevent excessive storage
     const uniqueDates = Array.from(new Set(dates)).sort();
-    localStorage.setItem(STREAK_KEY, JSON.stringify(uniqueDates.slice(-100)));
+    localStorage.setItem(key, JSON.stringify(uniqueDates.slice(-100)));
   }
 }
 
-export function getStreakStats() {
-  const raw = localStorage.getItem(STREAK_KEY);
+export function getStreakStats(userId?: string) {
+  const key = getStreakKey(userId);
+  const raw = localStorage.getItem(key);
   const dates: string[] = raw ? JSON.parse(raw) : [];
   const dateSet = new Set(dates);
   

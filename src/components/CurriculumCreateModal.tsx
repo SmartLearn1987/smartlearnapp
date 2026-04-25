@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Plus, ArrowLeft, Upload, ImagePlus, X, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, API_BASE_URL } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
@@ -33,9 +33,14 @@ import { toast } from "sonner";
    const [publisher, setPublisher] = useState(editingCurriculum?.publisher || "");
    const [educationLevel, setEducationLevel] = useState(editingCurriculum?.education_level || "");
    const [isPublic, setIsPublic] = useState(editingCurriculum?.is_public ?? false);
-   const [lessonCount, setLessonCount] = useState(editingCurriculum?.lesson_count || 5);
+   const [lessonCount, setLessonCount] = useState<number | "">(editingCurriculum?.lesson_count || "");
    const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
-   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(editingCurriculum?.image_url || null);
+   const initialImageUrl = editingCurriculum?.image_url 
+     ? (editingCurriculum.image_url.startsWith("http") 
+         ? editingCurriculum.image_url 
+         : `${API_BASE_URL.replace("/api", "")}${editingCurriculum.image_url}`)
+     : null;
+   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(initialImageUrl);
    const [error, setError] = useState("");
 
   const handleSave = async () => {
@@ -74,7 +79,7 @@ import { toast } from "sonner";
              education_level: educationLevel,
              is_public: isPublic,
              publisher: publisher.trim(),
-             lesson_count: lessonCount,
+             lesson_count: lessonCount === "" ? 0 : lessonCount,
              image_url: finalImageUrl || editingCurriculum.image_url,
            }),
          });
@@ -89,7 +94,7 @@ import { toast } from "sonner";
          formData.set("education_level", educationLevel);
          formData.set("is_public", String(isPublic));
          formData.set("publisher", publisher.trim());
-         formData.set("lesson_count", String(lessonCount));
+         formData.set("lesson_count", String(lessonCount === "" ? 0 : lessonCount));
          formData.set("created_by", user?.id || "");
          
          await apiFetch("/curricula", {
@@ -107,7 +112,10 @@ import { toast } from "sonner";
 
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="max-h-[90dvh] w-[95vw] sm:w-full overflow-y-auto custom-scrollbar max-w-2xl">
+      <DialogContent 
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        className="max-h-[90dvh] w-[95vw] sm:w-full overflow-y-auto custom-scrollbar max-w-2xl"
+      >
         <DialogHeader>
           <div className="flex items-center gap-3 mb-2">
              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-xl shadow-inner">
@@ -211,9 +219,16 @@ import { toast } from "sonner";
               <input 
                 type="number" 
                 value={lessonCount} 
-                onChange={e => setLessonCount(Math.max(1, parseInt(e.target.value) || 1))} 
+                onChange={e => {
+                  if (e.target.value === "") {
+                    setLessonCount("");
+                  } else {
+                    setLessonCount(Math.max(1, parseInt(e.target.value) || 1));
+                  }
+                }} 
                 min={1} 
                 max={100}
+                placeholder="VD: 10"
                 className="w-full rounded-xl border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium" 
               />
             </div>

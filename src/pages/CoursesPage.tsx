@@ -43,6 +43,7 @@ interface CurriculumData {
   is_public?: boolean;
   image_url?: string;
   created_by?: string;
+  grade?: string;
 }
 
 export default function CoursesPage() {
@@ -688,21 +689,30 @@ export default function CoursesPage() {
         </div>
       ) : (
         <div className="animate-fade-in max-w-4xl mx-auto space-y-8">
-          <div className="flex items-center gap-4 pt-4 ml-0">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-[#112240] tracking-tight">{selectedCurriculum?.name}</h1>
-            <span className="rounded-full bg-emerald-50 px-4 py-1.5 text-[11px] font-bold text-emerald-600 border border-emerald-200 uppercase tracking-widest mt-2">
-              Môn: {subject?.name}
-            </span>
-          </div>
-          <div className="flex items-center gap-3 mt-6">
-            <button
-              onClick={() => setView("lessons")}
-              className="rounded-xl p-2 hover:bg-muted transition-all active:scale-90"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <h2 className="text-2xl font-bold">{editingLessonId ? "Sửa bài học" : "Tạo bài học mới"}</h2>
-          </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white/50 p-6 sm:p-8 rounded-[40px] border border-white/60 shadow-sm backdrop-blur-sm mb-8 mt-4">
+              <div className="flex items-start gap-5">
+                <button
+                  onClick={() => {
+                    setView("lessons");
+                    resetLessonForm();
+                  }}
+                  className="group rounded-2xl bg-white/80 p-3 shadow-sm border border-white/60 hover:bg-white hover:shadow-md transition-all shrink-0"
+                >
+                  <ArrowLeft className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </button>
+                <div className="space-y-1 text-left">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h2 className="text-2xl font-bold tracking-tight text-[#112240]">{selectedCurriculum?.name}</h2>
+                    <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold text-primary uppercase tracking-widest border border-primary/20 whitespace-nowrap">
+                      Môn: {subject?.name}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground font-bold">
+                    {editingLessonId ? "Sửa bài học" : "Tạo bài học mới"}
+                  </p>
+                </div>
+              </div>
+            </div>
           
           <div className="space-y-6 rounded-3xl border bg-card/50 p-8 shadow-sm">
               <div className="grid gap-6 sm:grid-cols-2">
@@ -856,7 +866,9 @@ export default function CoursesPage() {
                     value={lessonSummary}
                     onChange={(e) => setLessonSummary(e.target.value)}
                     rows={4}
-                    className="w-full rounded-2xl border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none"
+                    onInput={(e) => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = e.currentTarget.scrollHeight + "px"; }}
+                    ref={(el) => { if (el) { el.style.height = "auto"; el.style.height = el.scrollHeight + "px"; } }}
+                    className="w-full rounded-2xl border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none overflow-hidden"
                     placeholder="Ghi nhận xét ngắn gọn..."
                   />
                 </div>
@@ -866,7 +878,9 @@ export default function CoursesPage() {
                     value={lessonKeyPoints}
                     onChange={(e) => setLessonKeyPoints(e.target.value)}
                     rows={4}
-                    className="w-full rounded-2xl border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none"
+                    onInput={(e) => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = e.currentTarget.scrollHeight + "px"; }}
+                    ref={(el) => { if (el) { el.style.height = "auto"; el.style.height = el.scrollHeight + "px"; } }}
+                    className="w-full rounded-2xl border bg-background px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none overflow-hidden"
                     placeholder="Ý chính 1&#10;Ý chính 2"
                   />
                 </div>
@@ -1031,7 +1045,7 @@ export default function CoursesPage() {
       {showCreateModal && (
         <CurriculumCreateModal
           onCancel={() => setShowCreateModal(false)}
-          curriculum={editingCurriculum || undefined}
+          editingCurriculum={editingCurriculum || undefined}
           subjectId={subjectId || ""}
           subjectName={subject?.name || ""}
           subjectIcon={subject?.icon}
@@ -1202,7 +1216,7 @@ function LessonReviewMode({
   if (!lesson) return <div className="py-20 text-center">Không tìm thấy bài học.</div>;
 
   return (
-    <div className="space-y-4 sm:space-y-8 max-w-4xl mx-auto pb-20">
+    <div className="space-y-4 sm:space-y-8 max-w-7xl mx-auto pb-20">
       {/* Responsive Header */}
       <div className="flex flex-col items-center gap-4 sm:block sm:relative sm:text-center sm:px-12 sm:py-4">
         <button
@@ -1379,7 +1393,7 @@ function LessonReviewMode({
               <h3 className="mb-3 sm:mb-4 font-bold text-lg sm:text-xl flex items-center gap-2">
                 📝 Tổng kết
               </h3>
-              <p className="text-sm sm:text-base text-foreground/90 leading-relaxed">{lesson.summary || "Chưa có tóm tắt."}</p>
+              <p className="text-sm sm:text-base text-foreground/90 leading-relaxed whitespace-pre-wrap">{lesson.summary || "Chưa có tóm tắt."}</p>
             </div>
             
             {lesson.keyPoints?.length > 0 && (
@@ -1393,7 +1407,7 @@ function LessonReviewMode({
                       <span className="mt-1 flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-[10px] sm:text-xs font-bold text-primary">
                         {i + 1}
                       </span>
-                      <span className="text-sm sm:text-base text-foreground/85">{point}</span>
+                      <span className="text-sm sm:text-base text-foreground/85 whitespace-pre-wrap">{point}</span>
                     </li>
                   ))}
                 </ul>
