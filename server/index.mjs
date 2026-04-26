@@ -145,18 +145,27 @@ app.post(`${API_PREFIX}/upload`, (req, res) => {
         key text PRIMARY KEY,
         value jsonb NOT NULL,
         updated_at timestamptz DEFAULT now()
-      );`
+      );`,
+      `CREATE TABLE IF NOT EXISTS subscription_plans (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name TEXT UNIQUE NOT NULL,
+        duration_days INTEGER NOT NULL,
+        price INTEGER NOT NULL DEFAULT 0,
+        description TEXT,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );`,
+      `ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS is_premium boolean NOT NULL DEFAULT false;`
     ];
     for (const q of queries) {
-      await query(q);
+      try {
+        await query(q);
+      } catch (e) {
+        console.warn(`[Migration Warning] Query failed: ${q.substring(0, 50)}... Error: ${e.message}`);
+      }
     }
-    // Add is_premium column to subscription_plans if not exists
-    try {
-      await query(`ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS is_premium boolean NOT NULL DEFAULT false`);
-    } catch (e) {
-      console.warn("Could not add is_premium column:", e.message);
-    }
-    console.log("Auto-migration completed: ensured all recent user columns are present.");
+    console.log("Auto-migration completed: ensured all tables and columns are present.");
   } catch (err) {
     console.error("Auto-migration failed:", err.message);
   }
@@ -785,7 +794,8 @@ app.get(`${API_PREFIX}/plans`, async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch plans" });
+    console.error("GET /plans error:", err);
+    res.status(500).json({ error: "Không thể tải danh sách gói cước: " + err.message });
   }
 });
 
@@ -801,7 +811,8 @@ app.get(`${API_PREFIX}/admin/plans`, async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch plans" });
+    console.error("GET /admin/plans error:", err);
+    res.status(500).json({ error: "Không thể tải danh sách gói cước (admin): " + err.message });
   }
 });
 
@@ -810,22 +821,30 @@ app.post(`${API_PREFIX}/plans`, async (req, res) => {
   if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
 
   const { name, durationDays, price, description, isActive = true, sortOrder = 0, isPremium = false } = req.body || {};
-  if (!name || !durationDays) return res.status(400).json({ error: "Name and durationDays are required" });
+  if (!name || durationDays === undefined) return res.status(400).json({ error: "Name and durationDays are required" });
 
   try {
     const { rows } = await query(
       `INSERT INTO subscription_plans (name, duration_days, price, description, is_active, sort_order, is_premium)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id, name, duration_days as "durationDays", price, description, is_active as "isActive", sort_order as "sortOrder", is_premium as "isPremium"`,
-      [name.trim(), durationDays, price || 0, description || null, isActive, sortOrder, isPremium]
+      [
+        name.trim(), 
+        Number(durationDays), 
+        Number(price || 0), 
+        description || null, 
+        Boolean(isActive), 
+        Number(sortOrder || 0), 
+        Boolean(isPremium)
+      ]
     );
     res.status(201).json(rows[0]);
   } catch (err) {
-    if (err.message.includes("unique constraint")) {
-      return res.status(400).json({ error: "Plan name already exists" });
-    }
     console.error("POST /plans error:", err);
-    res.status(500).json({ error: "Failed to create plan" });
+    if (err.message.includes("unique constraint")) {
+      return res.status(400).json({ error: "Tên gói cước đã tồn tại" });
+    }
+    res.status(500).json({ error: "Không thể tạo gói cước: " + err.message });
   }
 });
 
@@ -835,7 +854,7 @@ app.put(`${API_PREFIX}/plans/:id`, async (req, res) => {
 
   const { id } = req.params;
   const { name, durationDays, price, description, isActive, sortOrder, isPremium = false } = req.body || {};
-  if (!name || !durationDays) return res.status(400).json({ error: "Name and durationDays are required" });
+  if (!name || durationDays === undefined) return res.status(400).json({ error: "Name and durationDays are required" });
 
   try {
     const { rows } = await query(
@@ -843,13 +862,22 @@ app.put(`${API_PREFIX}/plans/:id`, async (req, res) => {
        SET name = $1, duration_days = $2, price = $3, description = $4, is_active = $5, sort_order = $6, is_premium = $7 
        WHERE id = $8 
        RETURNING id, name, duration_days as "durationDays", price, description, is_active as "isActive", sort_order as "sortOrder", is_premium as "isPremium"`,
-      [name.trim(), durationDays, price || 0, description || null, isActive, sortOrder, isPremium, id]
+      [
+        name.trim(), 
+        Number(durationDays), 
+        Number(price || 0), 
+        description || null, 
+        Boolean(isActive), 
+        Number(sortOrder || 0), 
+        Boolean(isPremium), 
+        id
+      ]
     );
-    if (!rows[0]) return res.status(404).json({ error: "Plan not found" });
+    if (!rows[0]) return res.status(404).json({ error: "Gói cước không tồn tại" });
     res.json(rows[0]);
   } catch (err) {
     console.error("PUT /plans/:id error:", err);
-    res.status(500).json({ error: "Failed to update plan" });
+    res.status(500).json({ error: "Không thể cập nhật gói cước: " + err.message });
   }
 });
 
@@ -1629,7 +1657,7 @@ app.get(`${API_PREFIX}/quizlets`, async (req, res) => {
          from quizlet_sets q
          left join users u on q.user_id = u.id
          left join subjects s on q.subject_id = s.id
-         where ($2::boolean = true or q.user_id = $1::uuid or q.is_public = true)
+         where (cast($2 as boolean) = true or q.user_id = cast($1 as uuid) or q.is_public = true)
          order by s.name asc, q.created_at desc`,
         [userId, isAdmin]
       );
