@@ -137,11 +137,10 @@ export default function PremiumPage() {
               return (
                 <div
                   key={plan.id}
-                  className={`relative rounded-3xl border-2 p-6 flex flex-col transition-all duration-300 hover:-translate-y-1 ${
-                    isPopular
-                      ? "border-primary bg-gradient-to-br from-[#2D9B63] to-[#1a7a4a] text-white shadow-2xl shadow-primary/30 scale-[1.02]"
-                      : "border-border bg-white shadow-sm hover:shadow-lg hover:border-primary/30"
-                  }`}
+                  className={`relative rounded-3xl border-2 p-6 flex flex-col transition-all duration-300 hover:-translate-y-1 ${isPopular
+                    ? "border-primary bg-gradient-to-br from-[#2D9B63] to-[#1a7a4a] text-white shadow-2xl shadow-primary/30 scale-[1.02]"
+                    : "border-border bg-white shadow-sm hover:shadow-lg hover:border-primary/30"
+                    }`}
                 >
                   {/* Popular badge */}
                   {isPopular && (
@@ -155,9 +154,8 @@ export default function PremiumPage() {
 
                   {/* Plan header */}
                   <div className="mb-6">
-                    <div className={`inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold mb-3 ${
-                      isPopular ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
-                    }`}>
+                    <div className={`inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold mb-3 ${isPopular ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
+                      }`}>
                       {isUnlimited ? <Crown className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
                       {formatDuration(plan.durationDays, plan.name)}
                     </div>
@@ -180,7 +178,7 @@ export default function PremiumPage() {
                     </div>
                     <div className={`text-sm mt-1 ${isPopular ? "text-white/70" : "text-muted-foreground"}`}>
                       {plan.durationDays >= 1800 ? "Một lần duy nhất" :
-                       `/${formatDuration(plan.durationDays, plan.name)}`}
+                        `/${formatDuration(plan.durationDays, plan.name)}`}
                     </div>
                   </div>
 
@@ -188,9 +186,8 @@ export default function PremiumPage() {
                   <div className="space-y-2.5 mb-8 flex-1">
                     {FEATURES.slice(0, 4).map(({ label }) => (
                       <div key={label} className="flex items-start gap-2.5">
-                        <div className={`shrink-0 h-5 w-5 rounded-full flex items-center justify-center mt-0.5 ${
-                          isPopular ? "bg-white/20" : "bg-primary/10"
-                        }`}>
+                        <div className={`shrink-0 h-5 w-5 rounded-full flex items-center justify-center mt-0.5 ${isPopular ? "bg-white/20" : "bg-primary/10"
+                          }`}>
                           <Check className={`h-3 w-3 ${isPopular ? "text-white" : "text-primary"}`} />
                         </div>
                         <span className={`text-sm ${isPopular ? "text-white/90" : "text-gray-600"}`}>{label}</span>
@@ -200,20 +197,18 @@ export default function PremiumPage() {
 
                   {/* CTA Button */}
                   {isCurrent ? (
-                    <div className={`w-full rounded-2xl py-3 text-center text-sm font-bold ${
-                      isPopular ? "bg-white/20 text-white border border-white/30" : "bg-muted text-muted-foreground"
-                    }`}>
+                    <div className={`w-full rounded-2xl py-3 text-center text-sm font-bold ${isPopular ? "bg-white/20 text-white border border-white/30" : "bg-muted text-muted-foreground"
+                      }`}>
                       <BadgeCheck className="h-4 w-4 inline mr-1.5" />
                       Gói hiện tại
                     </div>
                   ) : (
                     <button
                       onClick={() => handleUpgrade(plan)}
-                      className={`w-full rounded-2xl py-3 text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2 ${
-                        isPopular
-                          ? "bg-white text-primary hover:bg-amber-50 shadow-lg"
-                          : "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
-                      }`}
+                      className={`w-full rounded-2xl py-3 text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2 ${isPopular
+                        ? "bg-white text-primary hover:bg-amber-50 shadow-lg"
+                        : "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
+                        }`}
                     >
                       Nâng cấp ngay
                       <ChevronRight className="h-4 w-4" />
@@ -242,7 +237,7 @@ export default function PremiumPage() {
             </h3>
             <ul className="space-y-3">
               {[
-                "Thanh toán an toàn qua SePay",
+                "Thanh toán an toàn",
                 "Kích hoạt ngay sau khi thanh toán thành công",
                 "Hỗ trợ qua email & Zalo trong 24h",
                 "Hoàn tiền trong 7 ngày nếu có lỗi kỹ thuật",

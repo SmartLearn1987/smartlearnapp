@@ -156,8 +156,45 @@ app.post(`${API_PREFIX}/upload`, (req, res) => {
         sort_order INTEGER NOT NULL DEFAULT 0,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );`,
-      `ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS is_premium boolean NOT NULL DEFAULT false;`
+      `ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS is_premium boolean NOT NULL DEFAULT false;`,
+      `CREATE TABLE IF NOT EXISTS timetable_groups (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name text NOT NULL,
+        sort_order integer DEFAULT 0,
+        created_at timestamptz DEFAULT now()
+      );`,
+      `CREATE TABLE IF NOT EXISTS timetable_entries (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        group_id uuid NOT NULL REFERENCES timetable_groups(id) ON DELETE CASCADE,
+        day text NOT NULL,
+        subject text NOT NULL,
+        start_time text NOT NULL,
+        end_time text NOT NULL,
+        room text,
+        color text,
+        created_at timestamptz DEFAULT now()
+      );`,
+      `CREATE TABLE IF NOT EXISTS user_tasks (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title text NOT NULL,
+        description text,
+        due_date date,
+        completed boolean DEFAULT false,
+        priority text DEFAULT 'medium',
+        created_at timestamptz DEFAULT now()
+      );`,
+      `CREATE TABLE IF NOT EXISTS user_notes (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title text,
+        content text,
+        color text,
+        updated_at timestamptz DEFAULT now()
+      );`
     ];
+
     for (const q of queries) {
       try {
         await query(q);
@@ -165,7 +202,33 @@ app.post(`${API_PREFIX}/upload`, (req, res) => {
         console.warn(`[Migration Warning] Query failed: ${q.substring(0, 50)}... Error: ${e.message}`);
       }
     }
-    console.log("Auto-migration completed: ensured all tables and columns are present.");
+
+    // ── Cascade Deletion Migration ──────────────────────────────────────────
+    // Ensure that when a user is deleted, all their related data is also removed.
+    const cascadeConfigs = [
+      { table: 'subjects', column: 'user_id', constraint: 'subjects_user_id_fkey' },
+      { table: 'curricula', column: 'user_id', constraint: 'curricula_user_id_fkey' },
+      { table: 'quizlet_sets', column: 'user_id', constraint: 'quizlet_sets_user_id_fkey' },
+      { table: 'exams', column: 'user_id', constraint: 'exams_user_id_fkey' },
+      { table: 'learning_categories', column: 'created_by', constraint: 'learning_categories_created_by_fkey' },
+      { table: 'pictogram_questions', column: 'created_by', constraint: 'pictogram_questions_created_by_fkey' },
+      { table: 'dictation_exercises', column: 'created_by', constraint: 'dictation_exercises_created_by_fkey' },
+      { table: 'proverbs', column: 'created_by', constraint: 'proverbs_created_by_fkey' },
+      { table: 'vua_tieng_viet_questions', column: 'created_by', constraint: 'vua_tieng_viet_questions_created_by_fkey' },
+      { table: 'nhanh_nhu_chop_questions', column: 'created_by', constraint: 'nhanh_nhu_chop_questions_created_by_fkey' }
+    ];
+
+    for (const conf of cascadeConfigs) {
+      try {
+        // Drop and recreate constraint with ON DELETE CASCADE
+        await query(`ALTER TABLE ${conf.table} DROP CONSTRAINT IF EXISTS ${conf.constraint}`);
+        await query(`ALTER TABLE ${conf.table} ADD CONSTRAINT ${conf.constraint} FOREIGN KEY (${conf.column}) REFERENCES users(id) ON DELETE CASCADE`);
+      } catch (e) {
+        console.warn(`[Migration] Could not update cascade for ${conf.table}:`, e.message);
+      }
+    }
+
+    console.log("Auto-migration completed: ensured all tables, columns, and cascades are present.");
   } catch (err) {
     console.error("Auto-migration failed:", err.message);
   }
@@ -737,14 +800,29 @@ app.post(`${API_PREFIX}/users`, async (req, res) => {
 
 app.delete(`${API_PREFIX}/users/:id`, async (req, res) => {
   const { id } = req.params;
+  const currentUserId = getUserId(req);
+  const isAdmin = await checkAdmin(currentUserId);
+  
+  if (!isAdmin && currentUserId !== id) {
+    return res.status(403).json({ error: "Forbidden: You can only delete your own account" });
+  }
+
+  const { reason } = req.body || {};
+
   try {
     const { rows } = await query(`select username from users where id = $1`, [id]);
     if (rows[0]?.username === "adminsmart") {
       return res.status(403).json({ error: "Cannot delete the root admin account" });
     }
+
+    if (reason) {
+      console.log(`[User Deletion] User ${id} (${rows[0]?.username}) is deleting their account. Reason: ${reason}`);
+    }
+
     await query(`delete from users where id = $1`, [id]);
     res.status(204).send();
   } catch (err) {
+    console.error("DELETE /users/:id error:", err);
     res.status(500).json({ error: "Failed to delete user" });
   }
 });
@@ -982,6 +1060,253 @@ app.post(`${API_PREFIX}/user-subjects`, async (req, res) => {
   }
 });
 
+
+
+// ── Timetable ────────────────────────────────────────────────────────────────
+app.get(`${API_PREFIX}/timetable`, async (req, res) => {
+  const userId = getUserId(req);
+  try {
+    const { rows: groups } = await query(
+      `select * from timetable_groups where user_id = $1 order by sort_order asc, created_at asc`,
+      [userId]
+    );
+    const { rows: entries } = await query(
+      `select e.* from timetable_entries e 
+       join timetable_groups g on e.group_id = g.id 
+       where g.user_id = $1`,
+      [userId]
+    );
+
+    const result = groups.map(g => ({
+      ...g,
+      entries: entries.filter(e => e.group_id === g.id)
+    }));
+    res.json(result);
+  } catch (err) {
+    console.error("GET /timetable error:", err);
+    res.status(500).json({ error: "Failed to fetch timetable" });
+  }
+});
+
+app.post(`${API_PREFIX}/timetable/groups`, async (req, res) => {
+  const userId = getUserId(req);
+  const { name } = req.body || {};
+  if (!name) return res.status(400).json({ error: "Name is required" });
+  try {
+    const { rows } = await query(
+      `insert into timetable_groups (user_id, name) values ($1, $2) returning *`,
+      [userId, name]
+    );
+    res.json({ ...rows[0], entries: [] });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create group" });
+  }
+});
+
+app.put(`${API_PREFIX}/timetable/groups/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  const { id } = req.params;
+  const { name, sort_order } = req.body || {};
+  try {
+    const { rows } = await query(
+      `update timetable_groups set name = coalesce($1, name), sort_order = coalesce($2, sort_order) 
+       where id = $3 and user_id = $4 returning *`,
+      [name, sort_order, id, userId]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Group not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update group" });
+  }
+});
+
+app.delete(`${API_PREFIX}/timetable/groups/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  const { id } = req.params;
+  try {
+    const { rowCount } = await query(`delete from timetable_groups where id = $1 and user_id = $2`, [id, userId]);
+    if (rowCount === 0) return res.status(404).json({ error: "Group not found" });
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete group" });
+  }
+});
+
+app.post(`${API_PREFIX}/timetable/entries`, async (req, res) => {
+  const userId = getUserId(req);
+  const { group_id, day, subject, start_time, end_time, room, color } = req.body || {};
+  if (!group_id || !day || !subject || !start_time || !end_time) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+  try {
+    // Verify group belongs to user
+    const { rows: grp } = await query(`select id from timetable_groups where id = $1 and user_id = $2`, [group_id, userId]);
+    if (!grp[0]) return res.status(403).json({ error: "Forbidden" });
+
+    const { rows } = await query(
+      `insert into timetable_entries (group_id, day, subject, start_time, end_time, room, color) 
+       values ($1, $2, $3, $4, $5, $6, $7) returning *`,
+      [group_id, day, subject, start_time, end_time, room || null, color || null]
+    );
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create entry" });
+  }
+});
+
+app.put(`${API_PREFIX}/timetable/entries/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  const { id } = req.params;
+  const { day, subject, start_time, end_time, room, color } = req.body || {};
+  try {
+    const { rows } = await query(
+      `update timetable_entries set 
+        day = coalesce($1, day), 
+        subject = coalesce($2, subject), 
+        start_time = coalesce($3, start_time), 
+        end_time = coalesce($4, end_time), 
+        room = coalesce($5, room), 
+        color = coalesce($6, color)
+       where id = $7 and group_id in (select id from timetable_groups where user_id = $8)
+       returning *`,
+      [day, subject, start_time, end_time, room, color, id, userId]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Entry not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update entry" });
+  }
+});
+
+app.delete(`${API_PREFIX}/timetable/entries/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  const { id } = req.params;
+  try {
+    const { rowCount } = await query(
+      `delete from timetable_entries where id = $1 and group_id in (select id from timetable_groups where user_id = $2)`,
+      [id, userId]
+    );
+    if (rowCount === 0) return res.status(404).json({ error: "Entry not found" });
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete entry" });
+  }
+});
+
+// ── User Tasks ────────────────────────────────────────────────────────────────
+app.get(`${API_PREFIX}/tasks`, async (req, res) => {
+  const userId = getUserId(req);
+  try {
+    const { rows } = await query(`select * from user_tasks where user_id = $1 order by created_at desc`, [userId]);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch tasks" });
+  }
+});
+
+app.post(`${API_PREFIX}/tasks`, async (req, res) => {
+  const userId = getUserId(req);
+  const { title, description, due_date, completed, priority } = req.body || {};
+  if (!title) return res.status(400).json({ error: "Title is required" });
+  try {
+    const { rows } = await query(
+      `insert into user_tasks (user_id, title, description, due_date, completed, priority) 
+       values ($1, $2, $3, $4, $5, $6) returning *`,
+      [userId, title, description || null, due_date || null, completed || false, priority || 'medium']
+    );
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create task" });
+  }
+});
+
+app.put(`${API_PREFIX}/tasks/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  const { id } = req.params;
+  const { title, description, due_date, completed, priority } = req.body || {};
+  try {
+    const { rows } = await query(
+      `update user_tasks set 
+        title = coalesce($1, title), 
+        description = coalesce($2, description), 
+        due_date = coalesce($3, due_date), 
+        completed = coalesce($4, completed), 
+        priority = coalesce($5, priority)
+       where id = $6 and user_id = $7 returning *`,
+      [title, description, due_date, completed, priority, id, userId]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Task not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update task" });
+  }
+});
+
+app.delete(`${API_PREFIX}/tasks/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  const { id } = req.params;
+  try {
+    const { rowCount } = await query(`delete from user_tasks where id = $1 and user_id = $2`, [id, userId]);
+    if (rowCount === 0) return res.status(404).json({ error: "Task not found" });
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete task" });
+  }
+});
+
+// ── User Notes ────────────────────────────────────────────────────────────────
+app.get(`${API_PREFIX}/notes`, async (req, res) => {
+  const userId = getUserId(req);
+  try {
+    const { rows } = await query(`select * from user_notes where user_id = $1 order by updated_at desc`, [userId]);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch notes" });
+  }
+});
+
+app.post(`${API_PREFIX}/notes`, async (req, res) => {
+  const userId = getUserId(req);
+  const { title, content, color } = req.body || {};
+  try {
+    const { rows } = await query(
+      `insert into user_notes (user_id, title, content, color) values ($1, $2, $3, $4) returning *`,
+      [userId, title || null, content || null, color || null]
+    );
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create note" });
+  }
+});
+
+app.put(`${API_PREFIX}/notes/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  const { id } = req.params;
+  const { title, content, color } = req.body || {};
+  try {
+    const { rows } = await query(
+      `update user_notes set title = coalesce($1, title), content = coalesce($2, content), color = coalesce($3, color), updated_at = now() 
+       where id = $4 and user_id = $5 returning *`,
+      [title, content, color, id, userId]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Note not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update note" });
+  }
+});
+
+app.delete(`${API_PREFIX}/notes/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  const { id } = req.params;
+  try {
+    const { rowCount } = await query(`delete from user_notes where id = $1 and user_id = $2`, [id, userId]);
+    if (rowCount === 0) return res.status(404).json({ error: "Note not found" });
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete note" });
+  }
+});
 
 app.get(`${API_PREFIX}/subjects`, async (req, res) => {
   try {

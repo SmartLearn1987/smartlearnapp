@@ -1388,3 +1388,110 @@ Submit the contact form. Forces a `sendMail` to the configured `EMAIL_USER`.
 ```
 
 **Errors:** `400` (missing required fields), `500` (email configuration error or SMTP fail).
+
+---
+
+## 🗓️ Schedule & Personal Management
+
+All endpoints in this section require standard authentication (`x-api-key`, `x-user-id`, `x-session-token`). Data is strictly isolated per user.
+
+### Timetable
+
+#### `GET /api/timetable`
+List all timetable groups and their entries for the current user.
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": "uuid",
+    "name": "Lịch học chính",
+    "sort_order": 0,
+    "entries": [
+      {
+        "id": "uuid",
+        "day": "Thứ 2",
+        "subject": "Toán học",
+        "start_time": "08:00",
+        "end_time": "09:30",
+        "room": "A101",
+        "color": "bg-blue-500/15..."
+      }
+    ]
+  }
+]
+```
+
+#### `POST /api/timetable/groups`
+Create a new timetable group.
+
+**Request Body:** `{ "name": "string" }`
+
+#### `PUT /api/timetable/groups/:id`
+Update a group's name or sort order.
+
+#### `DELETE /api/timetable/groups/:id`
+Delete a group and all its entries (cascading).
+
+#### `POST /api/timetable/entries`
+Create a new entry in a group.
+
+**Request Body:**
+| Field        | Type   | Required |
+|--------------|--------|----------|
+| `group_id`   | UUID   | ✅       |
+| `day`        | string | ✅       |
+| `subject`    | string | ✅       |
+| `start_time` | string | ✅       |
+| `end_time`   | string | ✅       |
+| `room`       | string | ❌       |
+| `color`      | string | ❌       |
+
+#### `PUT /api/timetable/entries/:id`
+Update an entry. Same body as POST (all fields optional).
+
+#### `DELETE /api/timetable/entries/:id`
+Delete an entry.
+
+---
+
+### Tasks
+
+#### `GET /api/tasks`
+List all tasks for the current user.
+
+#### `POST /api/tasks`
+Create a new task.
+
+**Request Body:**
+| Field         | Type    | Required | Default  |
+|---------------|---------|----------|----------|
+| `title`       | string  | ✅       |          |
+| `description` | string  | ❌       |          |
+| `due_date`    | string  | ❌       |          |
+| `completed`   | boolean | ❌       | `false`  |
+| `priority`    | string  | ❌       | `medium` |
+
+#### `PUT /api/tasks/:id`
+Update a task.
+
+#### `DELETE /api/tasks/:id`
+Delete a task.
+
+---
+
+### Notes
+
+#### `GET /api/notes`
+List all notes for the current user.
+
+#### `POST /api/notes`
+Create a new note.
+
+**Request Body:** `{ "title": "string", "content": "string", "color": "string" }`
+
+#### `PUT /api/notes/:id`
+Update a note.
+
+#### `DELETE /api/notes/:id`
+Delete a note.

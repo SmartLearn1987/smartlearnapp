@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { apiFetch } from "@/lib/api";
 
 import { createPortal } from "react-dom";
 import { Calendar as CalendarIcon, CheckSquare, StickyNote, Plus, Trash2, Check, Clock, BookOpen, Edit3, Save, X, GripVertical, ChevronDown, Eye } from "lucide-react";
@@ -100,7 +101,8 @@ const LOCAL_KEY = {
 };
 
 const getLocalKey = (key: keyof typeof LOCAL_KEY, userId: string) => {
-  return userId ? `${LOCAL_KEY[key]}-${userId}` : LOCAL_KEY[key];
+  if (!userId) return `guest-${LOCAL_KEY[key]}`;
+  return `${LOCAL_KEY[key]}-${userId}`;
 };
 
 
@@ -138,40 +140,92 @@ function PortalModal({ children, onClose }: PortalModalProps) {
 // ─── Timetable Tab ───────────────────────────────────────────────────────────
 
 function TimetableTab({ userId }: { userId: string }) {
-  const [groups, setGroups] = useState<TimetableGroup[]>(() => {
-    try { 
-      const userKey = getLocalKey("timetable", userId);
-      let raw = localStorage.getItem(userKey);
+  const [groups, setGroups] = useState<TimetableGroup[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+
+  const fetchTimetable = async () => {
+    try {
+      const data = await apiFetch<any[]>("/timetable");
+      const transformed = data.map(g => ({
+        id: g.id,
+        name: g.name,
+        entries: (g.entries || []).map((e: any) => ({
+          id: e.id,
+          day: e.day,
+          subject: e.subject,
+          startTime: e.start_time,
+          endTime: e.end_time,
+          room: e.room,
+          color: e.color
+        }))
+      }));
+      setGroups(transformed);
+      if (transformed.length > 0 && !activeGroupId) {
+        setActiveGroupId(transformed[0].id);
+      }
+    } catch (err) {
+      console.error("Fetch Timetable Error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const migrateAndFetch = async () => {
+      const localKey = getLocalKey("timetable", userId);
+      const localData = localStorage.getItem(localKey);
       
-      // Migration: if user key is empty but old global key has data
-      if (!raw && userId) {
-        const oldRaw = localStorage.getItem(LOCAL_KEY.timetable);
-        if (oldRaw) {
-          localStorage.setItem(userKey, oldRaw);
-          // Optional: clear old global key to complete migration
-          // localStorage.removeItem(LOCAL_KEY.timetable); 
-          raw = oldRaw;
+      if (localData) {
+        try {
+          const parsed = JSON.parse(localData);
+          let groupsToMigrate: TimetableGroup[] = [];
+          
+          if (Array.isArray(parsed)) {
+            if (parsed.length > 0 && !parsed[0].entries) {
+               groupsToMigrate = [{ id: "default", name: "Lịch học chính", entries: parsed }];
+            } else {
+               groupsToMigrate = parsed;
+            }
+          }
+
+          if (groupsToMigrate.length > 0) {
+            toast.info("Đang đồng bộ dữ liệu lịch học lên máy chủ...");
+            for (const g of groupsToMigrate) {
+              const newGroup = await apiFetch<any>("/timetable/groups", {
+                method: "POST",
+                body: JSON.stringify({ name: g.name })
+              });
+              for (const e of g.entries) {
+                await apiFetch("/timetable/entries", {
+                  method: "POST",
+                  body: JSON.stringify({
+                    group_id: newGroup.id,
+                    day: e.day,
+                    subject: e.subject,
+                    start_time: e.startTime,
+                    end_time: e.endTime,
+                    room: e.room,
+                    color: e.color
+                  })
+                });
+              }
+            }
+            localStorage.removeItem(localKey);
+            toast.success("Đồng bộ lịch học thành công!");
+          }
+        } catch (e) {
+          console.error("Migration error:", e);
         }
       }
+      fetchTimetable();
+    };
 
-      if (!raw) return [{ id: "default", name: "Lịch học chính", entries: [] }];
-      const parsed = JSON.parse(raw);
-
-      // Migration: if stored data is just an array of entries
-      if (Array.isArray(parsed) && parsed.length > 0 && !parsed[0].entries) {
-        return [{ id: "default", name: "Lịch học chính", entries: parsed }];
-      }
-      return parsed.length > 0 ? parsed : [{ id: "default", name: "Lịch học chính", entries: [] }];
-    }
-    catch { return [{ id: "default", name: "Lịch học chính", entries: [] }]; }
-  });
-
-  const [activeGroupId, setActiveGroupId] = useState<string>(() => {
-    return groups[0]?.id || "default";
-  });
+    migrateAndFetch();
+  }, [userId]);
 
   const activeGroup = groups.find(g => g.id === activeGroupId) || groups[0];
-  const entries = activeGroup.entries;
+  const entries = activeGroup?.entries || [];
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<Omit<TimetableEntry, "id">>({ 
@@ -185,53 +239,110 @@ function TimetableTab({ userId }: { userId: string }) {
   const [isAddingGroup, setIsAddingGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
 
-  useEffect(() => {
-    if (userId) {
-      localStorage.setItem(getLocalKey("timetable", userId), JSON.stringify(groups));
-    }
-  }, [groups, userId]);
-
-
-  const updateActiveEntries = (updater: (prev: TimetableEntry[]) => TimetableEntry[]) => {
-    setGroups(prev => prev.map(g => g.id === activeGroupId ? { ...g, entries: updater(g.entries) } : g));
-  };
-
-  const add = () => {
+  const add = async () => {
     if (!form.subject.trim()) { toast.error("Vui lòng nhập tên môn học"); return; }
-    updateActiveEntries(prev => [...prev, { ...form, id: uid() }]);
-    setShowForm(false);
-    setForm({ day: "Thứ 2", subject: "", startTime: "07:00", endTime: "08:30", room: "", color: SUBJECT_COLORS[0] });
-    toast.success("Đã thêm môn học");
+    if (!activeGroupId) { toast.error("Vui lòng chọn hoặc tạo nhóm lịch học"); return; }
+    try {
+      const newEntry = await apiFetch<any>("/timetable/entries", {
+        method: "POST",
+        body: JSON.stringify({
+          group_id: activeGroupId,
+          day: form.day,
+          subject: form.subject,
+          start_time: form.startTime,
+          end_time: form.endTime,
+          room: form.room,
+          color: form.color
+        })
+      });
+      const transformed = {
+        id: newEntry.id,
+        day: newEntry.day,
+        subject: newEntry.subject,
+        startTime: newEntry.start_time,
+        endTime: newEntry.end_time,
+        room: newEntry.room,
+        color: newEntry.color
+      };
+      setGroups(prev => prev.map(g => g.id === activeGroupId ? { ...g, entries: [...g.entries, transformed] } : g));
+      setShowForm(false);
+      setForm({ day: "Thứ 2", subject: "", startTime: "07:00", endTime: "08:30", room: "", color: SUBJECT_COLORS[0] });
+      toast.success("Đã thêm môn học");
+    } catch (err) {
+      toast.error("Không thể thêm môn học");
+    }
   };
 
-  const remove = (id: string) => {
-    updateActiveEntries(prev => prev.filter(e => e.id !== id));
-    toast.success("Đã xóa môn học");
+  const remove = async (id: string) => {
+    try {
+      await apiFetch(`/timetable/entries/${id}`, { method: "DELETE" });
+      setGroups(prev => prev.map(g => g.id === activeGroupId ? { ...g, entries: g.entries.filter(e => e.id !== id) } : g));
+      toast.success("Đã xóa môn học");
+    } catch (err) {
+      toast.error("Không thể xóa môn học");
+    }
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (!editForm.subject.trim()) { toast.error("Vui lòng nhập tên môn học"); return; }
-    updateActiveEntries(prev => prev.map(e => e.id === editingEntry!.id ? { ...editForm, id: e.id } : e));
-    setEditingEntry(null);
-    toast.success("Đã cập nhật môn học");
+    try {
+      const updated = await apiFetch<any>(`/timetable/entries/${editingEntry!.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          day: editForm.day,
+          subject: editForm.subject,
+          start_time: editForm.startTime,
+          end_time: editForm.endTime,
+          room: editForm.room,
+          color: editForm.color
+        })
+      });
+      const transformed = {
+        id: updated.id,
+        day: updated.day,
+        subject: updated.subject,
+        startTime: updated.start_time,
+        endTime: updated.end_time,
+        room: updated.room,
+        color: updated.color
+      };
+      setGroups(prev => prev.map(g => g.id === activeGroupId ? { ...g, entries: g.entries.map(e => e.id === transformed.id ? transformed : e) } : g));
+      setEditingEntry(null);
+      toast.success("Đã cập nhật môn học");
+    } catch (err) {
+      toast.error("Không thể cập nhật môn học");
+    }
   };
 
-  const addGroup = () => {
+  const addGroup = async () => {
     if (!newGroupName.trim()) { toast.error("Vui lòng nhập tên loại"); return; }
-    const id = uid();
-    setGroups(prev => [...prev, { id, name: newGroupName.trim(), entries: [] }]);
-    setActiveGroupId(id);
-    setNewGroupName("");
-    setIsAddingGroup(false);
-    toast.success("Đã thêm loại thời khóa biểu mới");
+    try {
+      const newGroup = await apiFetch<any>("/timetable/groups", {
+        method: "POST",
+        body: JSON.stringify({ name: newGroupName.trim() })
+      });
+      const transformed = { ...newGroup, entries: [] };
+      setGroups(prev => [...prev, transformed]);
+      setActiveGroupId(newGroup.id);
+      setNewGroupName("");
+      setIsAddingGroup(false);
+      toast.success("Đã thêm loại thời khóa biểu mới");
+    } catch (err) {
+      toast.error("Không thể thêm loại thời khóa biểu");
+    }
   };
 
-  const removeGroup = (id: string) => {
+  const removeGroup = async (id: string) => {
     if (groups.length <= 1) { toast.error("Không thể xóa nhóm cuối cùng"); return; }
-    const newGroups = groups.filter(g => g.id !== id);
-    setGroups(newGroups);
-    if (activeGroupId === id) setActiveGroupId(newGroups[0].id);
-    toast.success("Đã xóa nhóm thời khóa biểu");
+    try {
+      await apiFetch(`/timetable/groups/${id}`, { method: "DELETE" });
+      const newGroups = groups.filter(g => g.id !== id);
+      setGroups(newGroups);
+      if (activeGroupId === id) setActiveGroupId(newGroups[0].id);
+      toast.success("Đã xóa nhóm thời khóa biểu");
+    } catch (err) {
+      toast.error("Không thể xóa nhóm");
+    }
   };
 
   const grouped = DAYS.map(day => ({
@@ -248,6 +359,36 @@ function TimetableTab({ userId }: { userId: string }) {
     }
     return () => { document.body.style.overflow = "unset"; };
   }, [editingEntry]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4" />
+        <p className="text-muted-foreground animate-pulse">Đang tải lịch học...</p>
+      </div>
+    );
+  }
+
+  if (groups.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center rounded-2xl border-2 border-dashed border-border bg-muted/20">
+         <div className="mb-4 p-4 rounded-full bg-primary/10">
+           <Plus className="h-8 w-8 text-primary" />
+         </div>
+         <h3 className="font-bold text-lg mb-1">Chưa có lịch học</h3>
+         <p className="text-muted-foreground mb-6 max-w-xs">Hãy tạo nhóm lịch học đầu tiên để bắt đầu quản lý thời gian của bạn</p>
+         <div className="flex items-center gap-2">
+            <input 
+              value={newGroupName}
+              onChange={e => setNewGroupName(e.target.value)}
+              placeholder="Tên loại (Vd: Lịch học chính)"
+              className="rounded-xl border border-border bg-background px-4 py-2 text-sm focus:border-primary focus:outline-none"
+            />
+            <button onClick={addGroup} className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 transition-all">Tạo ngay</button>
+         </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -578,24 +719,63 @@ function TimetableTab({ userId }: { userId: string }) {
 // ─── Tasks Tab ────────────────────────────────────────────────────────────────
 
 function TasksTab({ userId }: { userId: string }) {
-  const [tasks, setTasks] = useState<Task[]>(() => {
-    try { 
-      const userKey = getLocalKey("tasks", userId);
-      let raw = localStorage.getItem(userKey);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-      // Migration
-      if (!raw && userId) {
-        const oldRaw = localStorage.getItem(LOCAL_KEY.tasks);
-        if (oldRaw) {
-          localStorage.setItem(userKey, oldRaw);
-          raw = oldRaw;
+  const fetchTasks = async () => {
+    try {
+      const data = await apiFetch<any[]>("/tasks");
+      const transformed = data.map(t => ({
+        id: t.id,
+        title: t.title,
+        description: t.description,
+        dueDate: t.due_date ? t.due_date.split('T')[0] : "",
+        completed: t.completed,
+        priority: t.priority,
+        createdAt: t.created_at
+      }));
+      setTasks(transformed);
+    } catch (err) {
+      console.error("Fetch Tasks Error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const migrateAndFetch = async () => {
+      const localKey = getLocalKey("tasks", userId);
+      const localData = localStorage.getItem(localKey);
+      
+      if (localData) {
+        try {
+          const parsed = JSON.parse(localData);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            toast.info("Đang đồng bộ dữ liệu nhiệm vụ lên máy chủ...");
+            for (const t of parsed) {
+              await apiFetch("/tasks", {
+                method: "POST",
+                body: JSON.stringify({
+                  title: t.title,
+                  description: t.description,
+                  due_date: t.dueDate || null,
+                  completed: t.completed,
+                  priority: t.priority
+                })
+              });
+            }
+            localStorage.removeItem(localKey);
+            toast.success("Đồng bộ nhiệm vụ thành công!");
+          }
+        } catch (e) {
+          console.error("Migration error:", e);
         }
       }
+      fetchTasks();
+    };
 
-      return JSON.parse(raw || "[]"); 
-    }
-    catch { return []; }
-  });
+    migrateAndFetch();
+  }, [userId]);
 
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState<"all" | "active" | "done">("all");
@@ -605,33 +785,62 @@ function TasksTab({ userId }: { userId: string }) {
   const [collapsedMonths, setCollapsedMonths] = useState<Record<string, boolean>>({});
   const [viewingTaskDetail, setViewingTaskDetail] = useState<Task | null>(null);
 
-  useEffect(() => {
-    if (userId) {
-      localStorage.setItem(getLocalKey("tasks", userId), JSON.stringify(tasks));
-    }
-  }, [tasks, userId]);
-
-
   const toggleMonth = (key: string) => {
     setCollapsedMonths(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const add = () => {
+  const add = async () => {
     if (!form.title.trim()) { toast.error("Vui lòng nhập tiêu đề nhiệm vụ"); return; }
-    const newTask: Task = { id: uid(), ...form, completed: false, createdAt: new Date().toISOString() };
-    setTasks(prev => [newTask, ...prev]);
-    setForm({ title: "", description: "", dueDate: "", priority: "medium" });
-    setShowForm(false);
-    toast.success("Đã thêm nhiệm vụ");
+    try {
+      const newTask = await apiFetch<any>("/tasks", {
+        method: "POST",
+        body: JSON.stringify({
+          title: form.title,
+          description: form.description,
+          due_date: form.dueDate || null,
+          priority: form.priority
+        })
+      });
+      const transformed = {
+        id: newTask.id,
+        title: newTask.title,
+        description: newTask.description,
+        dueDate: newTask.due_date ? newTask.due_date.split('T')[0] : "",
+        completed: newTask.completed,
+        priority: newTask.priority,
+        createdAt: newTask.created_at
+      };
+      setTasks(prev => [transformed, ...prev]);
+      setForm({ title: "", description: "", dueDate: "", priority: "medium" });
+      setShowForm(false);
+      toast.success("Đã thêm nhiệm vụ");
+    } catch (err) {
+      toast.error("Không thể thêm nhiệm vụ");
+    }
   };
 
-  const toggle = (id: string) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+  const toggle = async (id: string) => {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    try {
+      const updated = await apiFetch<any>(`/tasks/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ completed: !task.completed })
+      });
+      setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: updated.completed } : t));
+    } catch (err) {
+      toast.error("Không thể cập nhật nhiệm vụ");
+    }
   };
 
-  const remove = (id: string) => {
-    setTasks(prev => prev.filter(t => t.id !== id));
-    toast.success("Đã xóa nhiệm vụ");
+  const remove = async (id: string) => {
+    try {
+      await apiFetch(`/tasks/${id}`, { method: "DELETE" });
+      setTasks(prev => prev.filter(t => t.id !== id));
+      toast.success("Đã xóa nhiệm vụ");
+    } catch (err) {
+      toast.error("Không thể xóa nhiệm vụ");
+    }
   };
 
   const openEditTask = (task: Task) => {
@@ -639,11 +848,33 @@ function TasksTab({ userId }: { userId: string }) {
     setEditForm({ title: task.title, description: task.description, dueDate: task.dueDate, priority: task.priority });
   };
 
-  const saveEditTask = () => {
+  const saveEditTask = async () => {
     if (!editForm.title.trim()) { toast.error("Vui lòng nhập tiêu đề nhiệm vụ"); return; }
-    setTasks(prev => prev.map(t => t.id === editingTask!.id ? { ...t, ...editForm } : t));
-    setEditingTask(null);
-    toast.success("Đã cập nhật nhiệm vụ");
+    try {
+      const updated = await apiFetch<any>(`/tasks/${editingTask!.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          title: editForm.title,
+          description: editForm.description,
+          due_date: editForm.dueDate || null,
+          priority: editForm.priority
+        })
+      });
+      const transformed = {
+        id: updated.id,
+        title: updated.title,
+        description: updated.description,
+        dueDate: updated.due_date ? updated.due_date.split('T')[0] : "",
+        completed: updated.completed,
+        priority: updated.priority,
+        createdAt: updated.created_at
+      };
+      setTasks(prev => prev.map(t => t.id === editingTask!.id ? transformed : t));
+      setEditingTask(null);
+      toast.success("Đã cập nhật nhiệm vụ");
+    } catch (err) {
+      toast.error("Không thể cập nhật nhiệm vụ");
+    }
   };
 
   const filtered = tasks.filter(t =>
@@ -696,6 +927,15 @@ function TasksTab({ userId }: { userId: string }) {
   }, [editingTask, viewingTaskDetail]);
 
   const totalDone = tasks.filter(t => t.completed).length;
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4" />
+        <p className="text-muted-foreground animate-pulse">Đang tải nhiệm vụ...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -1135,24 +1375,59 @@ function TasksTab({ userId }: { userId: string }) {
 // ─── Notes Tab ────────────────────────────────────────────────────────────────
 
 function NotesTab({ userId }: { userId: string }) {
-  const [notes, setNotes] = useState<Note[]>(() => {
-    try { 
-      const userKey = getLocalKey("notes", userId);
-      let raw = localStorage.getItem(userKey);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-      // Migration
-      if (!raw && userId) {
-        const oldRaw = localStorage.getItem(LOCAL_KEY.notes);
-        if (oldRaw) {
-          localStorage.setItem(userKey, oldRaw);
-          raw = oldRaw;
+  const fetchNotes = async () => {
+    try {
+      const data = await apiFetch<any[]>("/notes");
+      const transformed = data.map(n => ({
+        id: n.id,
+        title: n.title,
+        content: n.content,
+        color: n.color,
+        updatedAt: n.updated_at
+      }));
+      setNotes(transformed);
+    } catch (err) {
+      console.error("Fetch Notes Error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const migrateAndFetch = async () => {
+      const localKey = getLocalKey("notes", userId);
+      const localData = localStorage.getItem(localKey);
+      
+      if (localData) {
+        try {
+          const parsed = JSON.parse(localData);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            toast.info("Đang đồng bộ dữ liệu ghi chú lên máy chủ...");
+            for (const n of parsed) {
+              await apiFetch("/notes", {
+                method: "POST",
+                body: JSON.stringify({
+                  title: n.title,
+                  content: n.content,
+                  color: n.color
+                })
+              });
+            }
+            localStorage.removeItem(localKey);
+            toast.success("Đồng bộ ghi chú thành công!");
+          }
+        } catch (e) {
+          console.error("Migration error:", e);
         }
       }
+      fetchNotes();
+    };
 
-      return JSON.parse(raw || "[]"); 
-    }
-    catch { return []; }
-  });
+    migrateAndFetch();
+  }, [userId]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addingColor, setAddingColor] = useState(NOTE_COLORS[0]);
@@ -1162,43 +1437,80 @@ function NotesTab({ userId }: { userId: string }) {
   const [editForm, setEditForm] = useState<{ title: string; content: string; color: string }>({ title: "", content: "", color: "" });
   const [viewingNote, setViewingNote] = useState<Note | null>(null);
 
-  useEffect(() => {
-    if (userId) {
-      localStorage.setItem(getLocalKey("notes", userId), JSON.stringify(notes));
-    }
-  }, [notes, userId]);
 
 
-  const add = () => {
+  const add = async () => {
     if (!addTitle.trim() && !addContent.trim()) { toast.error("Vui lòng nhập tiêu đề hoặc nội dung"); return; }
-    setNotes(prev => [{
-      id: uid(),
-      title: addTitle,
-      content: addContent,
-      color: addingColor.bg + " " + addingColor.border,
-      updatedAt: new Date().toISOString()
-    }, ...prev]);
-    setAddTitle("");
-    setAddContent("");
-    setShowAdd(false);
-    toast.success("Đã thêm ghi chú");
+    try {
+      const newNote = await apiFetch<any>("/notes", {
+        method: "POST",
+        body: JSON.stringify({
+          title: addTitle,
+          content: addContent,
+          color: addingColor.bg + " " + addingColor.border
+        })
+      });
+      const transformed = {
+        id: newNote.id,
+        title: newNote.title,
+        content: newNote.content,
+        color: newNote.color,
+        updatedAt: newNote.updated_at
+      };
+      setNotes(prev => [transformed, ...prev]);
+      setAddTitle("");
+      setAddContent("");
+      setShowAdd(false);
+      toast.success("Đã thêm ghi chú");
+    } catch (err) {
+      toast.error("Không thể thêm ghi chú");
+    }
   };
 
-  const saveEdit = (id: string) => {
-    setNotes(prev => prev.map(n => n.id === id ? { ...n, ...editForm, updatedAt: new Date().toISOString() } : n));
-    setEditingId(null);
-    toast.success("Đã lưu ghi chú");
+  const saveEdit = async (id: string) => {
+    try {
+      const updated = await apiFetch<any>(`/notes/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(editForm)
+      });
+      const transformed = {
+        id: updated.id,
+        title: updated.title,
+        content: updated.content,
+        color: updated.color,
+        updatedAt: updated.updated_at
+      };
+      setNotes(prev => prev.map(n => n.id === id ? transformed : n));
+      setEditingId(null);
+      toast.success("Đã lưu ghi chú");
+    } catch (err) {
+      toast.error("Không thể cập nhật ghi chú");
+    }
   };
 
-  const remove = (id: string) => {
-    setNotes(prev => prev.filter(n => n.id !== id));
-    toast.success("Đã xóa ghi chú");
+  const remove = async (id: string) => {
+    try {
+      await apiFetch(`/notes/${id}`, { method: "DELETE" });
+      setNotes(prev => prev.filter(n => n.id !== id));
+      toast.success("Đã xóa ghi chú");
+    } catch (err) {
+      toast.error("Không thể xóa ghi chú");
+    }
   };
 
   const startEdit = (note: Note) => {
     setEditingId(note.id);
     setEditForm({ title: note.title, content: note.content, color: note.color });
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4" />
+        <p className="text-muted-foreground animate-pulse">Đang tải ghi chú...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

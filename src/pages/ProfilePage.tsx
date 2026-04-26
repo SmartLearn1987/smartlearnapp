@@ -8,9 +8,23 @@ import { getStreakStats } from "@/lib/streak";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useRef } from "react";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Trash2 } from "lucide-react";
 
 export default function ProfilePage() {
-  const { user, refresh } = useAuth();
+  const { user, refresh, logout } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const streakData = getStreakStats(user?.id);
@@ -31,6 +45,11 @@ export default function ProfilePage() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [otherReason, setOtherReason] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -188,6 +207,28 @@ export default function ProfilePage() {
       setError(err.message || "Đã xảy ra lỗi");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    
+    setIsDeleting(true);
+    try {
+      const reason = deleteReason === "Khác" ? `Khác: ${otherReason}` : deleteReason;
+      
+      await apiFetch(`/users/${user.id}`, {
+        method: "DELETE",
+        body: JSON.stringify({ reason })
+      });
+
+      toast.success("Tài khoản của bạn đã được xóa thành công.");
+      logout(); // This will clear session and redirect to login
+    } catch (err: any) {
+      toast.error(err.message || "Không thể xóa tài khoản");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
     }
   };
 
@@ -439,14 +480,91 @@ export default function ProfilePage() {
               </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => navigate(-1)} className="rounded-xl h-12 px-8">
-                Hủy
-              </Button>
-              <Button type="submit" className="rounded-xl h-12 px-10 shadow-lg shadow-primary/20" disabled={loading}>
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
-                Lưu thay đổi
-              </Button>
+            <div className="flex justify-between items-center pt-4">
+              <div className="flex items-center">
+                {user.role !== 'admin' && (
+                  <AlertDialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+                    <AlertDialogTrigger asChild>
+                      <Button type="button" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl gap-2 font-bold px-4">
+                        <Trash2 className="h-4 w-4" />
+                        Xóa tài khoản
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="rounded-3xl max-w-md border-border shadow-2xl">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-xl font-black text-destructive flex items-center gap-2">
+                          <AlertCircle className="h-6 w-6" />
+                          Xác nhận xóa tài khoản
+                        </AlertDialogTitle>
+                        <AlertDialogDescription asChild>
+                          <div className="space-y-4 pt-2">
+                            <div className="rounded-2xl bg-destructive/5 p-4 border border-destructive/20">
+                              <p className="text-foreground font-bold mb-1 text-sm">Cảnh báo: Hành động này không thể hoàn tác!</p>
+                              <p className="text-muted-foreground text-xs leading-relaxed">
+                                Tất cả dữ liệu bao gồm bài học, flashcard và kết quả học tập của bạn sẽ bị xóa vĩnh viễn khỏi hệ thống.
+                              </p>
+                            </div>
+                            
+                            <div className="space-y-3">
+                              <p className="text-sm font-bold text-foreground">Vui lòng cho biết lý do bạn muốn rời đi:</p>
+                              <RadioGroup value={deleteReason} onValueChange={setDeleteReason} className="space-y-2">
+                                <div className="flex items-center space-x-2 rounded-xl border border-border p-3 hover:bg-muted/50 transition-colors cursor-pointer">
+                                  <RadioGroupItem value="Không còn nhu cầu sử dụng" id="r1" />
+                                  <Label htmlFor="r1" className="flex-1 cursor-pointer font-medium">Không còn nhu cầu sử dụng</Label>
+                                </div>
+                                <div className="flex items-center space-x-2 rounded-xl border border-border p-3 hover:bg-muted/50 transition-colors cursor-pointer">
+                                  <RadioGroupItem value="App hoạt động không như mong muốn" id="r2" />
+                                  <Label htmlFor="r2" className="flex-1 cursor-pointer font-medium">App hoạt động không như mong muốn</Label>
+                                </div>
+                                <div className="flex items-center space-x-2 rounded-xl border border-border p-3 hover:bg-muted/50 transition-colors cursor-pointer">
+                                  <RadioGroupItem value="Đăng ký lại tài khoản mới" id="r3" />
+                                  <Label htmlFor="r3" className="flex-1 cursor-pointer font-medium">Đăng ký lại tài khoản mới</Label>
+                                </div>
+                                <div className="flex items-center space-x-2 rounded-xl border border-border p-3 hover:bg-muted/50 transition-colors cursor-pointer">
+                                  <RadioGroupItem value="Khác" id="r4" />
+                                  <Label htmlFor="r4" className="flex-1 cursor-pointer font-medium">Khác</Label>
+                                </div>
+                              </RadioGroup>
+                              
+                              {deleteReason === "Khác" && (
+                                <textarea
+                                  value={otherReason}
+                                  onChange={(e) => setOtherReason(e.target.value)}
+                                  placeholder="Hãy chia sẻ thêm với chúng tôi..."
+                                  className="w-full rounded-xl border-2 border-primary/20 bg-white p-3 text-sm font-medium focus:border-primary focus:outline-none min-h-[80px]"
+                                />
+                              )}
+                            </div>
+                          </div>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="gap-2 sm:gap-0">
+                        <AlertDialogCancel className="rounded-xl font-bold h-11">Quay lại</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleDeleteAccount();
+                          }}
+                          disabled={isDeleting || !deleteReason || (deleteReason === "Khác" && !otherReason.trim())}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl font-bold px-6 h-11 shadow-lg shadow-destructive/20"
+                        >
+                          {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Xác nhận xóa vĩnh viễn"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button type="button" variant="outline" onClick={() => navigate(-1)} className="rounded-xl h-12 px-8 font-bold">
+                  Hủy
+                </Button>
+                <Button type="submit" className="rounded-xl h-12 px-10 shadow-lg shadow-primary/20 font-bold" disabled={loading}>
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                  Lưu thay đổi
+                </Button>
+              </div>
             </div>
           </form>
         </div>
