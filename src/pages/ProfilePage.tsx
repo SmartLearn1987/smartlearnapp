@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User as UserIcon, Loader2, AlertCircle, ArrowLeft, ShieldCheck, Mail, GraduationCap, Lock, Check, Camera, Flame, CheckCircle2, Calendar } from "lucide-react";
+import { User as UserIcon, Loader2, AlertCircle, ArrowLeft, ShieldCheck, Mail, GraduationCap, Lock, Check, Camera, Flame, CheckCircle2, Calendar, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { updateUser, changePassword } from "@/lib/auth";
@@ -29,6 +29,8 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -405,15 +407,25 @@ export default function ProfilePage() {
                   <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
                     Mật khẩu mới
                   </label>
-                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••"
-                    className="w-full rounded-xl border-2 border-primary/20 bg-white px-4 py-3 text-sm font-medium focus:border-primary focus:outline-none transition-all hover:border-primary/40 shadow-sm" />
+                  <div className="relative">
+                    <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••"
+                      className="w-full rounded-xl border-2 border-primary/20 bg-white pl-4 pr-10 py-3 text-sm font-medium focus:border-primary focus:outline-none transition-all hover:border-primary/40 shadow-sm" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
                     Xác nhận mật khẩu
                   </label>
-                  <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••"
-                    className="w-full rounded-xl border-2 border-primary/20 bg-white px-4 py-3 text-sm font-medium focus:border-primary focus:outline-none transition-all hover:border-primary/40 shadow-sm" />
+                  <div className="relative">
+                    <input type={showConfirmPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••"
+                      className="w-full rounded-xl border-2 border-primary/20 bg-white pl-4 pr-10 py-3 text-sm font-medium focus:border-primary focus:outline-none transition-all hover:border-primary/40 shadow-sm" />
+                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground italic flex items-center gap-2">

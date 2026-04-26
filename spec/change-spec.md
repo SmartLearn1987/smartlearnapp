@@ -151,3 +151,23 @@ Cung cấp màn hình Thống kê để Admin theo dõi số lượng bài học
 
 ### Nội dung thay đổi
 - **Backend**: Thêm endpoint `GET /api/statistics/users`. Thêm trường `last_login` cho bảng `users`.
+
+---
+
+## 9. Hệ thống & Tài liệu (System & Documentation)
+
+**Date:** 2026-04-25
+
+### Task Content
+Dọn dẹp hệ thống log và đồng bộ hóa toàn bộ tài liệu đặc tả API để phục vụ việc phát triển và bàn giao.
+
+### Checklist
+- [x] Loại bỏ toàn bộ log debug cơ sở dữ liệu `[DB Debug]` trong `server/db.mjs`.
+- [x] Cập nhật và bổ sung đầy đủ các endpoint mới vào `spec/api.md`.
+- [x] Khởi tạo thư mục `/docs` và đồng bộ hóa tài liệu hệ thống.
+- [x] Khắc phục lỗi `TypeError` liên quan đến `charAt` khi xử lý dữ liệu người dùng (UI fix).
+
+### Nội dung thay đổi
+- **Backend**: Gỡ bỏ `console.log` gây nhiễu trong module Database.
+- **Documentation**: Cập nhật `spec/api.md` (Table of Contents, snake_case consistency, Admin stats). Sao chép tài liệu sang `/docs`.
+- **Frontend**: Thêm kiểm tra null-safe cho các thuộc tính chuỗi trong các component hiển thị thông tin người dùng.

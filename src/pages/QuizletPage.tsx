@@ -37,9 +37,10 @@ export default function QuizletPage() {
 
   useEffect(() => {
     async function loadData() {
+      setLoading(true);
       try {
         const [quizletData, subjectData] = await Promise.all([
-          apiFetch("/quizlets"),
+          apiFetch(`/quizlets?tab=${viewMode}`),
           apiFetch("/subjects")
         ]);
         setQuizlets(quizletData as QuizletSet[]);
@@ -51,7 +52,7 @@ export default function QuizletPage() {
       }
     }
     loadData();
-  }, []);
+  }, [viewMode]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Bạn có chắc chắn muốn xóa học phần này?")) return;
@@ -65,28 +66,7 @@ export default function QuizletPage() {
   };
 
   const filteredQuizlets = quizlets.filter(q => {
-    const matchesSearch = q.title.toLowerCase().includes(searchQuery.toLowerCase());
-    if (viewMode === "personal") {
-      return matchesSearch && q.user_id === currentUser?.id;
-    } else {
-      // Community view
-      const isPublic = q.is_public;
-      const isAdmin = currentUser?.role === "admin";
-      
-      if (isAdmin) {
-        return matchesSearch && isPublic;
-      }
-      
-      // For user and teacher: Filter by their education level
-      // If user hasn't set an education level, show all public ones as fallback
-      const userLevel = currentUser?.educationLevel?.trim().toLowerCase();
-      if (!userLevel) {
-        return matchesSearch && isPublic;
-      }
-      
-      const quizletLevel = (q.education_level || "").trim().toLowerCase();
-      return matchesSearch && isPublic && quizletLevel === userLevel;
-    }
+    return q.title.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   // 1. Group by Education Level

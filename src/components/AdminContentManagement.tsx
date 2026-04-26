@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 
 const PAGES = [
-  { slug: "payment-methods", title: "Hình thức thanh toán" },
+  { slug: "payment-methods", title: "Hướng dẫn thanh toán" },
   { slug: "privacy-policy", title: "Chính sách bảo mật" },
   { slug: "about-us", title: "Giới thiệu về chúng tôi" },
   { slug: "faq", title: "Các câu hỏi thường gặp" },
@@ -27,7 +27,11 @@ export default function AdminContentManagement() {
     setLoading(true);
     try {
       const data = await apiFetch<any>(`/system-pages/${selectedSlug}`);
-      setTitle(data.title || PAGES.find(p => p.slug === selectedSlug)?.title || "");
+      let fetchedTitle = data.title || PAGES.find(p => p.slug === selectedSlug)?.title || "";
+      if (selectedSlug === "payment-methods" && fetchedTitle === "Hình thức thanh toán") {
+        fetchedTitle = "Hướng dẫn thanh toán";
+      }
+      setTitle(fetchedTitle);
       setContent(data.content || "");
     } catch (err) {
       toast.error("Không thể tải nội dung trang");
@@ -123,8 +127,12 @@ export default function AdminContentManagement() {
                   <p>đang tải nội dung...</p>
                 </div>
               ) : previewMode ? (
-                <div className="prose prose-sm max-w-none dark:prose-invert min-h-[400px]">
-                  <div dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br/>') }} />
+                <div className="prose prose-sm max-w-none dark:prose-invert min-h-[400px] isolate">
+                  <div dangerouslySetInnerHTML={{ 
+                    __html: content.includes('<') && content.includes('>') 
+                      ? content 
+                      : content.replace(/\n/g, '<br/>') 
+                  }} />
                 </div>
               ) : (
                 <textarea

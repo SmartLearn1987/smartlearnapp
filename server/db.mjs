@@ -113,6 +113,10 @@ pool.query('SELECT NOW()', (err) => {
 
 
 export async function query(text, params = []) {
-  return pool.query(text, params);
+  try {
+    return await pool.query(text, params);
+  } catch (err) {
+    throw err;
+  }
 }
 

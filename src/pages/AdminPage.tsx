@@ -3,8 +3,11 @@ import { useNavigate } from "react-router-dom";
 import {
   Users, Plus, Trash2, KeyRound, ShieldCheck, User as UserIcon,
   Loader2, CheckCircle2, AlertCircle, X, Calendar, Edit3, BookOpen,
-  ArrowLeft, Search, Filter, XCircle
+  ArrowLeft, Search, Filter, XCircle, Settings, ArrowUpDown, ArrowUp, ArrowDown,
+  Eye, EyeOff
 } from "lucide-react";
+import { apiFetch } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { listUsers, createUser, deleteUser, changePassword, updateUser, type User, type Role } from "@/lib/auth";
@@ -35,12 +38,13 @@ const formatDateInput = (dateStr: string | null | undefined) => {
 const calculateEndDate = (startStr: string, planType: string) => {
   if (!startStr) return "";
   const d = new Date(startStr);
-  let daysToAdd = 7;
+  let daysToAdd = 6;
   if (planType === "1 tháng") daysToAdd = 30;
   else if (planType === "2 tháng") daysToAdd = 60;
   else if (planType === "3 tháng") daysToAdd = 90;
   else if (planType === "6 tháng") daysToAdd = 180;
   else if (planType === "12 tháng") daysToAdd = 365;
+  else if (planType === "Vô thời hạn") daysToAdd = 1800;
   
   d.setDate(d.getDate() + daysToAdd);
   const y = d.getFullYear();
@@ -108,21 +112,33 @@ function UserCreateScreen({ onBack, onCreated }: { onBack: () => void; onCreated
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [educationLevel, setEducationLevel] = useState("Tiểu học");
   const [role, setRole] = useState<Role>("user");
   const [plan, setPlan] = useState("Miễn phí");
   const [startDate, setStartDate] = useState(getTodayStr());
-  const [endDate, setEndDate] = useState(calculateEndDate(getTodayStr(), "Miễn phí"));
+  const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const { data: plans = [] } = useQuery<any[]>({
+    queryKey: ["plans"],
+    queryFn: () => apiFetch("/plans"),
+  });
+
+  useEffect(() => {
+    const selectedPlan = plans.find(p => p.name === plan);
+    if (selectedPlan) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + selectedPlan.durationDays);
+      setEndDate(formatDateInput(d.toISOString()));
+    }
+  }, [plan, startDate, plans]);
+
   const handlePlanChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newPlan = e.target.value;
-    setPlan(newPlan);
-    const today = getTodayStr();
-    setStartDate(today);
-    setEndDate(calculateEndDate(today, newPlan));
+    setPlan(e.target.value);
   };
 
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -210,12 +226,9 @@ function UserCreateScreen({ onBack, onCreated }: { onBack: () => void; onCreated
             <label className="text-sm font-semibold">Gói cước</label>
             <select value={plan} onChange={handlePlanChange}
               className="w-full rounded-xl border-2 border-input bg-background px-3 py-2.5 text-sm font-medium focus:border-primary focus:outline-none">
-              <option value="Miễn phí">Miễn phí</option>
-              <option value="1 tháng">1 tháng</option>
-              <option value="2 tháng">2 tháng</option>
-              <option value="3 tháng">3 tháng</option>
-              <option value="6 tháng">6 tháng</option>
-              <option value="12 tháng">12 tháng</option>
+              {plans.map(p => (
+                <option key={p.id} value={p.name}>{p.name}</option>
+              ))}
             </select>
           </div>
 
@@ -235,13 +248,23 @@ function UserCreateScreen({ onBack, onCreated }: { onBack: () => void; onCreated
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-sm font-semibold">Mật khẩu * (≥ 6 ký tự)</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••"
-                className="w-full rounded-xl border-2 border-input bg-background px-3 py-2.5 text-sm font-medium focus:border-primary focus:outline-none" />
+              <div className="relative">
+                <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••"
+                  className="w-full rounded-xl border-2 border-input bg-background pl-3 pr-10 py-2.5 text-sm font-medium focus:border-primary focus:outline-none" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-semibold">Nhập lại mật khẩu *</label>
-              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••"
-                className="w-full rounded-xl border-2 border-input bg-background px-3 py-2.5 text-sm font-medium focus:border-primary focus:outline-none" />
+              <div className="relative">
+                <input type={showConfirmPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••"
+                  className="w-full rounded-xl border-2 border-input bg-background pl-3 pr-10 py-2.5 text-sm font-medium focus:border-primary focus:outline-none" />
+                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -290,18 +313,26 @@ function UserEditScreen({ user, onBack, onUpdated }: { user: User; onBack: () =>
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const { data: plans = [] } = useQuery<any[]>({
+    queryKey: ["plans"],
+    queryFn: () => apiFetch("/plans"),
+  });
+
+  useEffect(() => {
+    const selectedPlan = plans.find(p => p.name === plan);
+    if (selectedPlan) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + selectedPlan.durationDays);
+      setEndDate(formatDateInput(d.toISOString()));
+    }
+  }, [plan, startDate, plans]);
+
   const handlePlanChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newPlan = e.target.value;
-    setPlan(newPlan);
-    const today = getTodayStr();
-    setStartDate(today);
-    setEndDate(calculateEndDate(today, newPlan));
+    setPlan(e.target.value);
   };
 
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newStart = e.target.value;
-    setStartDate(newStart);
-    setEndDate(calculateEndDate(newStart, plan));
+    setStartDate(e.target.value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -378,12 +409,9 @@ function UserEditScreen({ user, onBack, onUpdated }: { user: User; onBack: () =>
             <label className="text-sm font-semibold">Gói cước</label>
             <select value={plan} onChange={handlePlanChange}
               className="w-full rounded-xl border-2 border-input bg-background px-3 py-2.5 text-sm font-medium focus:border-primary focus:outline-none">
-              <option value="Miễn phí">Miễn phí</option>
-              <option value="1 tháng">1 tháng</option>
-              <option value="2 tháng">2 tháng</option>
-              <option value="3 tháng">3 tháng</option>
-              <option value="6 tháng">6 tháng</option>
-              <option value="12 tháng">12 tháng</option>
+              {plans.map(p => (
+                <option key={p.id} value={p.name}>{p.name}</option>
+              ))}
             </select>
           </div>
 
@@ -449,6 +477,7 @@ function UserEditScreen({ user, onBack, onUpdated }: { user: User; onBack: () =>
 // ── Change password modal ─────────────────────────────────────
 function ChangePwModal({ user, onClose }: { user: User; onClose: () => void }) {
   const [pw, setPw] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -477,9 +506,14 @@ function ChangePwModal({ user, onClose }: { user: User; onClose: () => void }) {
         </div>
         <p className="text-sm text-muted-foreground">Tài khoản: <strong>{user.displayName}</strong> (@{user.username})</p>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="password" value={pw} onChange={(e) => setPw(e.target.value)}
-            placeholder="Mật khẩu mới (≥ 6 ký tự)" autoFocus
-            className="w-full rounded-xl border-2 border-input bg-background px-4 py-2.5 text-sm font-medium focus:border-primary focus:outline-none" />
+          <div className="relative">
+            <input type={showPassword ? "text" : "password"} value={pw} onChange={(e) => setPw(e.target.value)}
+              placeholder="Mật khẩu mới (≥ 6 ký tự)" autoFocus
+              className="w-full rounded-xl border-2 border-input bg-background pl-4 pr-10 py-2.5 text-sm font-medium focus:border-primary focus:outline-none" />
+            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="flex gap-3">
             <Button type="button" variant="outline" onClick={onClose} className="flex-1">Hủy</Button>
@@ -493,6 +527,66 @@ function ChangePwModal({ user, onClose }: { user: User; onClose: () => void }) {
   );
 }
 
+// ── Default Plan Settings Modal ────────────────────────────────
+function SettingsModal({ plans, onClose }: { plans: any[]; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [plan, setPlan] = useState("Miễn phí");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["settings", "default-plan"],
+    queryFn: () => apiFetch("/settings/default-plan"),
+  });
+
+  useEffect(() => {
+    if (data?.plan) setPlan(data.plan);
+  }, [data]);
+
+  const mutation = useMutation({
+    mutationFn: (newPlan: string) => apiFetch("/settings/default-plan", { method: "PUT", body: JSON.stringify({ plan: newPlan }) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["settings", "default-plan"] });
+      toast.success("Đã cập nhật gói cước mặc định");
+      onClose();
+    },
+    onError: () => toast.error("Cập nhật thất bại"),
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+      <div className="w-full max-w-sm rounded-2xl bg-card shadow-2xl border border-border p-6 space-y-5 opacity-0 animate-scale-in">
+        <div className="flex items-center justify-between">
+          <h2 className="font-heading text-lg font-bold flex items-center gap-2">
+            <Settings className="h-5 w-5 text-secondary" /> Thiết định
+          </h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
+        </div>
+        <p className="text-sm text-muted-foreground">Chọn gói cước mặc định gán cho User khi đăng ký mới:</p>
+        
+        {isLoading ? (
+          <div className="flex justify-center py-4">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(plan); }} className="space-y-4">
+            <select value={plan} onChange={(e) => setPlan(e.target.value)}
+              className="w-full rounded-xl border-2 border-input bg-background px-4 py-2.5 text-sm font-medium focus:border-primary focus:outline-none">
+              {plans.map(p => (
+                <option key={p.id} value={p.name}>{p.name}</option>
+              ))}
+            </select>
+            <div className="flex gap-3">
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1 rounded-xl">Hủy</Button>
+              <Button type="submit" className="flex-1 rounded-xl shadow-md shadow-primary/20" disabled={mutation.isPending}>
+                {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Lưu thiết định
+              </Button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Main AdminPage ────────────────────────────────────────────
 export default function AdminPage() {
   const navigate = useNavigate();
@@ -501,6 +595,7 @@ export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [changePwTarget, setChangePwTarget] = useState<User | null>(null);
   const [editUserTarget, setEditUserTarget] = useState<User | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   
   // Pagination & Data state
   const [loading, setLoading] = useState(true);
@@ -509,11 +604,66 @@ export default function AdminPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [stats, setStats] = useState({ adminCount: 0, userCount: 0, totalCount: 0 });
 
+  const { data: plansData = [] } = useQuery<any[]>({
+    queryKey: ["plans"],
+    queryFn: () => apiFetch("/plans"),
+  });
+
   // Filter state
   const [filterUsername, setFilterUsername] = useState("");
   const [filterLevel, setFilterLevel] = useState("");
   const [filterRole, setFilterRole] = useState("");
   const [filterPlan, setFilterPlan] = useState("");
+
+  // Sort state
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
+
+  const handleSort = (key: string) => {
+    let direction: "asc" | "desc" = "asc";
+    if (sortConfig?.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedUsers = [...users].sort((a, b) => {
+    if (!sortConfig) return 0;
+    const { key, direction } = sortConfig;
+    
+    let valA: any = a[key as keyof typeof a];
+    let valB: any = b[key as keyof typeof b];
+
+    if (key === "planEndDate") {
+       valA = valA ? new Date(valA).getTime() : 0;
+       valB = valB ? new Date(valB).getTime() : 0;
+    } else if (typeof valA === "string" && typeof valB === "string") {
+       valA = valA.toLowerCase();
+       valB = valB.toLowerCase();
+    } else if (key === "isActive") {
+       valA = valA === false ? 0 : 1;
+       valB = valB === false ? 0 : 1;
+    }
+    
+    if (valA < valB) return direction === "asc" ? -1 : 1;
+    if (valA > valB) return direction === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  const renderSortableHeader = (label: string, key: string, align: "left" | "center" = "left", pxClass = "px-3") => (
+    <th 
+      className={`${pxClass} py-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] whitespace-nowrap cursor-pointer hover:bg-muted/50 select-none ${align === "center" ? "text-center" : "text-left"}`}
+      onClick={() => handleSort(key)}
+    >
+      <div className={`flex items-center gap-1 ${align === "center" ? "justify-center" : ""}`}>
+        {label}
+        {sortConfig?.key === key ? (
+          sortConfig.direction === "asc" ? <ArrowUp className="h-3 w-3 text-primary" /> : <ArrowDown className="h-3 w-3 text-primary" />
+        ) : (
+          <ArrowUpDown className="h-3 w-3 opacity-30" />
+        )}
+      </div>
+    </th>
+  );
 
   const fetchUsers = async () => {
     if (!isAdmin) return;
@@ -594,6 +744,7 @@ export default function AdminPage() {
 
   return (
     <div className="container py-10 px-4">
+      {showSettings && <SettingsModal plans={plansData} onClose={() => setShowSettings(false)} />}
       {changePwTarget && <ChangePwModal user={changePwTarget} onClose={() => setChangePwTarget(null)} />}
           {/* Header */}
           <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 opacity-0 animate-fade-up">
@@ -606,9 +757,17 @@ export default function AdminPage() {
               </h1>
               <p className="mt-2 sm:mt-1 text-muted-foreground text-sm">{stats.totalCount} tài khoản • {stats.adminCount} admin, {stats.userCount} user</p>
             </div>
-            <Button onClick={() => setView("create")} className="w-full sm:w-auto h-12 px-6 rounded-xl shadow-lg shadow-primary/20">
-              <Plus className="mr-2 h-4 w-4" /> Tạo tài khoản
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button variant="outline" onClick={() => navigate("/admin/plans")} className="w-full sm:w-auto h-12 px-6 rounded-xl border-2">
+                <Settings className="mr-2 h-4 w-4" /> Quản lý gói cước
+              </Button>
+              <Button variant="outline" onClick={() => setShowSettings(true)} className="w-full sm:w-auto h-12 px-6 rounded-xl border-2">
+                <Settings className="mr-2 h-4 w-4" /> Thiết định
+              </Button>
+              <Button onClick={() => setView("create")} className="w-full sm:w-auto h-12 px-6 rounded-xl shadow-lg shadow-primary/20">
+                <Plus className="mr-2 h-4 w-4" /> Tạo tài khoản
+              </Button>
+            </div>
           </div>
 
           {/* Filter Bar */}
@@ -655,12 +814,9 @@ export default function AdminPage() {
                 className="flex-1 h-11 px-3 rounded-xl border border-border bg-card text-sm focus:border-primary outline-none"
               >
                 <option value="">-- Tất cả gói cước --</option>
-                <option value="Miễn phí">Miễn phí</option>
-                <option value="1 tháng">1 tháng</option>
-                <option value="2 tháng">2 tháng</option>
-                <option value="3 tháng">3 tháng</option>
-                <option value="6 tháng">6 tháng</option>
-                <option value="12 tháng">12 tháng</option>
+                {plansData.map(p => (
+                  <option key={p.id} value={p.name}>{p.name}</option>
+                ))}
               </select>
 
               {isFiltered && (
@@ -683,23 +839,23 @@ export default function AdminPage() {
               <table className="w-full text-sm text-left border-collapse">
                 <thead>
                   <tr className="bg-muted/50 border-b border-border">
-                    <th className="px-4 py-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">Tên hiển thị</th>
-                    <th className="px-3 py-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] whitespace-nowrap">Tên đăng nhập</th>
-                    <th className="px-3 py-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] whitespace-nowrap">Cấp độ</th>
-                    <th className="px-3 py-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] whitespace-nowrap">Gói cước</th>
-                    <th className="px-3 py-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] whitespace-nowrap">Ngày hết hạn</th>
-                    <th className="px-3 py-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] whitespace-nowrap text-center">Trạng thái</th>
-                    <th className="px-3 py-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] whitespace-nowrap text-center">Vai trò</th>
+                    {renderSortableHeader("Tên hiển thị", "displayName", "left", "px-4")}
+                    {renderSortableHeader("Tên đăng nhập", "username", "left")}
+                    {renderSortableHeader("Cấp độ", "educationLevel", "left")}
+                    {renderSortableHeader("Gói cước", "plan", "left")}
+                    {renderSortableHeader("Ngày hết hạn", "planEndDate", "left")}
+                    {renderSortableHeader("Trạng thái", "isActive", "center")}
+                    {renderSortableHeader("Vai trò", "role", "center")}
                     <th className="px-4 py-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] text-right whitespace-nowrap">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {users.length > 0 ? users.map((u) => (
+                  {sortedUsers.length > 0 ? sortedUsers.map((u) => (
                     <tr key={u.id} className={`hover:bg-muted/30 transition-colors border-b border-border/50 ${u.isActive === false ? "bg-muted/20" : ""}`}>
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
                           <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${u.role === "admin" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
-                            {u.displayName.charAt(0).toUpperCase()}
+                            {(u.displayName || u.username || "?").charAt(0).toUpperCase()}
                           </div>
                           <div className="flex flex-col min-w-0">
                             <span className="font-bold text-foreground truncate max-w-[150px]" title={u.displayName}>{u.displayName}</span>

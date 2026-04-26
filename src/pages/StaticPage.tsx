@@ -15,6 +15,9 @@ export default function StaticPage() {
       setLoading(true);
       try {
         const result = await apiFetch<any>(`/system-pages/${slug}`);
+        if (slug === "payment-methods" && result.title === "Hình thức thanh toán") {
+          result.title = "Hướng dẫn thanh toán";
+        }
         setData(result);
       } catch (err) {
         console.error("Error fetching static page:", err);
@@ -78,7 +81,11 @@ export default function StaticPage() {
               prose-strong:text-foreground
               prose-img:rounded-3xl prose-img:border prose-img:border-border"
           >
-            <div dangerouslySetInnerHTML={{ __html: data.content.replace(/\n/g, '<br/>') }} />
+            <div dangerouslySetInnerHTML={{ 
+              __html: data.content.includes('<') && data.content.includes('>') 
+                ? data.content 
+                : data.content.replace(/\n/g, '<br/>') 
+            }} />
           </div>
         </article>
 

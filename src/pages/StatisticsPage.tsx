@@ -201,7 +201,7 @@ export default function StatisticsPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
-                          {(u.displayName || u.username).charAt(0).toUpperCase()}
+                          {(u.displayName || u.username || "?").charAt(0).toUpperCase()}
                         </div>
                         <div>
                           <div className="font-bold text-slate-900">{u.displayName || u.username}</div>

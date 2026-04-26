@@ -43,7 +43,7 @@ export default function QuizListPage() {
     setLoading(true);
     try {
       const [examsData, subjectsData] = await Promise.all([
-        apiFetch<Exam[]>("/exams"),
+        apiFetch<Exam[]>(`/exams?tab=${viewMode}`),
         apiFetch<{name: string}[]>("/subjects")
       ]);
       setExams(examsData);
@@ -58,7 +58,7 @@ export default function QuizListPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [viewMode]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Bạn có chắc chắn muốn xóa bài thi này?")) return;
@@ -72,28 +72,7 @@ export default function QuizListPage() {
   };
 
   const filteredExams = exams.filter(e => {
-    const matchesSearch = e.title.toLowerCase().includes(searchQuery.toLowerCase());
-    if (viewMode === "personal") {
-      return matchesSearch && e.user_id === user?.id; // Personal: own quizzes (public & private)
-    } else {
-      // Community view
-      const isPublic = e.is_public;
-      const isAdmin = user?.role === "admin";
-      
-      if (isAdmin) {
-        return matchesSearch && isPublic;
-      }
-      
-      // For user and teacher: Filter by their education level
-      // If user hasn't set an education level, show all public ones as fallback
-      const userLevel = user?.educationLevel?.trim().toLowerCase();
-      if (!userLevel) {
-        return matchesSearch && isPublic;
-      }
-      
-      const examLevel = (e.education_level || "").trim().toLowerCase();
-      return matchesSearch && isPublic && examLevel === userLevel;
-    }
+    return e.title.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   // Grouping logic (Education Level -> Subject)

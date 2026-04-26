@@ -1,0 +1,90 @@
+<style>
+    /* Chỉ áp dụng cho vùng nội dung thanh toán, không ảnh hưởng menu */
+    .st-payment-wrapper {
+        padding: 0;
+        margin-top: 10px;
+    }
+
+    .st-payment-card {
+        padding: 24px;
+        border-radius: 20px;
+        background: #ffffff;
+        border: 1px solid #e8f5ed;
+        box-shadow: 0 10px 30px rgba(45, 155, 99, 0.05);
+    }
+
+    .st-payment-section {
+        margin-bottom: 24px;
+    }
+
+    .st-payment-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .st-payment-h2 {
+        color: #2D9B63 !important;
+        font-size: 1.2rem !important;
+        font-weight: 700 !important;
+        margin-top: 0 !important;
+        margin-bottom: 12px !important;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .st-payment-info-box {
+        background: #f0fdf4;
+        padding: 18px;
+        border-left: 4px solid #2D9B63;
+        border-radius: 12px;
+    }
+
+    .st-payment-info-box p {
+        margin: 6px 0 !important;
+        font-size: 0.95rem;
+    }
+
+    .st-payment-highlight {
+        font-weight: bold;
+        color: #d97706;
+    }
+
+    .st-payment-note {
+        font-size: 0.85em;
+        color: #666;
+        font-style: italic;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+    }
+</style>
+
+<div class="st-payment-wrapper">
+    <div class="st-payment-card">
+        <div class="st-payment-section">
+            <h2 class="st-payment-h2">1. Hình thức thanh toán</h2>
+            <p>Để kích hoạt tài khoản Premium, vui lòng thực hiện chuyển khoản ngân hàng theo thông tin dưới đây.</p>
+        </div>
+
+        <div class="st-payment-section">
+            <h2 class="st-payment-h2">2. Thông tin chuyển khoản</h2>
+            <div class="st-payment-info-box">
+                <p><strong>Ngân hàng:</strong> [Tên Ngân Hàng]</p>
+                <p><strong>Số tài khoản:</strong> 0000 1234 5678</p>
+                <p><strong>Chủ tài khoản:</strong> CÔNG TY CÔNG NGHỆ SMARTLEARN</p>
+                <p><strong>Nội dung CK:</strong> <span class="st-payment-highlight">SL [Tên tài khoản hoặc SĐT]</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="st-payment-section">
+            <h2 class="st-payment-h2">3. Thời gian kích hoạt</h2>
+            <ul style="padding-left: 20px; margin: 10px 0;">
+                <li style="margin-bottom: 8px;"> Kích hoạt trong vòng <strong>5-10 phút</strong> sau khi xác nhận chuyển
+                    khoản thành công.</li>
+            </ul>
+            <p class="st-payment-note">Lưu ý: Nếu quá thời gian trên tài khoản chưa được nâng cấp, vui lòng liên hệ ngay
+                Zalo hỗ trợ.</p>
+        </div>
+    </div>
+</div>

@@ -140,10 +140,21 @@ app.post(`${API_PREFIX}/upload`, (req, res) => {
         level integer NOT NULL DEFAULT 1,
         created_by uuid REFERENCES users(id) ON DELETE SET NULL,
         created_at timestamptz DEFAULT now()
+      );`,
+      `CREATE TABLE IF NOT EXISTS system_settings (
+        key text PRIMARY KEY,
+        value jsonb NOT NULL,
+        updated_at timestamptz DEFAULT now()
       );`
     ];
     for (const q of queries) {
       await query(q);
+    }
+    // Add is_premium column to subscription_plans if not exists
+    try {
+      await query(`ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS is_premium boolean NOT NULL DEFAULT false`);
+    } catch (e) {
+      console.warn("Could not add is_premium column:", e.message);
     }
     console.log("Auto-migration completed: ensured all recent user columns are present.");
   } catch (err) {
@@ -186,7 +197,7 @@ app.use(async (req, res, next) => {
   }
 
   try {
-    const { rows } = await query('select session_token, access_token_expires_at from users where id = $1', [userId]);
+    const { rows } = await query('select session_token, access_token_expires_at from users where id = cast($1 as uuid)', [userId]);
     const user = rows[0];
     if (!user || (user.session_token && user.session_token !== sessionToken)) {
       return res.status(401).json({ error: "Phiên đăng nhập đã hết hạn hoặc bạn đã đăng nhập ở thiết bị/trình duyệt khác." });
@@ -301,6 +312,36 @@ async function sendRegistrationEmail(email, displayName) {
   `;
   return sendMail(email, subject, html);
 }
+// ── Settings Endpoints ──────────────────────────────────────────────────────
+app.get(`${API_PREFIX}/settings/default-plan`, async (req, res) => {
+  try {
+    const { rows } = await query(`SELECT value FROM system_settings WHERE key = 'default_user_plan'`);
+    const plan = rows[0]?.value?.plan || "Miễn phí";
+    res.json({ plan });
+  } catch (err) {
+    console.error("GET default-plan Error:", err.message);
+    res.status(500).json({ error: "Failed to get default plan" });
+  }
+});
+
+app.put(`${API_PREFIX}/settings/default-plan`, async (req, res) => {
+  const { plan } = req.body || {};
+  if (!plan) return res.status(400).json({ error: "Missing plan" });
+  
+  try {
+    const value = JSON.stringify({ plan });
+    await query(
+      `INSERT INTO system_settings (key, value, updated_at) 
+       VALUES ('default_user_plan', $1, NOW()) 
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+      [value]
+    );
+    res.json({ plan });
+  } catch (err) {
+    console.error("PUT default-plan Error:", err.message);
+    res.status(500).json({ error: "Failed to update default plan" });
+  }
+});
 
 // ── Auth Endpoints ────────────────────────────────────────────────────────
 app.post(`${API_PREFIX}/register`, async (req, res) => {
@@ -310,12 +351,33 @@ app.post(`${API_PREFIX}/register`, async (req, res) => {
   }
 
   try {
+    // Lấy gói cước mặc định
+    let plan = "Miễn phí";
+    try {
+      const { rows: settingRows } = await query(`SELECT value FROM system_settings WHERE key = 'default_user_plan'`);
+      if (settingRows.length > 0) {
+        plan = settingRows[0].value.plan || "Miễn phí";
+      }
+    } catch (e) {
+      console.error("Failed to read default plan setting, fallback to Miễn phí", e);
+    }
+
+    let durationDays = 6;
+    try {
+      const { rows: planRows } = await query(`SELECT duration_days FROM subscription_plans WHERE name = $1`, [plan]);
+      if (planRows.length > 0) {
+        durationDays = planRows[0].duration_days;
+      }
+    } catch (e) {
+      console.error("Failed to fetch plan duration, fallback to 6 days", e);
+    }
+
     const passwordHash = await hashPassword(password);
     const { rows } = await query(
       `insert into users (username, email, password_hash, display_name, education_level, plan, plan_start_date, plan_end_date)
-       values ($1, $2, $3, $4, $5, $6, NOW(), NOW() + interval '6 days')
+       values ($1, $2, $3, $4, $5, $6, NOW(), NOW() + ($7 || ' days')::interval)
        returning id, username, email, display_name as "displayName", role, education_level as "educationLevel", is_active as "isActive", plan, plan_start_date::text as "planStartDate", plan_end_date::text as "planEndDate", created_at as "createdAt"`,
-      [username.trim(), email.trim(), passwordHash, display_name?.trim() || username.trim(), education_level || "Tiểu học", "Miễn phí"]
+      [username.trim(), email.trim(), passwordHash, display_name?.trim() || username.trim(), education_level || "Tiểu học", plan, durationDays]
     );
 
     const newUser = rows[0];
@@ -472,7 +534,7 @@ const getUserId = (req) => req.headers["x-user-id"];
 async function checkAdmin(userId) {
   if (!userId) return false;
   try {
-    const { rows } = await query(`select role from users where id = $1`, [userId]);
+    const { rows } = await query(`select role from users where id = cast($1 as uuid)`, [userId]);
     return rows[0]?.role === "admin";
   } catch (err) {
     return false;
@@ -627,9 +689,16 @@ app.post(`${API_PREFIX}/users`, async (req, res) => {
   if (!plan_start_date) {
     plan_start_date = new Date().toISOString();
   }
-  if (!plan_end_date) {
+  if (!plan_end_date || plan_end_date === "") {
     const defaultEnd = new Date(plan_start_date);
-    defaultEnd.setDate(defaultEnd.getDate() + 6);
+    let daysToAdd = 6;
+    if (plan === "1 tháng") daysToAdd = 30;
+    else if (plan === "2 tháng") daysToAdd = 60;
+    else if (plan === "3 tháng") daysToAdd = 90;
+    else if (plan === "6 tháng") daysToAdd = 180;
+    else if (plan === "12 tháng") daysToAdd = 365;
+    else if (plan === "Vô thời hạn") daysToAdd = 1800;
+    defaultEnd.setDate(defaultEnd.getDate() + daysToAdd);
     plan_end_date = defaultEnd.toISOString();
   }
 
@@ -673,7 +742,9 @@ app.delete(`${API_PREFIX}/users/:id`, async (req, res) => {
 
 app.put(`${API_PREFIX}/users/:id`, async (req, res) => {
   const { id } = req.params;
-  const { email, display_name, role, education_level, avatar_url, is_active, plan = "Miễn phí", plan_start_date = null, plan_end_date = null } = req.body || {};
+  const { email, display_name, role, education_level, avatar_url, is_active, plan = "Miễn phí", plan_start_date = null } = req.body || {};
+  let { plan_end_date = null } = req.body || {};
+  if (plan_end_date === "") plan_end_date = null;
   try {
     const { rows } = await query(
       `update users
@@ -702,6 +773,98 @@ app.put(`${API_PREFIX}/users/:id/password`, async (req, res) => {
     res.status(500).json({ error: "Failed to change password" });
   }
 });
+
+// ── Subscription Plans ────────────────────────────────────────────────────
+app.get(`${API_PREFIX}/plans`, async (req, res) => {
+  try {
+    const { rows } = await query(
+      `SELECT id, name, duration_days as "durationDays", price, description, is_active as "isActive", sort_order as "sortOrder", is_premium as "isPremium"
+       FROM subscription_plans
+       WHERE is_active = true
+       ORDER BY sort_order ASC`
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch plans" });
+  }
+});
+
+app.get(`${API_PREFIX}/admin/plans`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+  
+  try {
+    const { rows } = await query(
+      `SELECT id, name, duration_days as "durationDays", price, description, is_active as "isActive", sort_order as "sortOrder", is_premium as "isPremium"
+       FROM subscription_plans
+       ORDER BY sort_order ASC`
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch plans" });
+  }
+});
+
+app.post(`${API_PREFIX}/plans`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  const { name, durationDays, price, description, isActive = true, sortOrder = 0, isPremium = false } = req.body || {};
+  if (!name || !durationDays) return res.status(400).json({ error: "Name and durationDays are required" });
+
+  try {
+    const { rows } = await query(
+      `INSERT INTO subscription_plans (name, duration_days, price, description, is_active, sort_order, is_premium)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, name, duration_days as "durationDays", price, description, is_active as "isActive", sort_order as "sortOrder", is_premium as "isPremium"`,
+      [name.trim(), durationDays, price || 0, description || null, isActive, sortOrder, isPremium]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    if (err.message.includes("unique constraint")) {
+      return res.status(400).json({ error: "Plan name already exists" });
+    }
+    console.error("POST /plans error:", err);
+    res.status(500).json({ error: "Failed to create plan" });
+  }
+});
+
+app.put(`${API_PREFIX}/plans/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  const { id } = req.params;
+  const { name, durationDays, price, description, isActive, sortOrder, isPremium = false } = req.body || {};
+  if (!name || !durationDays) return res.status(400).json({ error: "Name and durationDays are required" });
+
+  try {
+    const { rows } = await query(
+      `UPDATE subscription_plans 
+       SET name = $1, duration_days = $2, price = $3, description = $4, is_active = $5, sort_order = $6, is_premium = $7 
+       WHERE id = $8 
+       RETURNING id, name, duration_days as "durationDays", price, description, is_active as "isActive", sort_order as "sortOrder", is_premium as "isPremium"`,
+      [name.trim(), durationDays, price || 0, description || null, isActive, sortOrder, isPremium, id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Plan not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("PUT /plans/:id error:", err);
+    res.status(500).json({ error: "Failed to update plan" });
+  }
+});
+
+app.delete(`${API_PREFIX}/plans/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+
+  try {
+    await query(`DELETE FROM subscription_plans WHERE id = $1`, [req.params.id]);
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete plan" });
+  }
+});
+
 
 // ── System Pages (Static content) ──────────────────────────────────────────
 app.get(`${API_PREFIX}/system-pages/:slug`, async (req, res) => {
@@ -1419,22 +1582,60 @@ app.put(`${API_PREFIX}/progress/:lessonId`, async (req, res) => {
 
 app.get(`${API_PREFIX}/quizlets`, async (req, res) => {
   const userId = getUserId(req);
-  const admin = await checkAdmin(userId);
-  try {
-    const { rows } = await query(
-      `select q.*, 
-        s.name as subject_name,
-        (select count(*)::int from quizlet_terms t where t.quizlet_set_id = q.id) as term_count,
-        coalesce(u.display_name, q.created_by, 'Người dùng ẩn danh') as author_name
-       from quizlet_sets q
-       left join users u on q.user_id = u.id
-       left join subjects s on q.subject_id = s.id
-       where ($2 = true or q.user_id = $1 or q.is_public = true)
-       order by s.name asc, q.created_at desc`,
-      [userId, admin]
-    );
-    res.json(rows);
+  const { tab } = req.query;
 
+  try {
+    const { rows: userRows } = await query('select role, education_level from users where id = cast($1 as uuid)', [userId]);
+    const user = userRows[0];
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const isAdmin = user.role === "admin";
+    const userLevelStr = String(user.education_level || "");
+
+    let rows;
+    if (tab === "personal") {
+      const result = await query(
+        `select q.*, 
+          s.name as subject_name,
+          (select count(*)::int from quizlet_terms t where t.quizlet_set_id = q.id) as term_count,
+          coalesce(u.display_name, q.created_by, 'Người dùng ẩn danh') as author_name
+         from quizlet_sets q
+         left join users u on q.user_id = u.id
+         left join subjects s on q.subject_id = s.id
+         where q.user_id = $1::uuid
+         order by s.name asc, q.created_at desc`,
+        [userId]
+      );
+      rows = result.rows;
+    } else if (tab === "community") {
+      const sql = `select q.*, 
+          s.name as subject_name,
+          (select count(*)::int from quizlet_terms t where t.quizlet_set_id = q.id) as term_count,
+          coalesce(u.display_name, q.created_by, 'Người dùng ẩn danh') as author_name
+         from quizlet_sets q
+         left join users u on q.user_id = u.id
+         left join subjects s on q.subject_id = s.id
+         where q.is_public = true ${isAdmin ? "" : "and q.education_level = cast($1 as text)"}
+         order by s.name asc, q.created_at desc`;
+      
+      const result = await query(sql, isAdmin ? [] : [userLevelStr]);
+      rows = result.rows;
+    } else {
+      const result = await query(
+        `select q.*, 
+          s.name as subject_name,
+          (select count(*)::int from quizlet_terms t where t.quizlet_set_id = q.id) as term_count,
+          coalesce(u.display_name, q.created_by, 'Người dùng ẩn danh') as author_name
+         from quizlet_sets q
+         left join users u on q.user_id = u.id
+         left join subjects s on q.subject_id = s.id
+         where ($2::boolean = true or q.user_id = $1::uuid or q.is_public = true)
+         order by s.name asc, q.created_at desc`,
+        [userId, isAdmin]
+      );
+      rows = result.rows;
+    }
+    res.json(rows);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch quizlet sets" });
   }
@@ -1444,39 +1645,26 @@ app.post(`${API_PREFIX}/quizlets`, async (req, res) => {
   const { title, description = null, subject_id = null, grade = null, education_level = null, is_public = false, created_by = null, terms = [] } = req.body || {};
   if (!title?.trim()) return res.status(400).json({ error: "title is required" });
 
-  const client = await pool.connect();
   try {
-    await client.query("begin");
-    
     const userId = getUserId(req);
-    // Insert quizlet set
-    const { rows: setRows } = await client.query(
-      `insert into quizlet_sets (title, description, subject_id, grade, education_level, is_public, user_id, created_by)
+    const { rows: setRows } = await query(
+      `insert into quizlet_sets (title, description, subject_id, grade, education_level, is_public, created_by, user_id)
        values ($1, $2, $3, $4, $5, $6, $7, $8)
        returning id`,
-      [title.trim(), description, subject_id, grade, education_level, is_public, userId, created_by]
+      [title.trim(), description, subject_id, grade, education_level, is_public, created_by, userId]
     );
 
     const setId = setRows[0].id;
-
-    // Insert terms
-    for (let i = 0; i < terms.length; i++) {
-      const t = terms[i];
-      if (!t.term?.trim() && !t.definition?.trim()) continue;
-      await client.query(
+    for (const term of terms) {
+      await query(
         `insert into quizlet_terms (quizlet_set_id, term, definition, image_url, sort_order)
          values ($1, $2, $3, $4, $5)`,
-        [setId, t.term?.trim() || "", t.definition?.trim() || "", t.image_url || null, i]
+        [setId, term.term.trim(), term.definition.trim(), term.image_url, term.sort_order || 0]
       );
     }
-
-    await client.query("commit");
     res.status(201).json({ id: setId });
   } catch (err) {
-    await client.query("rollback");
     res.status(500).json({ error: "Failed to create quizlet set" });
-  } finally {
-    client.release();
   }
 });
 
@@ -1507,49 +1695,36 @@ app.get(`${API_PREFIX}/quizlets/:id`, async (req, res) => {
 
 app.put(`${API_PREFIX}/quizlets/:id`, async (req, res) => {
   const { id } = req.params;
-  const { title, description = null, subject_id = null, grade = null, education_level = null, is_public = true, terms = [] } = req.body || {};
-  if (!title?.trim()) return res.status(400).json({ error: "title is required" });
+  const { title, description = null, subject_id = null, grade = null, education_level = null, is_public = false, terms = [] } = req.body || {};
 
-  const client = await pool.connect();
   try {
-    await client.query("begin");
-    
     const userId = getUserId(req);
     const isAdmin = await checkAdmin(userId);
-    // Update quizlet set
-    const { rows: setRows } = await client.query(
-      `update quizlet_sets 
-       set title = $1, description = $2, subject_id = $3, grade = $4, education_level = $5, is_public = $6
-       where id = $7 and ($8 = true or user_id = $9)
-       returning id`,
-      [title.trim(), description, subject_id, grade, education_level, is_public, id, isAdmin, userId]
+    
+    // Check ownership
+    const { rows: setRows } = await query(`select user_id from quizlet_sets where id = $1`, [id]);
+    if (setRows.length === 0) return res.status(404).json({ error: "Quizlet set not found" });
+    if (!isAdmin && setRows[0].user_id !== userId) return res.status(403).json({ error: "Forbidden" });
+
+    await query(
+      `update quizlet_sets set title = $1, description = $2, subject_id = $3, grade = $4, education_level = $5, is_public = $6
+       where id = $7`,
+      [title.trim(), description, subject_id, grade, education_level, is_public, id]
     );
 
-    if (!setRows[0]) {
-      await client.query("rollback");
-      return res.status(404).json({ error: "Quizlet set not found or permission denied" });
-    }
-
-    // Replace terms (delete old, insert new)
-    await client.query(`delete from quizlet_terms where quizlet_set_id = $1`, [id]);
-
-    for (let i = 0; i < terms.length; i++) {
-      const t = terms[i];
-      if (!t.term?.trim() && !t.definition?.trim()) continue;
-      await client.query(
+    // Update terms: simple way is delete and re-insert
+    await query(`delete from quizlet_terms where quizlet_set_id = $1`, [id]);
+    for (const term of terms) {
+      await query(
         `insert into quizlet_terms (quizlet_set_id, term, definition, image_url, sort_order)
          values ($1, $2, $3, $4, $5)`,
-        [id, t.term?.trim() || "", t.definition?.trim() || "", t.image_url || null, i]
+        [id, term.term.trim(), term.definition.trim(), term.image_url, term.sort_order || 0]
       );
     }
+    res.json({ success: true });
 
-    await client.query("commit");
-    res.json(setRows[0]);
   } catch (err) {
-    await client.query("rollback");
     res.status(500).json({ error: "Failed to update quizlet set" });
-  } finally {
-    client.release();
   }
 });
 
@@ -1576,21 +1751,63 @@ app.delete(`${API_PREFIX}/quizlets/:id`, async (req, res) => {
 // ── Exams (Trắc nghiệm) ──────────────────────────────────────────────────
 app.get(`${API_PREFIX}/exams`, async (req, res) => {
   const userId = getUserId(req);
-  const admin = await checkAdmin(userId);
+  const { tab } = req.query;
+
   try {
-    const { rows } = await query(
-      `select e.*, 
-       s.name as subject_name,
-       (select count(*) from exam_questions where exam_id = e.id) as question_count,
-       (select round(avg(score)) from exam_results where exam_id = e.id and user_id = $1) as average_score,
-       u.display_name as author_name
-       from exams e 
-       left join users u on e.user_id = u.id
-       left join subjects s on e.subject_id = s.id
-       where ($2 = true or e.user_id = $1 or e.is_public = true)
-       order by e.created_at desc`,
-      [userId, admin]
-    );
+    const { rows: userRows } = await query('select role, education_level from users where id = cast($1 as uuid)', [userId]);
+    const user = userRows[0];
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const isAdmin = user.role === "admin";
+    const userLevelStr = String(user.education_level || "");
+
+    let rows;
+    if (tab === "personal") {
+      const result = await query(
+        `select e.*, 
+         s.name as subject_name,
+         (select count(*) from exam_questions where exam_id = e.id) as question_count,
+         (select round(avg(score)) from exam_results where exam_id = e.id and user_id = $1::uuid) as average_score,
+         u.display_name as author_name
+         from exams e 
+         left join users u on e.user_id = u.id
+         left join subjects s on e.subject_id = s.id
+         where e.user_id = $1::uuid
+         order by e.created_at desc`,
+        [userId]
+      );
+      rows = result.rows;
+    } else if (tab === "community") {
+      const sql = `select e.*, 
+         s.name as subject_name,
+         (select count(*) from exam_questions where exam_id = e.id) as question_count,
+         (select round(avg(score)) from exam_results where exam_id = e.id and user_id = cast($1 as uuid)) as average_score,
+         u.display_name as author_name
+         from exams e 
+         left join users u on e.user_id = u.id
+         left join subjects s on e.subject_id = s.id
+         where e.is_public = true ${isAdmin ? "" : "and e.education_level = cast($2 as text)"}
+         order by e.created_at desc`;
+      
+      const params = isAdmin ? [userId] : [userId, userLevelStr];
+      const result = await query(sql, params);
+      rows = result.rows;
+    } else {
+      const result = await query(
+        `select e.*, 
+         s.name as subject_name,
+         (select count(*) from exam_questions where exam_id = e.id) as question_count,
+         (select round(avg(score)) from exam_results where exam_id = e.id and user_id = $1::uuid) as average_score,
+         u.display_name as author_name
+         from exams e 
+         left join users u on e.user_id = u.id
+         left join subjects s on e.subject_id = s.id
+         where ($2::boolean = true or e.user_id = $1::uuid or e.is_public = true)
+         order by e.created_at desc`,
+        [userId, isAdmin]
+      );
+      rows = result.rows;
+    }
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch exams" });
@@ -1623,7 +1840,6 @@ app.get(`${API_PREFIX}/exams/:id`, async (req, res) => {
 
     res.json({ ...exams[0], questions });
   } catch (err) {
-    console.error("Exam Fetch Error:", err);
     res.status(500).json({ error: "Failed to fetch exam details" });
   }
 });
@@ -1686,7 +1902,6 @@ app.post(`${API_PREFIX}/exams`, async (req, res) => {
     res.status(201).json({ id: examId });
   } catch (err) {
     await client.query("ROLLBACK");
-    console.error("Exam Post Error:", err);
     res.status(500).json({ error: "Failed to create exam" });
   } finally {
     client.release();
@@ -1744,7 +1959,6 @@ app.put(`${API_PREFIX}/exams/:id`, async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     await client.query("ROLLBACK");
-    console.error("Exam Put Error:", err);
     res.status(500).json({ error: err.message || "Failed to update exam" });
   } finally {
     client.release();
@@ -1758,7 +1972,6 @@ app.post(`${API_PREFIX}/exams/:id/results`, async (req, res) => {
   const { score, timeTaken } = req.body || {};
   
   if (score === undefined || timeTaken === undefined) {
-    console.warn("[Result Error] Missing score or timeTaken in request body");
     return res.status(400).json({ error: "Missing score or timeTaken" });
   }
 
@@ -1768,11 +1981,9 @@ app.post(`${API_PREFIX}/exams/:id/results`, async (req, res) => {
        values ($1, $2, $3, $4) returning id`,
       [id, userId, score, timeTaken]
     );
-    console.log(`[Result] Saved result for user ${userId} on exam ${id}. Score: ${score}%`);
     res.status(201).json(rows[0]);
   } catch (err) {
-    console.error("Result Post Error:", err.message, "Details:", { id, userId, score, timeTaken });
-    res.status(500).json({ error: "Failed to save exam result", details: err.message });
+    res.status(500).json({ error: "Failed to save exam result" });
   }
 });
 
@@ -1793,7 +2004,6 @@ app.get(`${API_PREFIX}/dictation/random`, async (req, res) => {
     if (rows.length === 0) return res.status(404).json({ error: "No exercise found" });
     res.json(rows[0]);
   } catch (err) {
-    console.error("Dictation Random Error:", err);
     res.status(500).json({ error: "Failed to fetch random dictation" });
   }
 });
@@ -1809,7 +2019,6 @@ app.get(`${API_PREFIX}/dictation`, async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    console.error("Dictation GET Error:", err);
     res.status(500).json({ error: "Failed to fetch dictation exercises" });
   }
 });
@@ -1829,7 +2038,6 @@ app.post(`${API_PREFIX}/dictation`, async (req, res) => {
     );
     res.status(201).json(rows[0]);
   } catch (err) {
-    console.error("Dictation POST Error:", err);
     res.status(500).json({ error: "Failed to create dictation exercise" });
   }
 });
@@ -1846,7 +2054,6 @@ app.put(`${API_PREFIX}/dictation/:id`, async (req, res) => {
     if (rowCount === 0) return res.status(404).json({ error: "Not found" });
     res.json(rows[0]);
   } catch (err) {
-    console.error("Dictation PUT Error:", err);
     res.status(500).json({ error: "Failed to update dictation exercise" });
   }
 });
@@ -1858,7 +2065,6 @@ app.delete(`${API_PREFIX}/dictation/:id`, async (req, res) => {
     await query(`delete from dictation_exercises where id=$1`, [id]);
     res.json({ ok: true });
   } catch (err) {
-    console.error("Dictation DELETE Error:", err);
     res.status(500).json({ error: "Failed to delete dictation exercise" });
   }
 });
@@ -1876,7 +2082,6 @@ app.get(`${API_PREFIX}/pictogram`, async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    console.error("Pictogram GET Error:", err);
     res.status(500).json({ error: "Failed to fetch pictogram questions" });
   }
 });
@@ -1896,7 +2101,6 @@ app.post(`${API_PREFIX}/pictogram`, async (req, res) => {
     );
     res.status(201).json(rows[0]);
   } catch (err) {
-    console.error("Pictogram POST Error:", err);
     res.status(500).json({ error: "Failed to create pictogram question" });
   }
 });
@@ -1913,7 +2117,6 @@ app.put(`${API_PREFIX}/pictogram/:id`, async (req, res) => {
     if (rowCount === 0) return res.status(404).json({ error: "Not found" });
     res.json(rows[0]);
   } catch (err) {
-    console.error("Pictogram PUT Error:", err);
     res.status(500).json({ error: "Failed to update pictogram question" });
   }
 });
@@ -1925,7 +2128,6 @@ app.delete(`${API_PREFIX}/pictogram/:id`, async (req, res) => {
     await query(`delete from pictogram_questions where id=$1`, [id]);
     res.json({ ok: true });
   } catch (err) {
-    console.error("Pictogram DELETE Error:", err);
     res.status(500).json({ error: "Failed to delete pictogram question" });
   }
 });
@@ -1947,7 +2149,6 @@ app.get(`${API_PREFIX}/pictogram/play`, async (req, res) => {
     if (rows.length === 0) return res.status(404).json({ error: "No questions found for this level" });
     res.json(rows);
   } catch (err) {
-    console.error("Pictogram Play API Error:", err);
     res.status(500).json({ error: "Failed to fetch questions" });
   }
 });
@@ -1970,7 +2171,6 @@ app.get(`${API_PREFIX}/proverbs/play`, async (req, res) => {
     if (rows.length === 0) return res.status(404).json({ error: "No proverbs found for this level" });
     res.json(rows);
   } catch (err) {
-    console.error("Proverbs Play API Error:", err);
     res.status(500).json({ error: "Failed to fetch proverbs" });
   }
 });
@@ -2021,7 +2221,6 @@ app.post(`${API_PREFIX}/proverbs/bulk`, async (req, res) => {
     }
     res.status(201).json(inserted);
   } catch (err) {
-    console.error("Bulk proverbs error:", err);
     res.status(500).json({ error: "Failed to create some proverbs" });
   }
 });
@@ -2112,7 +2311,6 @@ app.get(`${API_PREFIX}/vuatiengviet`, async (req, res) => {
       stats
     });
   } catch (err) {
-    console.error("Vua Tieng Viet List API Error:", err);
     res.status(500).json({ error: "Failed to fetch questions" });
   }
 });
@@ -2134,7 +2332,6 @@ app.get(`${API_PREFIX}/vuatiengviet/play`, async (req, res) => {
     if (rows.length === 0) return res.status(404).json({ error: "No questions found for this level" });
     res.json(rows);
   } catch (err) {
-    console.error("Vua Tieng Viet Play API Error:", err);
     res.status(500).json({ error: "Failed to fetch questions" });
   }
 });
@@ -2153,7 +2350,6 @@ app.post(`${API_PREFIX}/vuatiengviet`, async (req, res) => {
     );
     res.status(201).json(rows[0]);
   } catch (err) {
-    console.error("Vua Tieng Viet Create API Error:", err);
     res.status(500).json({ error: "Failed to create question" });
   }
 });
@@ -2186,7 +2382,6 @@ app.post(`${API_PREFIX}/vuatiengviet/bulk`, async (req, res) => {
     res.status(201).json({ imported: results.length });
   } catch (err) {
     await query('ROLLBACK').catch(() => {});
-    console.error("Vua Tieng Viet Bulk Create API Error:", err);
     res.status(500).json({ error: "Failed to bulk create questions" });
   }
 });
@@ -2411,7 +2606,6 @@ app.get(`${API_PREFIX}/nhanhnhuchop/questions`, async (req, res) => {
       limit
     });
   } catch (err) {
-    console.error("GET /nhanhnhuchop/questions Error:", err);
     res.status(500).json({ error: "Failed to fetch questions" });
   }
 });
@@ -2431,7 +2625,6 @@ app.get(`${API_PREFIX}/nhanhnhuchop/play`, async (req, res) => {
 });
 
 app.post(`${API_PREFIX}/contact`, async (req, res) => {
-  console.log(`[Contact] Received message from ${req.body?.email || 'unknown'}`);
   const { name, email, phone, message } = req.body;
   if (!name || !email || !phone) {
     return res.status(400).json({ error: "Vui lòng cung cấp đầy đủ thông tin bắt buộc." });
@@ -2439,7 +2632,6 @@ app.post(`${API_PREFIX}/contact`, async (req, res) => {
 
   const adminEmail = process.env.EMAIL_USER;
   if (!adminEmail) {
-    console.warn("[Contact API] EMAIL_USER not configured.");
     return res.status(500).json({ error: "Hệ thống chưa cấu hình email nhận." });
   }
 
@@ -2565,7 +2757,6 @@ app.use((req, res, next) => {
 
 // Global Error Handler
 app.use((err, req, res, next) => {
-  console.error("[Global Error Handled]", err);
   res.status(500).json({ 
     error: "Internal Server Error", 
     message: err.message,
@@ -2575,7 +2766,6 @@ app.use((err, req, res, next) => {
 
 // ── Server Initialization & DB Setup ───────────────────────────────────────
 async function initializeApp() {
-  console.log(`[Server] Initializing database and migrations...`);
   try {
     const schemaSql = await fs.readFile(path.join(__dirname, "schema.sql"), "utf8");
     const statements = schemaSql
@@ -2591,10 +2781,7 @@ async function initializeApp() {
         const isMissingUserId = err.code === "42703" && err.message.includes("user_id");
 
         if (isAlreadyExists || isMissingUserId) {
-          console.warn("[Schema Warning] Skipping statement:", stmt.split("\n")[0], 
-            isMissingUserId ? "(user_id column missing, will be added by migration)" : "(already exists)");
         } else {
-          console.error("[Schema Error] Critical statement failed:", stmt.split("\n")[0], err.message, "Code:", err.code);
         }
       }
     }
@@ -2614,7 +2801,6 @@ async function initializeApp() {
       
       let adminId;
       if (admins.length === 0) {
-        console.log("[Seed] Creating default admin...");
         const { rows } = await query(
           `insert into users (username, email, password_hash, display_name, role)
            values ($1, $2, $3, $4, $5)
@@ -2627,14 +2813,12 @@ async function initializeApp() {
       }
 
       // 2. Add columns if missing
-      console.log("[Migration] Checking user_id columns...");
       const tables = ["subjects", "curricula", "quizlet_sets", "exams"];
       for (const t of tables) {
         try {
           await query(`alter table ${t} add column if not exists user_id uuid references users(id)`);
           await query(`create index if not exists idx_${t}_user_id on ${t}(user_id)`);
         } catch (colErr) {
-          console.warn(`[Migration] Could not add user_id to ${t}:`, colErr.message);
         }
       }
 
@@ -2642,31 +2826,25 @@ async function initializeApp() {
       try {
         await query(`alter table subjects add column if not exists sort_order integer not null default 0`);
       } catch (colErr) {
-        console.warn(`[Migration] Could not add sort_order to subjects:`, colErr.message);
       }
 
       // Add is_active and education_level to users if missing
-      console.log("[Migration] Checking users columns...");
       try {
         await query(`alter table users add column if not exists is_active boolean not null default true`);
       } catch (colErr) {
-        console.warn(`[Migration] Could not add is_active to users:`, colErr.message);
       }
       try {
         await query(`alter table users add column if not exists education_level text`);
       } catch (colErr) {
-        console.warn(`[Migration] Could not add education_level to users:`, colErr.message);
       }
 
       // Add language column to dictation_exercises if missing
       try {
         await query(`alter table dictation_exercises add column if not exists language text not null default 'vi'`);
       } catch (colErr) {
-        console.warn(`[Migration] Could not add language to dictation_exercises:`, colErr.message);
       }
 
       // ── Pictogram Table Migration ──────────────────────────────────────────
-      console.log("[Migration] Checking pictogram_questions table...");
       try {
         await query(`
           CREATE TABLE IF NOT EXISTS pictogram_questions (
@@ -2680,18 +2858,15 @@ async function initializeApp() {
         `);
         await query(`CREATE INDEX IF NOT EXISTS idx_pictogram_created_by ON pictogram_questions(created_by)`);
       } catch (tabErr) {
-        console.warn(`[Migration] Could not create pictogram_questions:`, tabErr.message);
       }
 
       // Add subject_id to tables if missing
-      console.log("[Migration] Checking subject_id, grade, education_level columns...");
       const subjectTables = ["curricula", "quizlet_sets", "exams"];
       for (const t of subjectTables) {
         try {
           await query(`alter table ${t} add column if not exists subject_id uuid references subjects(id) on delete set null`);
           await query(`create index if not exists idx_${t}_subject_id on ${t}(subject_id)`);
         } catch (colErr) {
-          console.warn(`[Migration] Could not add subject_id to ${t}:`, colErr.message);
         }
       }
 
@@ -2700,7 +2875,6 @@ async function initializeApp() {
         await query(`alter table quizlet_sets add column if not exists grade text`);
         await query(`alter table quizlet_sets add column if not exists education_level text`);
       } catch (colErr) {
-        console.warn(`[Migration] Could not add quizlet columns:`, colErr.message);
       }
 
       // Specific columns for exams
@@ -2709,7 +2883,6 @@ async function initializeApp() {
         await query(`alter table exams add column if not exists education_level text`);
         await query(`alter table exams add column if not exists is_public boolean default true`);
       } catch (colErr) {
-        console.warn(`[Migration] Could not add exam columns:`, colErr.message);
       }
 
       // Specific columns for curricula
@@ -2717,27 +2890,21 @@ async function initializeApp() {
         await query(`alter table curricula add column if not exists education_level text`);
         await query(`alter table curricula add column if not exists is_public boolean default false`);
       } catch (colErr) {
-        console.warn(`[Migration] Could not add curricula columns:`, colErr.message);
       }
 
       // 3. Migration: Assign orphan records to admin
-      console.log("[Migration] Assigning orphan records to admin...");
       await query(`update subjects set user_id = $1 where user_id is null`, [adminId]);
       await query(`update curricula set user_id = $1 where user_id is null`, [adminId]);
       await query(`update quizlet_sets set user_id = $1 where user_id is null`, [adminId]);
       await query(`update exams set user_id = $1 where user_id is null`, [adminId]);
-      console.log("[Migration] Done.");
 
-      console.log("[Migration] Converting proverbs level to text...");
       try {
-        await query(`alter table proverbs alter column level type text using (case when level=1 then 'easy' when level=2 then 'medium' when level=3 then 'hard' when level=4 then 'extreme' else 'easy' end)`);
+        await query(`alter table proverbs alter column level type text using (case when level::text='1' then 'easy' when level::text='2' then 'medium' when level::text='3' then 'hard' when level::text='4' then 'extreme' else 'easy' end)`);
         await query(`alter table proverbs alter column level set default 'easy'`);
       } catch (colErr) {
-        // Safe to ignore if it's already text
       }
 
       // ── Learning with Kids Tables ──────────────────────────────────────────
-      console.log("[Migration] Checking learning game tables...");
       try {
         await query(`
           CREATE TABLE IF NOT EXISTS learning_categories (

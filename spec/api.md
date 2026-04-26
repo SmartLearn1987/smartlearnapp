@@ -2,6 +2,42 @@
 
 > Base URL: `/api`
 
+## Table of Contents
+1. [Authentication & Session](#authentication--session)
+2. [Auth](#auth)
+   - [POST /register](#post-apiregister)
+   - [POST /login](#post-apilogin)
+   - [POST /refresh-token](#post-apirefresh-token)
+   - [GET /me](#get-apime)
+3. [File Upload](#file-upload)
+4. [Health Check](#health-check)
+5. [System Settings](#system-settings)
+   - [GET /settings/default-plan](#get-apisettingsdefault-plan)
+   - [PUT /settings/default-plan](#put-apisettingsdefault-plan-admin-only)
+6. [User Management](#user-management)
+   - [GET /statistics/users](#get-apistatisticsusers)
+   - [GET /users](#get-apiusers)
+   - [POST /users](#post-apiusers)
+   - [PUT /users/:id](#put-apiusersid)
+   - [PUT /users/:id/password](#put-apiusersidpassword)
+   - [DELETE /users/:id](#delete-apiusersid)
+   - [POST /forgot-password](#post-apiforgot-password)
+7. [System Pages](#system-pages)
+8. [Subjects](#subjects)
+9. [User Subjects](#user-subjects-thiết-định-môn-học-cá-nhân)
+10. [Curricula](#curricula)
+11. [Lessons](#lessons)
+12. [Quizlet (Flashcard Sets)](#quizlet-flashcard-sets)
+13. [Exams (Trắc nghiệm)](#exams-trắc-nghiệm)
+14. [Games](#games)
+    - [Dictation](#dictation-chép-chính-tả)
+    - [Pictogram](#pictogram-đuổi-hình- bắt-chữ)
+    - [Proverbs](#proverbs-ca-dao-tục-ngữ)
+    - [Nhanh Như Chớp](#nhanh-như-chớp-fast-response)
+    - [Vua Tiếng Việt](#vua-tiếng-việt)
+15. [Learning with Kids](#learning-with-kids-học-cùng-bé)
+16. [Contact](#contact)
+
 ---
 
 ## Authentication & Session
@@ -42,7 +78,15 @@ Create a new user account.
 | `education_level`  | string  | ❌       | "Tiểu học"    |
 
 **Response:** `201 Created`
-Sends a welcome email upon success. Sets `plan` to "Miễn phí", `plan_start_date` to `NOW()`, and `plan_end_date` to `NOW() + 6 days`.
+Sends a welcome email upon success. Sets `plan` based on the system's `default_user_plan` (defaults to "Miễn phí").
+The `plan_end_date` is calculated as follows:
+- "1 tháng": `NOW() + interval '1 month'`
+- "2 tháng": `NOW() + interval '2 months'`
+- "3 tháng": `NOW() + interval '3 months'`
+- "6 tháng": `NOW() + interval '6 months'`
+- "12 tháng": `NOW() + interval '1 year'`
+- "Vô thời hạn": `NOW() + interval '1800 days'`
+- Default: `NOW() + interval '6 days'`
 ```json
 {
   "id": "uuid",
@@ -148,6 +192,33 @@ Upload a single file (generic).
 **Response:** `200 OK`
 ```json
 { "ok": true }
+```
+
+---
+
+## ⚙️ System Settings
+
+### `GET /api/settings/default-plan`
+Fetch the current default plan for new users.
+
+**Response:** `200 OK`
+```json
+{ "plan": "Miễn phí" }
+```
+
+---
+
+### `PUT /api/settings/default-plan` *(Admin only)*
+Update the default plan for new users.
+
+**Request Body:**
+| Field  | Type   | Required |
+|--------|--------|----------|
+| `plan` | string | ✅       |
+
+**Response:** `200 OK`
+```json
+{ "plan": "1 tháng" }
 ```
 
 ---
@@ -758,7 +829,17 @@ Toggle lesson completion for a student.
 ## 🗂️ Quizlet (Flashcard Sets)
 
 ### `GET /api/quizlets`
-List all visible flashcard sets. Admin sees all; users see their own + public.
+List flashcard sets with tab-based filtering and automatic education level matching.
+
+**Query Params:**
+| Param | Type   | Required | Description |
+|-------|--------|----------|-------------|
+| `tab` | string | ❌       | `personal` (user's own) or `community` (public matching user's level) |
+
+**Notes:**
+- `tab=personal`: Returns all sets where `user_id` matches the authenticated user.
+- `tab=community`: Returns all sets where `is_public` is `true`. For non-admin users, `education_level` must also exactly match the authenticated user's `education_level`. Admins see all levels.
+- If no `tab` is provided, the API falls back to returning all sets the user has access to (own + public).
 
 **Response:** `200 OK`
 ```json
@@ -843,7 +924,17 @@ Delete a set and all its terms (permission-checked).
 ## 📝 Exams (Trắc nghiệm)
 
 ### `GET /api/exams`
-List all exams visible to the user. Includes `question_count` and `average_score`.
+List all exams with tab-based filtering and automatic education level matching. Includes `question_count` and `average_score`.
+
+**Query Params:**
+| Param | Type   | Required | Description |
+|-------|--------|----------|-------------|
+| `tab` | string | ❌       | `personal` (user's own) or `community` (public matching user's level) |
+
+**Notes:**
+- `tab=personal`: Returns all exams where `user_id` matches the authenticated user.
+- `tab=community`: Returns all exams where `is_public` is `true`. For non-admin users, `education_level` must also exactly match the authenticated user's `education_level`. Admins see all levels.
+- If no `tab` is provided, the API falls back to returning all exams the user has access to (own + public).
 
 **Response:** `200 OK`
 ```json
@@ -1047,7 +1138,7 @@ Get a list of all proverbs.
 **Response:** `200 OK`
 ```json
 [
-  { "id": "uuid", "content": "string", "level": 1, "created_by": "uuid", "created_at": "timestamp" }
+  { "id": "uuid", "content": "string", "level": "easy | medium | hard | extreme", "created_by": "uuid", "created_at": "timestamp" }
 ]
 ```
 
@@ -1058,7 +1149,7 @@ Create a single proverb.
 | Field     | Type   | Required | Default |
 |-----------|--------|----------|---------|
 | `content` | string | ✅       |         |
-| `level`   | number | ❌       | 1       |
+| `level`   | string | ❌       | "easy"  |
 
 **Response:** `201 Created`
 
@@ -1069,7 +1160,7 @@ Create multiple proverbs at once. The content is plain text separated by line br
 | Field     | Type   | Required | Default |
 |-----------|--------|----------|---------|
 | `content` | string | ✅       |         |
-| `level`   | number | ❌       | 1       |
+| `level`   | string | ❌       | "easy"  |
 
 **Response:** `201 Created`
 
@@ -1086,7 +1177,26 @@ Delete a proverb.
 ### Nhanh Như Chớp (Fast Response)
 
 #### `GET /api/nhanhnhuchop/questions` *(Admin only)*
-List all questions for management.
+List all questions for management with pagination and search.
+
+**Query Params:**
+| Param        | Type   | Required | Default | Description        |
+|--------------|--------|----------|---------|--------------------|
+| `page`       | number | ❌       | 1       |                    |
+| `limit`      | number | ❌       | 30      |                    |
+| `searchTerm` | string | ❌       |         | Search by question |
+| `level`      | string | ❌       |         | Filter by level    |
+
+**Response:** `200 OK`
+```json
+{
+  "questions": [...],
+  "total": 100,
+  "totalPages": 4,
+  "page": 1,
+  "limit": 30
+}
+```
 
 #### `GET /api/nhanhnhuchop/play`
 Get randomized questions for gameplay.
@@ -1154,7 +1264,32 @@ Bulk import questions.
 ## 👑 Vua Tiếng Việt
 
 ### `GET /api/vuatiengviet`
-List all questions for management.
+List all questions for management with pagination and level filtering.
+
+**Query Params:**
+| Param   | Type   | Required | Default |
+|---------|--------|----------|---------|
+| `page`  | number | ❌       | 1       |
+| `limit` | number | ❌       | 30      |
+| `level` | string | ❌       |         |
+
+**Response:** `200 OK`
+```json
+{
+  "data": [...],
+  "total": 500,
+  "page": 1,
+  "limit": 30,
+  "totalPages": 17,
+  "stats": {
+    "total": 500,
+    "easy": 100,
+    "medium": 200,
+    "hard": 150,
+    "extreme": 50
+  }
+}
+```
 
 ### `GET /api/vuatiengviet/play`
 Get randomized questions for gameplay.

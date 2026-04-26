@@ -13,6 +13,7 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [educationLevel, setEducationLevel] = useState("Tiểu học");
@@ -127,12 +128,19 @@ export default function RegisterPage() {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                 <input
-                  type={showPw ? "text" : "password"}
+                  type={showConfirmPw ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Nhập lại mật khẩu"
-                  className="w-full rounded-xl border-2 border-input bg-background pl-10 pr-4 py-3 text-sm font-medium transition-colors focus:border-primary focus:outline-none placeholder:text-muted-foreground/50"
+                  className="w-full rounded-xl border-2 border-input bg-background pl-10 pr-11 py-3 text-sm font-medium transition-colors focus:border-primary focus:outline-none placeholder:text-muted-foreground/50"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPw(!showConfirmPw)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showConfirmPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </div>
 

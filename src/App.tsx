@@ -35,7 +35,9 @@ import SchedulePage from "./pages/SchedulePage";
 import LearningGamePlayPage from "./pages/LearningGamePlayPage";
 import NhanhNhuChopManagePage from "./pages/NhanhNhuChopManagePage";
 import NhanhNhuChopPlayPage from "./pages/NhanhNhuChopPlayPage";
+import PlanManagePage from "./pages/PlanManagePage";
 import ContactPage from "./pages/ContactPage";
+import PremiumPage from "./pages/PremiumPage";
 
 import QuizletPage from "./pages/QuizletPage";
 import CreateQuizletPage from "./pages/CreateQuizletPage";
@@ -108,9 +110,11 @@ const App = () => (
             <Route path="/games/pictogram" element={<ProtectedRoute requiredRole="admin"><PictogramManagePage /></ProtectedRoute>} />
             <Route path="/games/learning" element={<ProtectedRoute requiredRole="admin"><LearningManagePage /></ProtectedRoute>} />
             <Route path="/games/learning/:categoryId" element={<ProtectedRoute requiredRole="admin"><LearningCategoryQuestionsPage /></ProtectedRoute>} />
+            <Route path="/admin/plans" element={<ProtectedRoute requiredRole="admin"><PlanManagePage /></ProtectedRoute>} />
 
             <Route path="/p/:slug" element={<StaticPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/premium" element={<PremiumPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
