@@ -224,3 +224,20 @@ Nâng cấp tính nhất quán của giao diện người dùng trên toàn hệ
 - **Documentation**: 
     - Cập nhật `spec/schedule/DetailDesign_schedule.md` với các quy chuẩn UI mới và mã màu ngày trong tuần.
     - Sửa lỗi đánh số mục lục (Section 5-8) trong tài liệu đặc tả Schedule.
+---
+ 
+ ## 12. Sửa lỗi Thống kê & Đồng bộ Schema (Statistics Fix & Schema Synchronization)
+ 
+ **Date:** 2026-04-27
+ 
+ ### Task Content
+ Khắc phục lỗi không hiển thị phần tóm tắt thống kê tháng (Monthly Summary) trên trang Quản trị Thống kê do thiếu bảng dữ liệu trong một số môi trường (Windows/Linux/Cloud).
+ 
+ ### Checklist
+ - [x] Bổ sung bảng `deleted_users` vào quy trình Auto-migration trong `server/index.mjs`.
+ - [x] Cập nhật file `server/schema.sql` để bao gồm định nghĩa bảng `deleted_users` cho các bản build mới.
+ - [x] Kiểm tra và đảm bảo endpoint `GET /api/statistics/monthly-summary` hoạt động ổn định không trả về lỗi 500.
+ 
+ ### Nội dung thay đổi
+ - **Database**: Thêm bảng `deleted_users` (id, original_id, username, deleted_at) để theo dõi lịch sử xóa tài khoản phục vụ thống kê.
+ - **Backend**: Cập nhật logic khởi tạo server để tự động kiểm tra và tạo bảng nếu chưa tồn tại, giúp hệ thống hoạt động ổn định trên mọi môi trường build (Local, Railway, v.v.).

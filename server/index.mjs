@@ -192,6 +192,12 @@ app.post(`${API_PREFIX}/upload`, (req, res) => {
         content text,
         color text,
         updated_at timestamptz DEFAULT now()
+      );`,
+      `CREATE TABLE IF NOT EXISTS deleted_users (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        original_id uuid,
+        username text,
+        deleted_at timestamptz NOT NULL DEFAULT now()
       );`
     ];
 

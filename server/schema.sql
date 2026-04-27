@@ -236,3 +236,11 @@ create table if not exists user_subjects (
   created_at timestamptz not null default now(),
   primary key (user_id, subject_id)
 );
+ 
+ 
+create table if not exists deleted_users (
+  id uuid primary key default gen_random_uuid(),
+  original_id uuid,
+  username text,
+  deleted_at timestamptz not null default now()
+);
