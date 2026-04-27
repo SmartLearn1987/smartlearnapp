@@ -20,7 +20,11 @@ Tài liệu này mô tả chi tiết thiết kế cho hệ thống hiển thị 
 
 ## 2. Danh sách Validate (Validation List)
 
-### 2.1. Khởi tạo Game
+### 2.1. Quyền truy cập Gói cước (Subscription Access Control)
+- **Kiểm tra hạn sử dụng**: Trước khi mở Modal cấu hình chơi, hệ thống kiểm tra `planEndDate` của user.
+- **Hết hạn**: Nếu `planEndDate < currentDate`, hệ thống chặn khởi tạo trò chơi và bật Popup "Hết hạn gói cước".
+
+### 2.2. Khởi tạo Game
 - **Yêu cầu nội dung**: Trước khi chuyển sang màn hình chơi, hệ thống gọi API `play` với `limit=1` để kiểm tra xem có ít nhất 1 câu hỏi phù hợp với cấu hình hay không.
 - **Thông báo**: Nếu không có câu hỏi, hiển thị alert/message báo lỗi và không chuyển trang.
 
@@ -40,6 +44,7 @@ Tài liệu này mô tả chi tiết thiết kế cho hệ thống hiển thị 
 | **Empty categories** | "Hiện chưa có bài học nào sẵn sàng. Vui lòng quay lại sau nhé!" |
 | **Game Init Fail** | "Không thể khởi tạo trò chơi. Vui lòng thử lại sau." |
 | **Coming soon** | "Tính năng [Tên Game] sắp ra mắt!" |
+| **Subscription Expired** | Popup: "Hết hạn gói cước. Gói cước của bạn đã hết hạn. Vui lòng nâng cấp..." |
 
 ---
 
@@ -68,16 +73,21 @@ sequenceDiagram
     participant PlayPage
 
     User->>GameGrid: Click vào Game Card
-    GameGrid->>Modal: Hiển thị Modal cấu hình
-    
-    User->>Modal: Chọn Cấp độ, Số lượng, Thời gian
-    Modal->>Backend: GET /api/[Game]/play (Validate content)
-    Backend-->>Modal: Dữ liệu câu hỏi / Error
+    GameGrid->>GameGrid: Kiểm tra planEndDate
+    alt Đã hết hạn gói cước
+        GameGrid-->>User: Hiển thị Popup "Hết hạn gói cước"
+    else Còn hạn
+        GameGrid->>Modal: Hiển thị Modal cấu hình
+        
+        User->>Modal: Chọn Cấp độ, Số lượng, Thời gian
+        Modal->>Backend: GET /api/[Game]/play (Validate content)
+        Backend-->>Modal: Dữ liệu câu hỏi / Error
 
-    alt Có dữ liệu
-        Modal->>PlayPage: Navigate /games/[Game]/play?params...
-    else Không có dữ liệu
-        Modal-->>User: Hiển thị thông báo "Chưa có đủ câu hỏi"
+        alt Có dữ liệu
+            Modal->>PlayPage: Navigate /games/[Game]/play?params...
+        else Không có dữ liệu
+            Modal-->>User: Hiển thị thông báo "Chưa có đủ câu hỏi"
+        end
     end
 ```
 

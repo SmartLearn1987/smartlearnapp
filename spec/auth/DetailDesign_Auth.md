@@ -13,7 +13,7 @@ Tài liệu này mô tả chi tiết thiết kế cho hệ thống xác thực v
 | 5 | **Đổi mật khẩu** | Cho phép người dùng hoặc Admin cập nhật mật khẩu mới. |
 | 6 | **Hồ sơ cá nhân (Profile)** | Hiển thị và cập nhật thông tin: Tên hiển thị, Ảnh đại diện, Cấp học. |
 | 7 | **Quản trị người dùng (Admin)** | Admin có quyền xem danh sách, tạo mới, chỉnh sửa, xóa hoặc khóa (Lock) tài khoản. |
-| 8 | **Gói dùng thử (Trial)** | Tự động kích hoạt 6 ngày dùng thử (Gói Miễn phí) cho mọi tài khoản mới. |
+| 8 | **Gói mặc định (Default Plan)** | Tự động cấp gói cước mặc định (lấy từ cấu hình `system_settings`) kèm thời gian sử dụng tương ứng cho mọi tài khoản đăng ký mới. |
 | 9 | **Refresh Token** | Token duy trì phiên đăng nhập (30 ngày) và cơ chế xoay vòng (Rotation) mỗi lần cấp lại Access Token. |
 
 ---
@@ -90,7 +90,7 @@ sequenceDiagram
     Database-->>Backend: Trả về User Data
     alt Hợp lệ & Active
         Backend->>Backend: Tạo session_token (UUID)
-        Backend->>Database: Lưu session_token & refresh_token vào User (Invalidate phiên cũ)
+        Backend->>Database: Cập nhật token, thời hạn & last_login (NOW) vào User
         Backend-->>Frontend: Trả về User Info + sessionToken + refreshToken + accessTokenExpiresAt
         Frontend->>Frontend: Lưu session vào sessionStorage
         Frontend-->>User: Hiển thị Trang chủ / Dashboard
@@ -125,7 +125,8 @@ sequenceDiagram
     Frontend->>Backend: POST /api/register
     Backend->>Database: Kiểm tra trùng lặp (Unique)
     alt Thành công
-        Backend->>Database: Insert User mới (Default trial 6 days)
+        Backend->>Database: Query Gói cước mặc định & Thời hạn (system_settings)
+        Backend->>Database: Insert User mới (Gắn Plan mặc định)
         Backend->>MailService: Gửi Mail chào mừng
         Backend-->>Frontend: Trả về User Data (201 Created)
         Frontend-->>User: Thông báo thành công, chuyển hướng Login
@@ -171,7 +172,7 @@ stateDiagram-v2
 ### UC-01: Người dùng đăng ký tài khoản
 - **Actor**: Người dùng mới.
 - **Mục tiêu**: Có tài khoản để sử dụng các tính năng cá nhân hóa.
-- **Kết quả**: Tài khoản được tạo, có 6 ngày dùng thử, nhận được email chào mừng.
+- **Kết quả**: Tài khoản được tạo, được tự động cấp gói cước mặc định (thời hạn theo cài đặt của Admin), nhận được email chào mừng.
 
 ### UC-02: Người dùng đăng nhập
 - **Actor**: Người dùng đã có tài khoản.

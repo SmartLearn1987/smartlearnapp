@@ -116,6 +116,7 @@ export async function query(text, params = []) {
   try {
     return await pool.query(text, params);
   } catch (err) {
+    console.error("[DB Query Error]", { text, params, error: err.message });
     throw err;
   }
 }

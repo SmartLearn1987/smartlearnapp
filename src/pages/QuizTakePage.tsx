@@ -5,23 +5,6 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Clock, Send, ChevronLeft, ChevronRight, HelpCircle, Loader2, AlertTriangle, ShieldCheck, Check, Gamepad2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  horizontalListSortingStrategy,
-  useSortable,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 
 interface Option {
   id: string;
@@ -35,41 +18,6 @@ interface Question {
   options: Option[];
 }
 
-// ── Sortable Word Component ──────────────────────────────────────────────────
-function SortableWord({ id, word }: { id: string; word: string }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 10 : 1,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={cn(
-        "px-4 py-2 sm:px-6 sm:py-3 rounded-2xl border-2 shadow-sm font-heading text-base sm:text-lg font-bold transition-all cursor-grab active:cursor-grabbing select-none",
-        isDragging
-          ? "border-primary bg-primary/5 text-primary shadow-xl scale-105 z-50"
-          : "border-gray-200 bg-white hover:border-primary/20 text-gray-700"
-      )}
-    >
-      {word}
-    </div>
-  );
-}
-
 export default function QuizTakePage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -79,13 +27,6 @@ export default function QuizTakePage() {
   const [timeLeft, setTimeLeft] = useState<number>(0); // seconds
   const [userAnswers, setUserAnswers] = useState<Record<string, any>>({});
   const [currentIdx, setCurrentIdx] = useState(0);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
 
   useEffect(() => {
     const loadExam = async () => {
@@ -112,23 +53,30 @@ export default function QuizTakePage() {
       const words = sentence.trim().split(/\s+/).map((w, i) => ({ id: `w-${q.id}-${i}`, word: w }));
       // Shuffle once
       const shuffled = [...words].sort(() => Math.random() - 0.5);
-      setUserAnswers(prev => ({ ...prev, [q.id]: shuffled }));
+      setUserAnswers(prev => ({ 
+        ...prev, 
+        [q.id]: { available: shuffled, selected: [] }
+      }));
     }
   }, [currentIdx, exam]);
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    const q = exam?.questions[currentIdx];
-    if (!q) return;
-
-    if (active.id !== over?.id) {
-      const items = userAnswers[q.id] as { id: string, word: string }[];
-      const oldIndex = items.findIndex(item => item.id === active.id);
-      const newIndex = items.findIndex(item => item.id === over?.id);
-      
+  const handleOrderingClick = (qId: string, item: any, from: "available" | "selected") => {
+    const current = userAnswers[qId] || { available: [], selected: [] };
+    if (from === "available") {
       setUserAnswers({
         ...userAnswers,
-        [q.id]: arrayMove(items, oldIndex, newIndex)
+        [qId]: {
+          available: current.available.filter((x: any) => x.id !== item.id),
+          selected: [...current.selected, item]
+        }
+      });
+    } else {
+      setUserAnswers({
+        ...userAnswers,
+        [qId]: {
+          available: [...current.available, item],
+          selected: current.selected.filter((x: any) => x.id !== item.id)
+        }
       });
     }
   };
@@ -139,8 +87,8 @@ export default function QuizTakePage() {
     // Normalize userAnswers for backend (for ordering, join with spaces)
     const normalizedAnswers = { ...userAnswers };
     exam.questions.forEach(q => {
-      if (q.type === "ordering" && Array.isArray(normalizedAnswers[q.id])) {
-        normalizedAnswers[q.id] = normalizedAnswers[q.id].map((x: any) => x.word).join(" ");
+      if (q.type === "ordering" && normalizedAnswers[q.id]?.selected) {
+        normalizedAnswers[q.id] = normalizedAnswers[q.id].selected.map((x: any) => x.word).join(" ");
       }
     });
 
@@ -261,7 +209,10 @@ export default function QuizTakePage() {
                   className={`h-10 w-10 rounded-xl text-sm font-bold transition-all ${
                     idx === currentIdx 
                       ? "bg-primary text-white shadow-md shadow-primary/20 ring-4 ring-primary/5 scale-110" 
-                      : userAnswers[q.id] !== undefined && (Array.isArray(userAnswers[q.id]) ? userAnswers[q.id].length > 0 : userAnswers[q.id] !== "") 
+                      : userAnswers[q.id] !== undefined && (
+                          q.type === "ordering" ? userAnswers[q.id]?.selected?.length > 0 :
+                          (Array.isArray(userAnswers[q.id]) ? userAnswers[q.id].length > 0 : userAnswers[q.id] !== "")
+                        ) 
                         ? "bg-green-100 text-green-700 border border-green-200" 
                         : "bg-muted/50 text-muted-foreground hover:bg-muted"
                   }`}
@@ -297,22 +248,45 @@ export default function QuizTakePage() {
                 )}
               </div>
               
-              <h2 className="text-2xl font-bold leading-snug mb-10 text-gray-800">
-                {currentQuestion.type === "ordering" ? "Sắp xếp lại theo thứ tự đúng của câu." : currentQuestion.content}
-              </h2>
+              <div className="mb-10">
+                <h2 className="text-2xl font-bold leading-snug text-gray-800">
+                  {currentQuestion.type === "ordering" ? "Sắp xếp lại theo thứ tự đúng của câu." : currentQuestion.content}
+                </h2>
+                {currentQuestion.type === "ordering" && (
+                  <div className="text-sm text-muted-foreground flex items-center mt-3">
+                    <span className="flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full"><HelpCircle className="w-4 h-4" /> Click vào từng từ để chuyển xuống ô trống bên dưới</span>
+                  </div>
+                )}
+              </div>
 
               <div className="space-y-4">
                 {currentQuestion.type === "ordering" ? (
-                  <div className="p-8 sm:p-12 rounded-[2rem] border-4 border-dashed bg-gray-50/50 border-gray-100 min-h-[200px] flex items-center justify-center">
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                      <SortableContext items={(userAnswers[currentQuestion.id] || []).map((x: any) => x.id)} strategy={horizontalListSortingStrategy}>
-                        <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
-                          {(userAnswers[currentQuestion.id] || []).map((item: any) => (
-                            <SortableWord key={item.id} id={item.id} word={item.word} />
-                          ))}
-                        </div>
-                      </SortableContext>
-                    </DndContext>
+                  <div className="space-y-6">
+                    {/* Top list: Available Words */}
+                    <div className="flex flex-wrap justify-center gap-3 sm:gap-4 min-h-[60px]">
+                      {(userAnswers[currentQuestion.id]?.available || []).map((item: any) => (
+                        <button
+                          key={item.id}
+                          onClick={() => handleOrderingClick(currentQuestion.id, item, "available")}
+                          className="px-4 py-2 sm:px-6 sm:py-3 rounded-2xl border-2 shadow-sm font-heading text-base sm:text-lg font-bold transition-all border-green-500 bg-green-500 text-white hover:bg-green-600 hover:scale-105"
+                        >
+                          {item.word}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    {/* Bottom list: Selected Words */}
+                    <div className="p-6 sm:p-8 rounded-[2rem] border-4 border-dashed bg-gray-50/50 border-gray-200 min-h-[160px] flex flex-wrap justify-center gap-3 sm:gap-4 items-center content-center">
+                      {(userAnswers[currentQuestion.id]?.selected || []).map((item: any) => (
+                        <button
+                          key={item.id}
+                          onClick={() => handleOrderingClick(currentQuestion.id, item, "selected")}
+                          className="px-4 py-2 sm:px-6 sm:py-3 rounded-2xl border-2 shadow-sm font-heading text-base sm:text-lg font-bold transition-all border-green-200 bg-green-50 text-green-700 hover:bg-red-50 hover:border-red-200 hover:text-red-500"
+                        >
+                          {item.word}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 ) : currentQuestion.type === "text" ? (
                   <div className="space-y-2">

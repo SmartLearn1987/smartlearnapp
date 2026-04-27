@@ -163,7 +163,7 @@ export default function QuizResultPage() {
             )}
           </div>
           <Button 
-            onClick={() => navigate(`/quizzes/take/${exam.id}`)} 
+            onClick={() => navigate(`/quizzes/${exam.id}/take`)} 
             className="rounded-2xl h-11 px-8 font-bold flex items-center gap-2 bg-primary group w-full sm:w-auto justify-center"
             disabled={isSaving}
           >
@@ -197,7 +197,7 @@ export default function QuizResultPage() {
             </h3>
 
             <div className="space-y-4">
-              {q.type === "text" ? (
+              {q.type === "text" || q.type === "ordering" ? (
                 <div className="grid gap-4">
                   <div className="p-6 rounded-2xl border-2 border-gray-100 bg-gray-50/50">
                     <p className="text-xs font-bold text-muted-foreground mb-2 uppercase tracking-widest">Bạn đã trả lời:</p>

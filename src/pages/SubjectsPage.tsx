@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import SubjectCard from "@/components/SubjectCard";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Settings } from "lucide-react";
+import { Settings, AlertTriangle, Crown } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
@@ -22,10 +23,12 @@ interface SubjectData {
 }
 
 export default function SubjectsPage() {
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, isAdmin, isLoading: isAuthLoading } = useAuth();
+  const navigate = useNavigate();
   const [subjects, setSubjects] = useState<SubjectData[]>([]);
   const [allSubjects, setAllSubjects] = useState<SubjectData[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExpiredModalOpen, setIsExpiredModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [curricula, setCurricula] = useState<CurriculumData[]>([]);
@@ -96,6 +99,25 @@ export default function SubjectsPage() {
     }
   };
 
+  const handleSubjectClick = (id: string) => {
+    if (isAdmin) {
+      navigate(`/subjects/${id}`);
+      return;
+    }
+
+    // Role: User, Teacher
+    if (user?.planEndDate) {
+      const endDate = new Date(user.planEndDate);
+      const now = new Date();
+      if (now > endDate) {
+        setIsExpiredModalOpen(true);
+        return;
+      }
+    }
+
+    navigate(`/subjects/${id}`);
+  };
+
   return (
     <div className="container py-10">
       <div className="mb-8 flex items-start justify-between gap-4">
@@ -113,7 +135,7 @@ export default function SubjectsPage() {
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {subjects.length > 0 ? (
           subjects.map((s, i) => (
-            <SubjectCard key={s.id} subject={s} index={i} />
+            <SubjectCard key={s.id} subject={s} index={i} onClick={handleSubjectClick} />
           ))
         ) : (
           <div className="col-span-full py-10 text-center text-muted-foreground animate-fade-up">
@@ -174,6 +196,50 @@ export default function SubjectsPage() {
               {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isExpiredModalOpen} onOpenChange={setIsExpiredModalOpen}>
+        <DialogContent className="sm:max-w-[420px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-gradient-to-b from-green-50 to-white p-8">
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-6 relative">
+                <div className="h-20 w-20 rounded-full bg-[#2D9B63]/10 flex items-center justify-center animate-pulse">
+                  <AlertTriangle className="h-10 w-10 text-[#2D9B63]" />
+                </div>
+                <div className="absolute -top-1 -right-1 bg-white rounded-full p-1 shadow-sm">
+                  <div className="bg-[#2D9B63] rounded-full p-1">
+                    <Crown className="h-3 w-3 text-white" />
+                  </div>
+                </div>
+              </div>
+
+              <DialogHeader className="space-y-3">
+                <DialogTitle className="text-2xl font-bold text-gray-900 font-heading">
+                  Hết hạn gói cước
+                </DialogTitle>
+                <DialogDescription className="text-gray-600 text-base leading-relaxed">
+                  Gói thành viên của bạn đã hết hạn sử dụng. Hãy nâng cấp để tiếp tục học tập và sử dụng toàn bộ tính năng của Smart Learn.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="mt-8 flex flex-col w-full gap-3">
+                <Button 
+                  onClick={() => navigate("/premium")}
+                  className="w-full bg-[#2D9B63] hover:bg-[#2D9B63]/90 text-white font-bold h-12 rounded-2xl shadow-lg shadow-[#2D9B63]/20 transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <Crown className="h-5 w-5" />
+                  Nâng cấp ngay
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setIsExpiredModalOpen(false)}
+                  className="w-full h-12 rounded-2xl text-gray-500 font-medium hover:bg-gray-50 transition-all"
+                >
+                  Để sau
+                </Button>
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

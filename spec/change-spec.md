@@ -171,3 +171,29 @@ Dọn dẹp hệ thống log và đồng bộ hóa toàn bộ tài liệu đặc
 - **Backend**: Gỡ bỏ `console.log` gây nhiễu trong module Database.
 - **Documentation**: Cập nhật `spec/api.md` (Table of Contents, snake_case consistency, Admin stats). Sao chép tài liệu sang `/docs`.
 - **Frontend**: Thêm kiểm tra null-safe cho các thuộc tính chuỗi trong các component hiển thị thông tin người dùng.
+
+---
+
+## 10. Quản lý Gói cước & Quyền truy cập (Premium Plans & Access Control)
+
+**Date:** 2026-04-26
+
+### Task Content
+Bổ sung tính năng quản lý danh mục gói cước, đánh dấu gói cước "Premium", tự động tính toán ngày hết hạn dựa trên chu kỳ đăng ký và kiểm soát chặt chẽ quyền truy cập tính năng.
+
+### Checklist
+- [x] Thêm thuộc tính `is_premium` cho các gói cước (`plans`) trong Database và API.
+- [x] Tính năng "Vô thời hạn" tự động cộng 1800 ngày vào thời hạn (plan_end_date).
+- [x] Cập nhật giao diện Quản lý Gói cước (Admin) để thiết lập và hiển thị trạng thái Premium.
+- [x] Đồng bộ hóa hiển thị trên giao diện Nâng cấp Gói cước public để ưu tiên các gói Premium.
+- [x] Thực thi Subscription Expiration Access Control: Kiểm tra `planEndDate` trên toàn hệ thống (Sổ tay môn học, Làm bài trắc nghiệm).
+- [x] Thiết kế Popup cảnh báo "Hết hạn gói cước" thống nhất, tự động chặn người dùng và điều hướng đến trang nâng cấp.
+- [x] Khắc phục lỗi hiển thị và trải nghiệm (UX) trên giao diện Tạo bài thi và Học phần Flashcard.
+
+### Nội dung thay đổi
+- **Database**: Bổ sung `is_premium` vào bảng `plans`.
+- **Backend**: Cập nhật logic tính toán `plan_end_date`. Mở rộng các API liên quan đến `plans`.
+- **Frontend**: 
+    - Tích hợp logic kiểm tra hạn sử dụng tại trang chủ và danh sách trắc nghiệm.
+    - Cải thiện UI `QuizFormPage.tsx` và `CreateQuizletPage.tsx` giúp người dùng dễ dàng thao tác.
+- **Documentation**: Cập nhật `spec/api.md` bổ sung đặc tả API Plans Management.

@@ -14,6 +14,12 @@
 5. [System Settings](#system-settings)
    - [GET /settings/default-plan](#get-apisettingsdefault-plan)
    - [PUT /settings/default-plan](#put-apisettingsdefault-plan-admin-only)
+5.1 [Plans Management](#plans-management)
+   - [GET /plans](#get-apiplans)
+   - [GET /admin/plans](#get-apiadminplans-admin-only)
+   - [POST /plans](#post-apiplans-admin-only)
+   - [PUT /plans/:id](#put-apiplansid-admin-only)
+   - [DELETE /plans/:id](#delete-apiplansid-admin-only)
 6. [User Management](#user-management)
    - [GET /statistics/users](#get-apistatisticsusers)
    - [GET /users](#get-apiusers)
@@ -219,6 +225,71 @@ Update the default plan for new users.
 **Response:** `200 OK`
 ```json
 { "plan": "1 tháng" }
+```
+
+---
+
+## 💼 Plans Management
+
+### `GET /api/plans`
+Fetch all active subscription plans sorted by price.
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": "uuid",
+    "name": "string",
+    "price": 0,
+    "duration_months": 1,
+    "features": ["Feature 1", "Feature 2"],
+    "is_premium": true,
+    "is_active": true
+  }
+]
+```
+
+---
+
+### `GET /api/admin/plans` *(Admin only)*
+Fetch all subscription plans including inactive ones.
+
+**Response:** `200 OK`
+
+---
+
+### `POST /api/plans` *(Admin only)*
+Create a new subscription plan.
+
+**Request Body:**
+| Field             | Type    | Required | Default |
+|-------------------|---------|----------|---------|
+| `name`            | string  | ✅       |         |
+| `price`           | number  | ✅       |         |
+| `duration_months` | number  | ✅       |         |
+| `features`        | array   | ❌       | []      |
+| `is_premium`      | boolean | ❌       | false   |
+| `is_active`       | boolean | ❌       | true    |
+
+**Response:** `201 Created`
+
+---
+
+### `PUT /api/plans/:id` *(Admin only)*
+Update an existing subscription plan.
+
+**Request Body:** Same as `POST /api/plans`.
+
+**Response:** `200 OK`
+
+---
+
+### `DELETE /api/plans/:id` *(Admin only)*
+Delete a subscription plan.
+
+**Response:** `200 OK`
+```json
+{ "success": true }
 ```
 
 ---

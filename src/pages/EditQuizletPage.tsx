@@ -19,7 +19,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 const PRESET_COLORS = [
   '#000000', '#434343', '#666666', '#999999', '#b7b7b7', '#cccccc', '#d9d9d9', '#efefef', '#f3f3f3', '#ffffff',
   '#980000', '#ff0000', '#ff9900', '#ffff00', '#00ff00', '#00ffff', '#4a86e8', '#0000ff', '#9900ff', '#ff00ff',
@@ -140,6 +156,25 @@ export default function EditQuizletPage() {
       toast.success(`Đã nhập ${newCardsData.length} thẻ`);
     } else {
       toast.error("Không tìm thấy dữ liệu hợp lệ để nhập");
+    }
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setCards((items) => {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
     }
   };
 
@@ -497,27 +532,27 @@ export default function EditQuizletPage() {
           </div>
 
           <div className="space-y-4">
-            {cards.map((card, index) => (
-              <div key={card.id} className="bg-white border rounded-xl overflow-hidden shadow-sm">
-                <div className="bg-gray-50 p-2 flex justify-between items-center border-b">
-                  <span className="font-bold ml-2 text-gray-500">{index + 1}</span>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="cursor-grab"><GripVertical className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => removeCard(card.id)} disabled={cards.length <= 2}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
-                </div>
-                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-1">
-                    <input type="text" className="w-full border-b-2 focus:border-primary outline-none py-1 text-lg" value={card.term} onChange={e => updateCard(card.id, 'term', e.target.value)} />
-                    <label className="text-xs font-bold uppercase text-gray-400">Thuật ngữ</label>
-                  </div>
-                  <div className="space-y-1">
-                    <input type="text" className="w-full border-b-2 focus:border-primary outline-none py-1 text-lg" value={card.definition} onChange={e => updateCard(card.id, 'definition', e.target.value)} />
-                    <label className="text-xs font-bold uppercase text-gray-400">Định nghĩa</label>
-                  </div>
-                </div>
-              </div>
-            ))}
+            <DndContext 
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext 
+                items={cards.map(c => c.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {cards.map((card, index) => (
+                  <SortableCard 
+                    key={card.id} 
+                    card={card} 
+                    index={index} 
+                    updateCard={updateCard} 
+                    removeCard={removeCard} 
+                    totalCards={cards.length} 
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           </div>
 
           <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
@@ -617,7 +652,11 @@ export default function EditQuizletPage() {
             </DialogContent>
           </Dialog>
 
-          <div className="mt-8 mb-12 flex justify-center"><Button variant="outline" className="w-full max-w-md h-12 rounded-xl" onClick={addCard}><Plus className="mr-2" /> Thêm thẻ</Button></div>
+          <div className="mt-8 mb-12 flex justify-center">
+            <Button variant="outline" className="rounded-full border-primary text-primary hover:bg-primary/5 font-bold h-10 px-6 flex items-center gap-2 text-sm sm:text-base shadow-sm" onClick={addCard}>
+              <Plus className="h-4 w-4" /> Thêm thẻ
+            </Button>
+          </div>
         </>
       ) : (
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-8 text-center text-blue-800">
@@ -626,6 +665,50 @@ export default function EditQuizletPage() {
           <p>Bạn có thể ôn tập học phần này nhưng không có quyền chỉnh sửa nội dung.</p>
         </div>
       )}
+    </div>
+  );
+}
+
+function SortableCard({ card, index, updateCard, removeCard, totalCards }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: card.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1 : 0,
+    position: 'relative' as const,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className={`bg-white border rounded-xl overflow-hidden shadow-sm ${isDragging ? 'opacity-50' : ''}`}>
+      <div className="bg-gray-50 p-2 flex justify-between items-center border-b">
+        <span className="font-bold ml-2 text-gray-500">{index + 1}</span>
+        <div className="flex gap-1">
+          <Button variant="ghost" size="icon" {...attributes} {...listeners} className="cursor-grab focus:outline-none text-gray-500 hover:bg-gray-100">
+            <GripVertical className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => removeCard(card.id)} disabled={totalCards <= 2}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="space-y-1">
+          <input type="text" className="w-full border-b-2 focus:border-primary outline-none py-1 text-lg bg-transparent" value={card.term} onChange={e => updateCard(card.id, 'term', e.target.value)} />
+          <label className="text-xs font-bold uppercase text-gray-400">Thuật ngữ</label>
+        </div>
+        <div className="space-y-1">
+          <input type="text" className="w-full border-b-2 focus:border-primary outline-none py-1 text-lg bg-transparent" value={card.definition} onChange={e => updateCard(card.id, 'definition', e.target.value)} />
+          <label className="text-xs font-bold uppercase text-gray-400">Định nghĩa</label>
+        </div>
+      </div>
     </div>
   );
 }

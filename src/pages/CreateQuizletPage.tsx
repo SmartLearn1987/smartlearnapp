@@ -13,6 +13,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 export default function CreateQuizletPage() {
   const navigate = useNavigate();
@@ -38,6 +55,30 @@ export default function CreateQuizletPage() {
     }
     fetchSubjects();
   }, []);
+  interface CardData {
+    id: number | string;
+    term: string;
+    definition: string;
+  }
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setCards((items) => {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
   interface CardData {
     id: number | string;
     term: string;
@@ -287,58 +328,27 @@ export default function CreateQuizletPage() {
 
       {/* Cards List */}
       <div className="space-y-4">
-        {cards.map((card, index) => (
-          <div key={card.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            {/* Card Header */}
-            <div className="flex items-center justify-between border-b border-gray-50 px-4 py-3 bg-gray-50/50">
-              <span className="font-bold text-gray-700">{index + 1}</span>
-              <div className="flex gap-2 text-muted-foreground">
-                <button className="p-1 hover:bg-gray-200 rounded transition-colors cursor-grab">
-                  <GripVertical className="w-5 h-5" />
-                </button>
-                <button 
-                  onClick={() => removeCard(card.id)}
-                  disabled={cards.length <= 2}
-                  className={`p-1 hover:bg-gray-200 rounded transition-colors ${cards.length <= 2 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Card Body */}
-            <div className="p-6">
-              <div className="flex flex-col md:flex-row gap-6">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    value={card.term}
-                    onChange={(e) => updateCard(card.id, 'term', e.target.value)}
-                    className="w-full pb-2 text-lg focus:outline-none border-b-2 border-gray-200 focus:border-primary transition-colors bg-white/50"
-                  />
-                  <div className="text-xs font-semibold text-muted-foreground mt-2 uppercase tracking-wide">Thuật ngữ</div>
-                </div>
-                
-                <div className="flex-1 flex gap-4">
-                  <div className="flex-1">
-                    <input
-                      type="text"
-                      value={card.definition}
-                      onChange={(e) => updateCard(card.id, 'definition', e.target.value)}
-                      className="w-full pb-2 text-lg focus:outline-none border-b-2 border-gray-200 focus:border-primary transition-colors bg-white/50"
-                    />
-                    <div className="text-xs font-semibold text-muted-foreground mt-2 uppercase tracking-wide">Định nghĩa</div>
-                  </div>
-                  
-                  <button className="h-20 w-24 flex flex-col items-center justify-center gap-1 border-2 border-dashed border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors text-muted-foreground">
-                    <ImageIcon className="w-6 h-6" />
-                    <span className="text-[10px] font-semibold">Hình ảnh</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
+        <DndContext 
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext 
+            items={cards.map(c => c.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {cards.map((card, index) => (
+              <SortableCard 
+                key={card.id} 
+                card={card} 
+                index={index} 
+                updateCard={updateCard} 
+                removeCard={removeCard} 
+                totalCards={cards.length} 
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
       </div>
       
       {/* Add Card Button */}
@@ -346,10 +356,74 @@ export default function CreateQuizletPage() {
         <Button 
           onClick={addCard}
           variant="outline" 
-          className="bg-white hover:bg-gray-50 w-full max-w-lg h-14 rounded-xl shadow-sm border-gray-200 font-bold text-lg"
+          className="rounded-full border-primary text-primary hover:bg-primary/5 font-bold h-10 px-6 flex items-center gap-2 text-sm sm:text-base shadow-sm"
         >
-          <Plus className="mr-2" /> Thêm thẻ
+          <Plus className="h-4 w-4" /> Thêm thẻ
         </Button>
+      </div>
+    </div>
+  );
+}
+
+function SortableCard({ card, index, updateCard, removeCard, totalCards }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: card.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1 : 0,
+    position: 'relative' as const,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden ${isDragging ? 'opacity-50' : ''}`}>
+      {/* Card Header */}
+      <div className="flex items-center justify-between border-b border-gray-50 px-4 py-3 bg-gray-50/50">
+        <span className="font-bold text-gray-700">{index + 1}</span>
+        <div className="flex gap-2 text-muted-foreground">
+          <button {...attributes} {...listeners} className="p-1 hover:bg-gray-200 rounded transition-colors cursor-grab focus:outline-none">
+            <GripVertical className="w-5 h-5" />
+          </button>
+          <button 
+            onClick={() => removeCard(card.id)}
+            disabled={totalCards <= 2}
+            className={`p-1 text-red-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors ${totalCards <= 2 ? 'opacity-50 cursor-not-allowed text-gray-400' : ''}`}
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Card Body */}
+      <div className="p-6">
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="flex-1">
+            <input
+              type="text"
+              value={card.term}
+              onChange={(e) => updateCard(card.id, 'term', e.target.value)}
+              className="w-full pb-2 text-lg focus:outline-none border-b-2 border-gray-200 focus:border-primary transition-colors bg-white/50"
+            />
+            <div className="text-xs font-semibold text-muted-foreground mt-2 uppercase tracking-wide">Thuật ngữ</div>
+          </div>
+          
+          <div className="flex-1">
+            <input
+              type="text"
+              value={card.definition}
+              onChange={(e) => updateCard(card.id, 'definition', e.target.value)}
+              className="w-full pb-2 text-lg focus:outline-none border-b-2 border-gray-200 focus:border-primary transition-colors bg-white/50"
+            />
+            <div className="text-xs font-semibold text-muted-foreground mt-2 uppercase tracking-wide">Định nghĩa</div>
+          </div>
+        </div>
       </div>
     </div>
   );

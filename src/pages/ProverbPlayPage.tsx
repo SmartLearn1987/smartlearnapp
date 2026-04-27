@@ -7,23 +7,6 @@ import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { createPortal } from "react-dom";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  horizontalListSortingStrategy,
-  useSortable,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 
 interface Question {
   id: string;
@@ -105,40 +88,7 @@ function ResultOverlay({ score, total, onRetry, onHome, questions, userAnswers }
   );
 }
 
-// ── Sortable Word Component ──────────────────────────────────────────────────
-function SortableWord({ id, word }: { id: string; word: string }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 10 : 1,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={`px-4 py-2 sm:px-6 sm:py-3 rounded-2xl border-2 shadow-sm font-heading text-lg sm:text-2xl font-bold transition-colors cursor-grab active:cursor-grabbing
-        ${isDragging 
-          ? "border-primary bg-primary/10 text-primary shadow-xl shadow-primary/20 scale-105" 
-          : "border-border bg-card hover:border-primary/40 text-foreground"
-        }
-      `}
-    >
-      {word}
-    </div>
-  );
-}
+// Removed SortableWord component
 
 export default function ProverbPlayPage() {
   const [searchParams] = useSearchParams();
@@ -150,18 +100,11 @@ export default function ProverbPlayPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIdx, setCurrentIdx] = useState(0);
-  const [userAnswers, setUserAnswers] = useState<{ id: string, word: string }[][]>([]); 
+  const [userAnswers, setUserAnswers] = useState<{ available: { id: string, word: string }[], selected: { id: string, word: string }[] }[]>([]); 
   const [timeLeft, setTimeLeft] = useState(initialTime);
   const [isFinished, setIsFinished] = useState(false);
   const [score, setScore] = useState(0);
   const [checkStatus, setCheckStatus] = useState<"idle" | "correct" | "incorrect">("idle");
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
 
   // Fetch Questions
   useEffect(() => {
@@ -173,10 +116,13 @@ export default function ProverbPlayPage() {
         // Split proverbs into Shuffled Word Arrays
         const initialAnswers = data.map(q => {
           const words = q.content.trim().split(/\s+/);
-          // Create objects with unique ids for DndKit
+          // Create objects with unique ids
           const wordObjs = words.map((w, i) => ({ id: `${i}-${w}`, word: w }));
           // Shuffle
-          return wordObjs.sort(() => Math.random() - 0.5);
+          return {
+            available: wordObjs.sort(() => Math.random() - 0.5),
+            selected: []
+          };
         });
         
         setUserAnswers(initialAnswers);
@@ -205,23 +151,27 @@ export default function ProverbPlayPage() {
     return () => clearInterval(timer);
   }, [loading, isFinished, timeLeft]);
 
-  // Handle Drag End
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (active.id !== over?.id) {
-      setUserAnswers((answers) => {
-        const curAns = answers[currentIdx];
-        const oldIndex = curAns.findIndex(item => item.id === active.id);
-        const newIndex = curAns.findIndex(item => item.id === over?.id);
-        
-        const newCurAns = arrayMove(curAns, oldIndex, newIndex);
-        const newAnswers = [...answers];
-        newAnswers[currentIdx] = newCurAns;
-        return newAnswers;
-      });
-      // Reset check status when user changes something
-      setCheckStatus("idle");
-    }
+  // Handle Word Click
+  const handleOrderClick = (item: any, from: "available" | "selected") => {
+    if (checkStatus !== "idle") return; // prevent clicks when showing result
+    
+    setUserAnswers(answers => {
+      const newAnswers = [...answers];
+      const curAns = newAnswers[currentIdx];
+      if (from === "available") {
+        newAnswers[currentIdx] = {
+          available: curAns.available.filter(x => x.id !== item.id),
+          selected: [...curAns.selected, item]
+        };
+      } else {
+        newAnswers[currentIdx] = {
+          available: [...curAns.available, item],
+          selected: curAns.selected.filter(x => x.id !== item.id)
+        };
+      }
+      return newAnswers;
+    });
+    setCheckStatus("idle");
   };
 
   const [finalResultAnswers, setFinalResultAnswers] = useState<string[][]>([]);
@@ -231,12 +181,12 @@ export default function ProverbPlayPage() {
     const finalAnswers = userAnswers.map((ua, idx) => {
       const originalWords = questions[idx].content.trim().split(/\s+/);
       const correctStr = originalWords.join(' ').toLowerCase();
-      const userStr = ua.map(x => x.word).join(' ').trim().toLowerCase();
+      const userStr = ua.selected.map(x => x.word).join(' ').trim().toLowerCase();
       
       if (userStr === correctStr) {
         s++;
       }
-      return ua.map(x => x.word);
+      return ua.selected.map(x => x.word);
     });
     setFinalResultAnswers(finalAnswers);
     setScore(s);
@@ -247,7 +197,7 @@ export default function ProverbPlayPage() {
     if (!questions.length) return;
     const originalWords = questions[currentIdx].content.trim().split(/\s+/);
     const correctStr = originalWords.join(' ').toLowerCase();
-    const userStr = userAnswers[currentIdx].map(x => x.word).join(' ').trim().toLowerCase();
+    const userStr = userAnswers[currentIdx].selected.map(x => x.word).join(' ').trim().toLowerCase();
     
     if (userStr === correctStr) {
       setCheckStatus("correct");
@@ -314,30 +264,51 @@ export default function ProverbPlayPage() {
 
           {/* Game Canvas */}
           <div className="flex-1 min-h-0 relative bg-white/40 backdrop-blur-md rounded-[1.5rem] sm:rounded-[2.5rem] border-2 sm:border-4 border-dashed border-emerald-200/50 shadow-inner flex flex-col items-center pt-12 sm:pt-16 p-4 sm:p-8">
-            <div className="absolute top-4 sm:top-6 border border-emerald-200 bg-emerald-50 text-emerald-600 shadow-sm px-4 sm:px-5 py-1 sm:py-1.5 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-wider">
-               Sắp xếp các từ để tạo thành câu đúng
+            <div className="absolute top-4 sm:top-6 flex flex-col items-center gap-2">
+              <div className="border border-emerald-200 bg-emerald-50 text-emerald-600 shadow-sm px-4 sm:px-5 py-1 sm:py-1.5 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-wider">
+                 Sắp xếp các từ để tạo thành câu đúng
+              </div>
+              <div className="text-[10px] sm:text-xs text-emerald-600/70 flex items-center">
+                <AlertCircle className="w-3 h-3 mr-1" /> Click vào từng từ để chuyển xuống ô trống
+              </div>
             </div>
 
-            <div className={`w-full max-w-4xl flex-1 flex items-center justify-center transition-colors duration-300 rounded-3xl p-4
-                ${checkStatus === "correct" ? "bg-green-50 border-2 border-green-200 shadow-[0_0_40px_-10px_rgba(34,197,94,0.3)]" : 
-                  checkStatus === "incorrect" ? "bg-red-50 border-2 border-red-200" : ""}
-            `}>
-                <DndContext 
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                >
-                    <SortableContext 
-                        items={currentAnswerState.map(x => x.id)}
-                        strategy={horizontalListSortingStrategy}
-                    >
-                        <div className="flex flex-wrap justify-center gap-3 sm:gap-4 items-center align-middle">
-                            {currentAnswerState.map((item) => (
-                                <SortableWord key={item.id} id={item.id} word={item.word} />
-                            ))}
-                        </div>
-                    </SortableContext>
-                </DndContext>
+            <div className="w-full max-w-4xl flex-1 flex flex-col justify-center gap-6 mt-8">
+              {/* Top list: Available Words */}
+              <div className="flex flex-wrap justify-center gap-3 sm:gap-4 min-h-[60px]">
+                {(currentAnswerState?.available || []).map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => handleOrderClick(item, "available")}
+                    className="px-4 py-2 sm:px-6 sm:py-3 rounded-2xl border-2 shadow-sm font-heading text-base sm:text-xl font-bold transition-all border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 hover:scale-105 active:scale-95"
+                  >
+                    {item.word}
+                  </button>
+                ))}
+              </div>
+
+              {/* Bottom list: Selected Words */}
+              <div className={cn(
+                "p-6 sm:p-8 rounded-[2rem] border-4 border-dashed transition-all duration-500 min-h-[160px] flex flex-wrap justify-center gap-3 sm:gap-4 items-center content-center",
+                checkStatus === "correct" ? "bg-green-50 border-green-200 shadow-[0_0_40px_-10px_rgba(34,197,94,0.3)]" : 
+                checkStatus === "incorrect" ? "bg-red-50 border-red-200" : 
+                "bg-gray-50/50 border-gray-200"
+              )}>
+                {(currentAnswerState?.selected || []).map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => handleOrderClick(item, "selected")}
+                    className={cn(
+                      "px-4 py-2 sm:px-6 sm:py-3 rounded-2xl border-2 shadow-sm font-heading text-base sm:text-xl font-bold transition-all active:scale-95",
+                      checkStatus === "correct" ? "border-green-500 bg-green-500 text-white" :
+                      checkStatus === "incorrect" ? "border-red-500 bg-red-500 text-white" :
+                      "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-red-50 hover:border-red-200 hover:text-red-500"
+                    )}
+                  >
+                    {item.word}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="mt-8">
@@ -413,7 +384,7 @@ export default function ProverbPlayPage() {
               // We can determine if it's correct implicitly to show in sidebar
               const originalWords = q.content.trim().split(/\s+/);
               const correctStr = originalWords.join(' ').toLowerCase();
-              const userStr = userAnswers[idx]?.map(x => x.word).join(' ').trim().toLowerCase();
+              const userStr = userAnswers[idx]?.selected.map(x => x.word).join(' ').trim().toLowerCase();
               const isCorrect = userStr === correctStr;
 
               return (
@@ -435,7 +406,7 @@ export default function ProverbPlayPage() {
              <div className="bg-emerald-50 rounded-2xl p-3 flex items-start gap-3">
                <AlertCircle className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" />
                <p className="text-[10px] sm:text-xs text-emerald-700 leading-relaxed font-medium">
-                 Kéo thả các từ để ghép thành câu đúng. Bạn có thể kiểm tra từng câu và làm lại nếu sai.
+                 Click vào các từ để ghép thành câu đúng. Bạn có thể kiểm tra từng câu và làm lại nếu sai.
                </p>
              </div>
           </div>

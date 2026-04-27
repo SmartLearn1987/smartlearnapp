@@ -352,7 +352,7 @@ export default function QuizFormPage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="font-heading text-lg sm:text-xl font-bold truncate">
-              {isEdit ? "Chỉnh sửa bài thi" : "Tạo bài thi mới"}
+              {isEdit ? "Chỉnh sửa bài trắc nghiệm" : "Tạo bài trắc nghiệm mới"}
             </h1>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-between sm:justify-end">
@@ -369,7 +369,7 @@ export default function QuizFormPage() {
                 onClick={() => document.getElementById("quiz-import")?.click()}
                 className="rounded-xl h-10 px-3 sm:px-4 font-bold border-primary text-primary hover:bg-primary/5 flex-1 sm:flex-none flex items-center gap-2 text-xs sm:text-sm"
               >
-                <Upload className="h-4 w-4" /> <span className="sm:inline">Tải bài</span>
+                <Upload className="h-4 w-4" /> <span className="sm:inline">Tải trắc nghiệm</span>
               </Button>
               <Button 
                 variant="outline" 
@@ -382,7 +382,7 @@ export default function QuizFormPage() {
             <div className="hidden sm:block w-px h-6 bg-gray-200 mx-1" />
             <Button onClick={handleSave} disabled={saving} className="rounded-xl h-10 px-6 font-bold flex items-center gap-2 shadow-lg shadow-primary/20 w-full sm:w-auto text-sm">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Lưu bài thi
+              Lưu bài trắc nghiệm
             </Button>
           </div>
         </div>
@@ -533,13 +533,13 @@ export default function QuizFormPage() {
 
               {/* Question Content */}
               <div className="p-8 space-y-6">
-                <div className="relative">
+                <div className="relative mb-6">
                   <textarea
                     placeholder="Nhập câu hỏi của bạn..."
                     value={question.content}
                     onChange={(e) => updateQuestion(question.id, { content: e.target.value })}
-                    className="w-full text-lg font-semibold bg-transparent border-none focus:outline-none placeholder:text-muted-foreground/20 resize-none min-h-[30px]"
-                    rows={1}
+                    className="w-full text-lg font-bold text-gray-800 bg-gray-50 border-2 border-gray-100 rounded-2xl px-6 py-4 focus:outline-none focus:border-primary/40 focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground/60 resize-none min-h-[80px]"
+                    rows={2}
                   />
                 </div>
 

@@ -2,23 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import { CheckCircle2, XCircle, ArrowRight, RotateCcw, AlertCircle, Check, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  horizontalListSortingStrategy,
-  useSortable,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 
 interface QuizQuestion {
   id: string | number;
@@ -28,41 +11,6 @@ interface QuizQuestion {
   correctIndex?: number;
   explanation?: string;
   content?: string; // Fallback for some structures
-}
-
-// ── Sortable Word Component ──────────────────────────────────────────────────
-function SortableWord({ id, word, isDraggingGlobal }: { id: string; word: string; isDraggingGlobal?: boolean }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 10 : 1,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={cn(
-        "px-4 py-2 sm:px-6 sm:py-3 rounded-2xl border-2 shadow-sm font-heading text-base sm:text-xl font-bold transition-all cursor-grab active:cursor-grabbing select-none",
-        isDragging
-          ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-xl scale-105 z-50"
-          : "border-gray-200 bg-white hover:border-emerald-200 text-gray-700"
-      )}
-    >
-      {word}
-    </div>
-  );
 }
 
 export default function QuizRunner({ questions }: { questions: QuizQuestion[] }) {
@@ -75,16 +23,10 @@ export default function QuizRunner({ questions }: { questions: QuizQuestion[] })
   const [singleAns, setSingleAns] = useState<number | null>(null);
   const [multiAns, setMultiAns] = useState<number[]>([]);
   const [textAns, setTextAns] = useState("");
-  const [orderAns, setOrderAns] = useState<{ id: string, word: string }[]>([]);
+  const [orderAvailable, setOrderAvailable] = useState<{ id: string, word: string }[]>([]);
+  const [orderSelected, setOrderSelected] = useState<{ id: string, word: string }[]>([]);
 
   const q = questions[current];
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
 
   // Initialize Ordering Words
   useEffect(() => {
@@ -92,7 +34,8 @@ export default function QuizRunner({ questions }: { questions: QuizQuestion[] })
       const sentence = q.options?.[0]?.content || q.content || q.question || "";
       const words = sentence.trim().split(/\s+/);
       const wordObjs = words.map((w, i) => ({ id: `word-${i}-${w}`, word: w }));
-      setOrderAns(wordObjs.sort(() => Math.random() - 0.5));
+      setOrderAvailable(wordObjs.sort(() => Math.random() - 0.5));
+      setOrderSelected([]);
     } else {
       setSingleAns(null);
       setMultiAns([]);
@@ -101,15 +44,14 @@ export default function QuizRunner({ questions }: { questions: QuizQuestion[] })
     setCheckStatus("idle");
   }, [current, q]);
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (active.id !== over?.id) {
-      setOrderAns((items) => {
-        const oldIndex = items.findIndex(item => item.id === active.id);
-        const newIndex = items.findIndex(item => item.id === over?.id);
-        return arrayMove(items, oldIndex, newIndex);
-      });
-      setCheckStatus("idle");
+  const handleOrderClick = (item: any, from: "available" | "selected") => {
+    if (checkStatus !== "idle") return; // disable clicks if already checked
+    if (from === "available") {
+      setOrderAvailable(prev => prev.filter(x => x.id !== item.id));
+      setOrderSelected(prev => [...prev, item]);
+    } else {
+      setOrderAvailable(prev => [...prev, item]);
+      setOrderSelected(prev => prev.filter(x => x.id !== item.id));
     }
   };
 
@@ -127,7 +69,7 @@ export default function QuizRunner({ questions }: { questions: QuizQuestion[] })
       correct = textAns.trim().toLowerCase() === correctText.trim().toLowerCase();
     } else if (q.type === "ordering") {
       const originalSentence = q.options?.[0]?.content || q.content || "";
-      const userSentence = orderAns.map(x => x.word).join(" ");
+      const userSentence = orderSelected.map(x => x.word).join(" ");
       correct = userSentence.trim().toLowerCase() === originalSentence.trim().toLowerCase();
     }
 
@@ -198,7 +140,7 @@ export default function QuizRunner({ questions }: { questions: QuizQuestion[] })
       </div>
 
       {/* Question Header */}
-      <div className="space-y-4">
+      <div className="space-y-4 mb-8">
         {q.type === "ordering" && (
            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-black uppercase tracking-widest">
              <Gamepad2 className="h-3 w-3" /> Sắp xếp câu đúng
@@ -207,26 +149,52 @@ export default function QuizRunner({ questions }: { questions: QuizQuestion[] })
         <h3 className="font-heading text-xl sm:text-2xl font-bold text-gray-800 leading-tight">
           {q.type === "ordering" ? "Sắp xếp lại theo thứ tự đúng của câu." : q.question}
         </h3>
+        {q.type === "ordering" && (
+          <div className="text-sm text-gray-400 flex items-center mt-3">
+            <span className="flex items-center gap-1 bg-gray-50 px-3 py-1 rounded-full"><AlertCircle className="w-4 h-4" /> Click vào từng từ để chuyển xuống ô trống</span>
+          </div>
+        )}
       </div>
 
       {/* Question Content */}
       <div className="min-h-[240px] flex flex-col justify-center">
         {q.type === "ordering" ? (
-          <div className={cn(
-            "p-8 sm:p-12 rounded-[2rem] border-4 border-dashed transition-all duration-500",
-            checkStatus === "correct" ? "bg-green-50 border-green-200" :
-            checkStatus === "incorrect" ? "bg-red-50 border-red-200" :
-            "bg-gray-50/50 border-gray-100"
-          )}>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={orderAns.map(x => x.id)} strategy={horizontalListSortingStrategy}>
-                <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
-                  {orderAns.map((item) => (
-                    <SortableWord key={item.id} id={item.id} word={item.word} />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
+          <div className="space-y-6 animate-fade-in">
+            {/* Top list: Available Words */}
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 min-h-[60px]">
+              {orderAvailable.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => handleOrderClick(item, "available")}
+                  className="px-4 py-2 sm:px-6 sm:py-3 rounded-2xl border-2 shadow-sm font-heading text-base sm:text-lg font-bold transition-all border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 hover:scale-105 active:scale-95"
+                >
+                  {item.word}
+                </button>
+              ))}
+            </div>
+            
+            {/* Bottom list: Selected Words */}
+            <div className={cn(
+              "p-6 sm:p-8 rounded-[2rem] border-4 border-dashed transition-all duration-500 min-h-[160px] flex flex-wrap justify-center gap-3 sm:gap-4 items-center content-center",
+              checkStatus === "correct" ? "bg-green-50 border-green-200" :
+              checkStatus === "incorrect" ? "bg-red-50 border-red-200" :
+              "bg-gray-50/50 border-gray-200"
+            )}>
+              {orderSelected.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => handleOrderClick(item, "selected")}
+                  className={cn(
+                    "px-4 py-2 sm:px-6 sm:py-3 rounded-2xl border-2 shadow-sm font-heading text-base sm:text-lg font-bold transition-all active:scale-95",
+                    checkStatus === "correct" ? "border-green-500 bg-green-500 text-white" :
+                    checkStatus === "incorrect" ? "border-red-500 bg-red-500 text-white" :
+                    "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-red-50 hover:border-red-200 hover:text-red-500"
+                  )}
+                >
+                  {item.word}
+                </button>
+              ))}
+            </div>
           </div>
         ) : q.type === "text" ? (
           <div className="max-w-md mx-auto w-full space-y-4">

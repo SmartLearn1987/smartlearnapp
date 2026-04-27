@@ -59,21 +59,21 @@ app.use((req, res, next) => {
 
 // ── API Key Middleware ────────────────────────────────────────────────────
 app.use(`${API_PREFIX}`, (req, res, next) => {
-  if (req.method === "OPTIONS") return next(); 
-  
+  if (req.method === "OPTIONS") return next();
+
   // Lấy key từ env và loại bỏ dấu ngoặc đơn/kép dư thừa nếu có (thường gặp khi cấu hình trên cloud)
   const envKey = process.env.VITE_API_KEY;
   const expectedKey = envKey ? envKey.trim().replace(/^["']|["']$/g, '') : "";
-  
+
   if (expectedKey !== "") {
     const headerKey = req.headers["x-api-key"];
     const providedKey = headerKey ? String(headerKey).trim().replace(/^["']|["']$/g, '') : "";
-    
+
     if (providedKey !== expectedKey) {
       const maskedExpected = expectedKey.substring(0, 4) + "...";
       const maskedProvided = providedKey ? providedKey.substring(0, 4) + "..." : "NONE";
       console.warn(`[Security] API Key mismatch for ${req.method} ${req.path}. Expected: ${maskedExpected}, Provided: ${maskedProvided}.`);
-      
+
       return res.status(403).json({ error: "Forbidden: Invalid API Key" });
     }
   }
@@ -199,9 +199,10 @@ app.post(`${API_PREFIX}/upload`, (req, res) => {
       try {
         await query(q);
       } catch (e) {
-        console.warn(`[Migration Warning] Query failed: ${q.substring(0, 50)}... Error: ${e.message}`);
+        console.warn(`[Migration Warning] Query failed: ${q.trim().substring(0, 100)}... Error: ${e.message}`);
       }
     }
+    console.log("[Migration] Queries finished.");
 
     // ── Cascade Deletion Migration ──────────────────────────────────────────
     // Ensure that when a user is deleted, all their related data is also removed.
@@ -242,8 +243,8 @@ app.use(async (req, res, next) => {
   }
 
   if (
-    req.path.startsWith(`${API_PREFIX}/login`) || 
-    req.path.startsWith(`${API_PREFIX}/register`) || 
+    req.path.startsWith(`${API_PREFIX}/login`) ||
+    req.path.startsWith(`${API_PREFIX}/register`) ||
     req.path.startsWith(`${API_PREFIX}/refresh-token`) ||
     req.path.startsWith(`${API_PREFIX}/forgot-password`) ||
     req.path.startsWith(`${API_PREFIX}/contact`) ||
@@ -254,7 +255,7 @@ app.use(async (req, res, next) => {
   }
   const userIdRaw = req.headers["x-user-id"];
   const sessionTokenRaw = req.headers["x-session-token"];
-  
+
   const userId = userIdRaw ? userIdRaw.trim() : null;
   const sessionToken = sessionTokenRaw ? sessionTokenRaw.trim() : null;
 
@@ -280,7 +281,8 @@ app.use(async (req, res, next) => {
     }
   } catch (err) {
     console.error("Session verification error:", err);
-    return res.status(500).json({ error: "Lỗi xác thực phiên làm việc." });
+    try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] Session verification error: ${err.message}\n${err.stack}\n`); } catch (e) {}
+    return res.status(500).json({ error: "Lỗi xác thực phiên làm việc.", details: err.message });
   }
   next();
 });
@@ -377,8 +379,9 @@ async function sendRegistrationEmail(email, displayName) {
 
       <div style="margin-top: 20px; font-size: 0.85em; color: #555;">
         <p style="margin-bottom: 5px;">Nếu bạn cần hỗ trợ, đừng ngần ngại liên hệ với chúng tôi:</p>
-        <p style="margin: 0;"><b>Zalo:</b> 0984.999.360 - 0987.384.380</p>
+        <p style="margin: 0;"><b>Zalo:</b> 0399887380</p>
         <p style="margin: 0;"><b>Email:</b> support.smart.learn@gmail.com</p>
+        <p style="margin: 0;"><b>Fanpage:</b> <a href="https://web.facebook.com/profile.php?id=61588811190072" style="color: #2D9B63; text-decoration: none;">Smartlearn</a></p>
       </div>
     </div>
   `;
@@ -399,7 +402,7 @@ app.get(`${API_PREFIX}/settings/default-plan`, async (req, res) => {
 app.put(`${API_PREFIX}/settings/default-plan`, async (req, res) => {
   const { plan } = req.body || {};
   if (!plan) return res.status(400).json({ error: "Missing plan" });
-  
+
   try {
     const value = JSON.stringify({ plan });
     await query(
@@ -454,7 +457,7 @@ app.post(`${API_PREFIX}/register`, async (req, res) => {
 
     const newUser = rows[0];
     const { accessToken, refreshToken, accessTokenExpiresAt } = await generateTokens(newUser.id);
-    
+
     // Gửi email xác nhận đăng ký thành công
     if (newUser && newUser.email) {
       sendRegistrationEmail(newUser.email, newUser.displayName).catch(err => {
@@ -584,8 +587,9 @@ app.post(`${API_PREFIX}/forgot-password`, async (req, res) => {
 
           <div style="margin-top: 20px; font-size: 0.85em; color: #555;">
             <p style="margin-bottom: 5px;">Nếu bạn cần hỗ trợ, đừng ngần ngại liên hệ với chúng tôi:</p>
-            <p style="margin: 0;"><b>Zalo:</b> 0984.999.360 - 0987.384.380</p>
+            <p style="margin: 0;"><b>Zalo:</b> 0399887380</p>
             <p style="margin: 0;"><b>Email:</b> support.smart.learn@gmail.com</p>
+            <p style="margin: 0;"><b>Fanpage:</b> <a href="https://web.facebook.com/profile.php?id=61588811190072" style="color: #2D9B63; text-decoration: none;">Smartlearn</a></p>
           </div>
         </div>
       `;
@@ -663,11 +667,52 @@ app.get(`${API_PREFIX}/statistics/users`, async (req, res) => {
       ) e_counts ON u.id = e_counts.user_id
       ORDER BY u.created_at DESC
     `);
-    
+
     res.json(rows);
   } catch (err) {
     console.error("GET /statistics/users Error:", err);
-    res.status(500).json({ error: "Failed to fetch user statistics" });
+    try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] GET /statistics/users Error: ${err.message}\n${err.stack}\n`); } catch (e) {}
+    res.status(500).json({ error: "Failed to fetch user statistics", details: err.message });
+  }
+});
+
+app.get(`${API_PREFIX}/statistics/monthly-summary`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden: Admins only" });
+
+  try {
+    const { rows } = await query(`
+      WITH months AS (
+        SELECT 
+          date_trunc('month', CURRENT_DATE) as current_month_start,
+          date_trunc('month', CURRENT_DATE - interval '1 month') as previous_month_start
+      )
+      SELECT 
+        (SELECT count(*) FROM users WHERE created_at >= (SELECT current_month_start FROM months))::int as current_new_users,
+        (SELECT count(*) FROM users WHERE last_login >= (SELECT current_month_start FROM months))::int as current_login_users,
+        (SELECT count(*) FROM deleted_users WHERE deleted_at >= (SELECT current_month_start FROM months))::int as current_deleted_users,
+        
+        (SELECT count(*) FROM users WHERE created_at >= (SELECT previous_month_start FROM months) AND created_at < (SELECT current_month_start FROM months))::int as previous_new_users,
+        (SELECT count(*) FROM users WHERE last_login >= (SELECT previous_month_start FROM months) AND last_login < (SELECT current_month_start FROM months))::int as previous_login_users,
+        (SELECT count(*) FROM deleted_users WHERE deleted_at >= (SELECT previous_month_start FROM months) AND deleted_at < (SELECT current_month_start FROM months))::int as previous_deleted_users
+    `);
+
+    const result = {
+      currentMonth: {
+        newUsers: rows[0]?.current_new_users || 0,
+        loginUsers: rows[0]?.current_login_users || 0,
+        deletedUsers: rows[0]?.current_deleted_users || 0
+      },
+      previousMonth: {
+        newUsers: rows[0]?.previous_new_users || 0,
+        loginUsers: rows[0]?.previous_login_users || 0,
+        deletedUsers: rows[0]?.previous_deleted_users || 0
+      }
+    };
+    res.json(result);
+  } catch (err) {
+    console.error("GET /statistics/monthly-summary Error:", err);
+    res.status(500).json({ error: "Failed to fetch monthly summary", details: err.message });
   }
 });
 
@@ -677,13 +722,13 @@ app.get(`${API_PREFIX}/users`, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 30;
     const offset = (page - 1) * limit;
-    
+
     const { username, level, role, plan } = req.query;
-    
+
     let whereClause = [];
     let params = [];
     let paramIdx = 1;
-    
+
     if (username) {
       whereClause.push(`(username ILIKE $${paramIdx} OR display_name ILIKE $${paramIdx})`);
       params.push(`%${username}%`);
@@ -708,9 +753,9 @@ app.get(`${API_PREFIX}/users`, async (req, res) => {
       params.push(plan);
       paramIdx++;
     }
-    
+
     const whereStr = whereClause.length > 0 ? `WHERE ${whereClause.join(" AND ")}` : "";
-    
+
     // Fetch users with data transformation
     const { rows: users } = await query(
       `select id, username, email, display_name as "displayName", role, education_level as "educationLevel", is_active as "isActive", plan, plan_start_date::text as "planStartDate", plan_end_date::text as "planEndDate", created_at as "createdAt"
@@ -724,19 +769,19 @@ app.get(`${API_PREFIX}/users`, async (req, res) => {
     // Fetch total count for pagination
     const { rows: countRows } = await query(`SELECT count(*) as count FROM users ${whereStr}`, params);
     const totalCount = parseInt(countRows[0].count);
-    
-    // Fetch statistics (global totals)
+
+    // Fetch statistics (global totals) - Use CASE WHEN for maximum compatibility
     const { rows: statsRows } = await query(
       `SELECT 
-        COUNT(*) FILTER (WHERE role = 'admin') as admins,
-        COUNT(*) FILTER (WHERE role = 'user') as users,
+        COUNT(CASE WHEN role = 'admin' THEN 1 END) as admins,
+        COUNT(CASE WHEN role = 'user' THEN 1 END) as users,
         COUNT(*) as total
        FROM users`
     );
     const stats = {
-      adminCount: parseInt(statsRows[0].admins),
-      userCount: parseInt(statsRows[0].users),
-      totalCount: parseInt(statsRows[0].total)
+      adminCount: parseInt(statsRows[0]?.admins || 0),
+      userCount: parseInt(statsRows[0]?.users || 0),
+      totalCount: parseInt(statsRows[0]?.total || 0)
     };
 
     res.json({
@@ -749,7 +794,8 @@ app.get(`${API_PREFIX}/users`, async (req, res) => {
     });
   } catch (err) {
     console.error("GET /users Error:", err);
-    res.status(500).json({ error: "Failed to fetch users" });
+    try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] GET /users Error: ${err.message}\n${err.stack}\n`); } catch (e) {}
+    res.status(500).json({ error: "Failed to fetch users", details: err.message });
   }
 });
 
@@ -802,7 +848,7 @@ app.delete(`${API_PREFIX}/users/:id`, async (req, res) => {
   const { id } = req.params;
   const currentUserId = getUserId(req);
   const isAdmin = await checkAdmin(currentUserId);
-  
+
   if (!isAdmin && currentUserId !== id) {
     return res.status(403).json({ error: "Forbidden: You can only delete your own account" });
   }
@@ -818,6 +864,9 @@ app.delete(`${API_PREFIX}/users/:id`, async (req, res) => {
     if (reason) {
       console.log(`[User Deletion] User ${id} (${rows[0]?.username}) is deleting their account. Reason: ${reason}`);
     }
+
+    // Insert into deleted_users for statistics
+    await query(`insert into deleted_users (original_id, username) values ($1, $2)`, [id, rows[0]?.username]);
 
     await query(`delete from users where id = $1`, [id]);
     res.status(204).send();
@@ -873,6 +922,7 @@ app.get(`${API_PREFIX}/plans`, async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error("GET /plans error:", err);
+    try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] GET /plans Error: ${err.message}\n${err.stack}\n`); } catch (e) {}
     res.status(500).json({ error: "Không thể tải danh sách gói cước: " + err.message });
   }
 });
@@ -880,7 +930,7 @@ app.get(`${API_PREFIX}/plans`, async (req, res) => {
 app.get(`${API_PREFIX}/admin/plans`, async (req, res) => {
   const userId = getUserId(req);
   if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
-  
+
   try {
     const { rows } = await query(
       `SELECT id, name, duration_days as "durationDays", price, description, is_active as "isActive", sort_order as "sortOrder", is_premium as "isPremium"
@@ -907,12 +957,12 @@ app.post(`${API_PREFIX}/plans`, async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id, name, duration_days as "durationDays", price, description, is_active as "isActive", sort_order as "sortOrder", is_premium as "isPremium"`,
       [
-        name.trim(), 
-        Number(durationDays), 
-        Number(price || 0), 
-        description || null, 
-        Boolean(isActive), 
-        Number(sortOrder || 0), 
+        name.trim(),
+        Number(durationDays),
+        Number(price || 0),
+        description || null,
+        Boolean(isActive),
+        Number(sortOrder || 0),
         Boolean(isPremium)
       ]
     );
@@ -941,13 +991,13 @@ app.put(`${API_PREFIX}/plans/:id`, async (req, res) => {
        WHERE id = $8 
        RETURNING id, name, duration_days as "durationDays", price, description, is_active as "isActive", sort_order as "sortOrder", is_premium as "isPremium"`,
       [
-        name.trim(), 
-        Number(durationDays), 
-        Number(price || 0), 
-        description || null, 
-        Boolean(isActive), 
-        Number(sortOrder || 0), 
-        Boolean(isPremium), 
+        name.trim(),
+        Number(durationDays),
+        Number(price || 0),
+        description || null,
+        Boolean(isActive),
+        Number(sortOrder || 0),
+        Boolean(isPremium),
         id
       ]
     );
@@ -1022,18 +1072,20 @@ app.get(`${API_PREFIX}/user-subjects`, async (req, res) => {
 
   try {
     const { rows } = await query(
-      `select s.*, count(c.id)::int as curriculum_count
+      `select s.id, s.name, s.description, s.icon, s.sort_order, s.created_at, 
+              count(c.id)::int as curriculum_count
        from subjects s
        join user_subjects us on s.id = us.subject_id
        left join curricula c on c.subject_id = s.id and c.is_public = true
        where us.user_id = $1
-       group by s.id
+       group by s.id, s.name, s.description, s.icon, s.sort_order, s.created_at
        order by s.sort_order asc, s.created_at desc`,
-      [userId]
+       [userId]
     );
     res.json(rows);
   } catch (err) {
     console.error("GET /user-subjects Error:", err.message);
+    try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] GET /user-subjects Error: ${err.message}\n${err.stack}\n`); } catch (e) {}
     res.status(500).json({ error: "Failed to fetch user subjects", details: err.message });
   }
 });
@@ -1438,7 +1490,9 @@ app.get(`${API_PREFIX}/curricula`, async (req, res) => {
 
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch curricula" });
+    console.error("GET /curricula Error:", err.message);
+    try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] GET /curricula Error: ${err.message}\n${err.stack}\n`); } catch (e) {}
+    res.status(500).json({ error: "Failed to fetch curricula", details: err.message });
   }
 });
 
@@ -1523,17 +1577,17 @@ app.post(`${API_PREFIX}/curricula`, (req, res) => {
   });
 });
 
- app.put(`${API_PREFIX}/curricula/:id`, async (req, res) => {
-   const userId = getUserId(req);
-   if (!userId) return res.status(401).json({ error: "Unauthorized" });
- 
-   const { id } = req.params;
-   const isAdmin = await checkAdmin(userId);
-   const { rows: ownerRows } = await query(`select user_id from curricula where id = $1`, [id]);
-   if (!ownerRows[0]) return res.status(404).json({ error: "Curriculum not found" });
-   
-   const isOwner = ownerRows[0].user_id === userId;
-   if (!isAdmin && !isOwner) return res.status(403).json({ error: "Forbidden" });
+app.put(`${API_PREFIX}/curricula/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const { id } = req.params;
+  const isAdmin = await checkAdmin(userId);
+  const { rows: ownerRows } = await query(`select user_id from curricula where id = $1`, [id]);
+  if (!ownerRows[0]) return res.status(404).json({ error: "Curriculum not found" });
+
+  const isOwner = ownerRows[0].user_id === userId;
+  if (!isAdmin && !isOwner) return res.status(403).json({ error: "Forbidden" });
 
   const {
     name,
@@ -1564,13 +1618,13 @@ app.post(`${API_PREFIX}/curricula`, (req, res) => {
   }
 });
 
- app.post(`${API_PREFIX}/curricula/reorder`, async (req, res) => {
-   const userId = getUserId(req);
-   if (!userId) return res.status(401).json({ error: "Unauthorized" });
-   
-   // For reorder, ideally we check if user owns all curricula they are reordering
-   // For now, allow any logged in user as they only see their own anyway in the UI
-   // But ideally we'd verify each ID in the loop. For local/low-risk, this is OK.
+app.post(`${API_PREFIX}/curricula/reorder`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  // For reorder, ideally we check if user owns all curricula they are reordering
+  // For now, allow any logged in user as they only see their own anyway in the UI
+  // But ideally we'd verify each ID in the loop. For local/low-risk, this is OK.
 
   try {
     const { order } = req.body;
@@ -1588,17 +1642,17 @@ app.post(`${API_PREFIX}/curricula`, (req, res) => {
   }
 });
 
- app.delete(`${API_PREFIX}/curricula/:id`, async (req, res) => {
-   const userId = getUserId(req);
-   if (!userId) return res.status(401).json({ error: "Unauthorized" });
- 
-   const { id } = req.params;
-   const isAdmin = await checkAdmin(userId);
-   const { rows: ownerRows } = await query(`select user_id from curricula where id = $1`, [id]);
-   if (!ownerRows[0]) return res.status(204).send(); // Gone already
-   
-   const isOwner = ownerRows[0].user_id === userId;
-   if (!isAdmin && !isOwner) return res.status(403).json({ error: "Forbidden" });
+app.delete(`${API_PREFIX}/curricula/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const { id } = req.params;
+  const isAdmin = await checkAdmin(userId);
+  const { rows: ownerRows } = await query(`select user_id from curricula where id = $1`, [id]);
+  if (!ownerRows[0]) return res.status(204).send(); // Gone already
+
+  const isOwner = ownerRows[0].user_id === userId;
+  if (!isAdmin && !isOwner) return res.status(403).json({ error: "Forbidden" });
 
   try {
     await query(`delete from curricula where id = $1`, [req.params.id]);
@@ -1888,7 +1942,7 @@ app.delete(`${API_PREFIX}/lessons/:id/images/:imageId`, async (req, res) => {
     );
     if (rows[0]?.file_url) {
       const filePath = path.join(projectRoot, rows[0].file_url);
-      await fs.unlink(filePath).catch(() => {});
+      await fs.unlink(filePath).catch(() => { });
     }
     res.status(204).send();
   } catch (err) {
@@ -1970,7 +2024,7 @@ app.get(`${API_PREFIX}/quizlets`, async (req, res) => {
          left join subjects s on q.subject_id = s.id
          where q.is_public = true ${isAdmin ? "" : "and q.education_level = cast($1 as text)"}
          order by s.name asc, q.created_at desc`;
-      
+
       const result = await query(sql, isAdmin ? [] : [userLevelStr]);
       rows = result.rows;
     } else {
@@ -2053,7 +2107,7 @@ app.put(`${API_PREFIX}/quizlets/:id`, async (req, res) => {
   try {
     const userId = getUserId(req);
     const isAdmin = await checkAdmin(userId);
-    
+
     // Check ownership
     const { rows: setRows } = await query(`select user_id from quizlet_sets where id = $1`, [id]);
     if (setRows.length === 0) return res.status(404).json({ error: "Quizlet set not found" });
@@ -2086,7 +2140,7 @@ app.delete(`${API_PREFIX}/quizlets/:id`, async (req, res) => {
   try {
     const userId = getUserId(req);
     const isAdmin = await checkAdmin(userId);
-    
+
     // Check if the set exists and is owned by the user or if the user is an admin
     const { rows } = await query(`select id from quizlet_sets where id = $1 and ($2 = true or user_id = $3)`, [id, isAdmin, userId]);
     if (rows.length === 0) return res.status(404).json({ error: "Quizlet set not found" });
@@ -2141,7 +2195,7 @@ app.get(`${API_PREFIX}/exams`, async (req, res) => {
          left join subjects s on e.subject_id = s.id
          where e.is_public = true ${isAdmin ? "" : "and e.education_level = cast($2 as text)"}
          order by e.created_at desc`;
-      
+
       const params = isAdmin ? [userId] : [userId, userLevelStr];
       const result = await query(sql, params);
       rows = result.rows;
@@ -2216,11 +2270,11 @@ app.delete(`${API_PREFIX}/exams/:id`, async (req, res) => {
 app.post(`${API_PREFIX}/exams`, async (req, res) => {
   const userId = getUserId(req);
   const { title, description, duration, subject_id, grade = null, education_level = null, is_public = true, questions } = req.body;
-  
+
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    
+
     const { rows: examRows } = await client.query(
       `insert into exams (title, description, duration, subject_id, grade, education_level, is_public, user_id)
        values ($1, $2, $3, $4, $5, $6, $7, $8) returning id`,
@@ -2265,11 +2319,11 @@ app.put(`${API_PREFIX}/exams/:id`, async (req, res) => {
   const userId = getUserId(req);
   const { id } = req.params;
   const { title, description, duration, subject_id, grade = null, education_level = null, is_public = true, questions } = req.body;
-  
+
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    
+
     const isAdmin = await checkAdmin(userId);
     const { rowCount } = await client.query(
       `update exams 
@@ -2323,7 +2377,7 @@ app.post(`${API_PREFIX}/exams/:id/results`, async (req, res) => {
   const userId = getUserId(req);
   const { id } = req.params;
   const { score, timeTaken } = req.body || {};
-  
+
   if (score === undefined || timeTaken === undefined) {
     return res.status(400).json({ error: "Missing score or timeTaken" });
   }
@@ -2638,10 +2692,10 @@ app.get(`${API_PREFIX}/vuatiengviet`, async (req, res) => {
     const { rows: statRows } = await query(
       `select level, count(*)::int as count from vua_tieng_viet_questions group by level`
     );
-    
+
     // Total of everything (to show in sidebar)
     const { rows: globalCountRows } = await query(`select count(*)::int as count from vua_tieng_viet_questions`);
-    
+
     const stats = {
       total: globalCountRows[0].count,
       easy: 0,
@@ -2719,22 +2773,22 @@ app.post(`${API_PREFIX}/vuatiengviet/bulk`, async (req, res) => {
   try {
     // Start transaction
     await query('BEGIN');
-    
+
     const results = [];
     for (const q of questions) {
       if (!q.question?.trim() || !q.answer?.trim()) continue;
-      
+
       const { rows } = await query(
         `insert into vua_tieng_viet_questions (question, answer, hint, level, created_by) values ($1, $2, $3, $4, $5) returning id`,
         [q.question.trim(), q.answer.trim(), q.hint?.trim() || null, q.level || 'medium', userId]
       );
       results.push(rows[0]);
     }
-    
+
     await query('COMMIT');
     res.status(201).json({ imported: results.length });
   } catch (err) {
-    await query('ROLLBACK').catch(() => {});
+    await query('ROLLBACK').catch(() => { });
     res.status(500).json({ error: "Failed to bulk create questions" });
   }
 });
@@ -2921,13 +2975,13 @@ app.get(`${API_PREFIX}/nhanhnhuchop/questions`, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 30;
     const offset = (page - 1) * limit;
-    
+
     const { searchTerm, level } = req.query;
-    
+
     let whereClause = [];
     let params = [];
     let paramIdx = 1;
-    
+
     if (searchTerm) {
       whereClause.push(`question ILIKE $${paramIdx}`);
       params.push(`%${searchTerm}%`);
@@ -2938,9 +2992,9 @@ app.get(`${API_PREFIX}/nhanhnhuchop/questions`, async (req, res) => {
       params.push(level);
       paramIdx++;
     }
-    
+
     const whereStr = whereClause.length > 0 ? `WHERE ${whereClause.join(" AND ")}` : "";
-    
+
     // Fetch questions
     const { rows: questions } = await query(
       `SELECT * FROM nhanh_nhu_chop_questions ${whereStr} ORDER BY created_at DESC LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
@@ -2950,7 +3004,7 @@ app.get(`${API_PREFIX}/nhanhnhuchop/questions`, async (req, res) => {
     // Fetch total count for pagination
     const { rows: countRows } = await query(`SELECT count(*) as count FROM nhanh_nhu_chop_questions ${whereStr}`, params);
     const totalCount = parseInt(countRows[0].count);
-    
+
     res.json({
       questions,
       total: totalCount,
@@ -3045,7 +3099,7 @@ app.post(`${API_PREFIX}/nhanhnhuchop/import`, async (req, res) => {
     const results = [];
     for (const q of questions) {
       if (!q.question?.trim() || !Array.isArray(q.options)) continue;
-      
+
       const { rows } = await query(
         `INSERT INTO nhanh_nhu_chop_questions (question, options, correct_index, explanation, level, created_by) 
          VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
@@ -3056,7 +3110,7 @@ app.post(`${API_PREFIX}/nhanhnhuchop/import`, async (req, res) => {
     await query('COMMIT');
     res.status(201).json({ imported: results.length });
   } catch (err) {
-    await query('ROLLBACK').catch(() => {});
+    await query('ROLLBACK').catch(() => { });
     res.status(500).json({ error: "Failed to bulk import questions" });
   }
 });
@@ -3110,10 +3164,10 @@ app.use((req, res, next) => {
 
 // Global Error Handler
 app.use((err, req, res, next) => {
-  res.status(500).json({ 
-    error: "Internal Server Error", 
+  res.status(500).json({
+    error: "Internal Server Error",
     message: err.message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined 
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
 
@@ -3151,7 +3205,7 @@ async function initializeApp() {
         `select id from users where username = $1`,
         [adminUsername]
       );
-      
+
       let adminId;
       if (admins.length === 0) {
         const { rows } = await query(
@@ -3331,23 +3385,22 @@ async function initializeApp() {
 }
 
 // ── Global Express Error Handler ───────────────────────────────────────────
-// Must have 4 parameters (err, req, res, next) for Express to treat it as
-// an error handler. This prevents unhandled errors from aborting connections.
-app.use((err, req, res, next) => {
+app.use(async (err, req, res, next) => {
   console.error("[Unhandled Express Error]", err.stack || err.message);
+  try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] Unhandled Express Error: ${err.message}\n${err.stack}\n`); } catch (e) {}
   if (res.headersSent) return next(err);
-  res.status(500).json({ error: "Đã xảy ra lỗi máy chủ. Vui lòng thử lại." });
+  res.status(500).json({ error: "Đã xảy ra lỗi máy chủ. Vui lòng thử lại.", details: err.message });
 });
 
 // Start the server only after the app is initialized
-initializeApp()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`[Server] API running on http://localhost:${PORT}${API_PREFIX}`);
-    });
-  })
-  .catch((err) => {
-    console.error("[Server] Fatal error during startup:", err);
-    process.exit(1);
+try {
+  await initializeApp();
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`[Server] API running on http://0.0.0.0:${PORT}${API_PREFIX}`);
+    console.log(`[Server] Local access: http://localhost:${PORT}${API_PREFIX}`);
   });
+} catch (err) {
+  console.error("[Server] Fatal error during startup:", err);
+  process.exit(1);
+}
 

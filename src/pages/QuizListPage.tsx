@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Search, ClipboardList, MoreVertical, Trash2, Edit2, Clock, Trophy, Eye, EyeOff, Layers } from "lucide-react";
+import { Plus, Search, ClipboardList, MoreVertical, Trash2, Edit2, Clock, Trophy, Eye, EyeOff, Layers, AlertTriangle, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Exam {
   id: string;
@@ -38,6 +39,7 @@ export default function QuizListPage() {
   const [subjects, setSubjects] = useState<{name: string}[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const [isExpiredModalOpen, setIsExpiredModalOpen] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -289,6 +291,14 @@ export default function QuizListPage() {
                             <Button 
                               onClick={(e) => {
                                 e.stopPropagation();
+                                if ((user?.role === 'user' || user?.role === 'teacher') && user?.planEndDate) {
+                                  const now = new Date();
+                                  const endDate = new Date(user.planEndDate);
+                                  if (now > endDate) {
+                                    setIsExpiredModalOpen(true);
+                                    return;
+                                  }
+                                }
                                 navigate(`/quizzes/${exam.id}/take`);
                               }}
                               className="w-full rounded-xl bg-primary/10 text-primary hover:bg-primary font-bold transition-all group-hover:bg-primary group-hover:text-primary-foreground"
@@ -320,6 +330,51 @@ export default function QuizListPage() {
           </div>
         )}
       </div>
+
+      <Dialog open={isExpiredModalOpen} onOpenChange={setIsExpiredModalOpen}>
+        <DialogContent className="sm:max-w-[420px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-gradient-to-b from-green-50 to-white p-8">
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-6 relative">
+                <div className="h-20 w-20 rounded-full bg-[#2D9B63]/10 flex items-center justify-center animate-pulse">
+                  <AlertTriangle className="h-10 w-10 text-[#2D9B63]" />
+                </div>
+                <div className="absolute -top-1 -right-1 bg-white rounded-full p-1 shadow-sm">
+                  <div className="bg-[#2D9B63] rounded-full p-1">
+                    <Crown className="h-3 w-3 text-white" />
+                  </div>
+                </div>
+              </div>
+
+              <DialogHeader className="space-y-3">
+                <DialogTitle className="text-2xl font-bold text-gray-900 font-heading">
+                  Hết hạn gói cước
+                </DialogTitle>
+                <DialogDescription className="text-gray-600 text-base leading-relaxed">
+                  Gói thành viên của bạn đã hết hạn sử dụng. Hãy nâng cấp để tiếp tục học tập và sử dụng toàn bộ tính năng của Smart Learn.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="mt-8 flex flex-col w-full gap-3">
+                <Button 
+                  onClick={() => navigate("/premium")}
+                  className="w-full bg-[#2D9B63] hover:bg-[#2D9B63]/90 text-white font-bold h-12 rounded-2xl shadow-lg shadow-[#2D9B63]/20 transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <Crown className="h-5 w-5" />
+                  Nâng cấp ngay
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setIsExpiredModalOpen(false)}
+                  className="w-full h-12 rounded-2xl text-gray-500 font-medium hover:bg-gray-50 transition-all"
+                >
+                  Để sau
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

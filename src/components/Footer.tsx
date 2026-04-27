@@ -39,6 +39,20 @@ export default function Footer() {
                   support.smart.learn@gmail.com
                 </a>
               </div>
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <div className="h-4 w-4 flex items-center justify-center shrink-0">
+                  <span className="text-[10px] font-bold text-primary border border-primary rounded-sm px-0.5">Z</span>
+                </div>
+                <span>Zalo: 0399887380</span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <div className="h-4 w-4 flex items-center justify-center shrink-0">
+                  <span className="text-[10px] font-bold text-primary border border-primary rounded-sm px-0.5">F</span>
+                </div>
+                <a href="https://web.facebook.com/profile.php?id=61588811190072" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                  Fanpage: Smartlear
+                </a>
+              </div>
             </div>
           </div>
 

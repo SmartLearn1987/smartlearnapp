@@ -42,6 +42,11 @@ export default function StatisticsPage() {
     queryFn: () => apiFetch("/statistics/users"),
   });
 
+  const { data: monthlySummary, isLoading: summaryLoading } = useQuery({
+    queryKey: ["statistics", "monthly-summary"],
+    queryFn: () => apiFetch("/statistics/monthly-summary"),
+  });
+
   const filteredUsers = (users || []).filter(u => 
     u.username.toLowerCase().includes(searchTerm.toLowerCase()) || 
     (u.displayName && u.displayName.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -108,6 +113,65 @@ export default function StatisticsPage() {
           </div>
         </div>
       </div>
+
+      {/* Monthly Summary Statistics */}
+      {!summaryLoading && monthlySummary && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 animate-fade-in">
+          {/* Current Month */}
+          <div className="bg-white p-6 rounded-[24px] border border-slate-200 shadow-sm relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-4 opacity-5">
+               <BarChart3 className="w-32 h-32" />
+             </div>
+             <div className="flex items-center gap-3 mb-6 relative z-10">
+               <div className="bg-emerald-100 text-emerald-600 p-2.5 rounded-xl border border-emerald-200">
+                 <Calendar className="h-5 w-5" />
+               </div>
+               <h3 className="text-lg font-black text-[#112240] tracking-tight">Thống kê tháng {format(new Date(), "MM/yyyy")}</h3>
+             </div>
+             <div className="space-y-3 relative z-10">
+               <div className="flex justify-between items-center bg-slate-50/80 hover:bg-emerald-50 transition-colors p-3.5 rounded-xl border border-slate-100">
+                 <span className="text-sm font-bold text-slate-600">Số user đăng ký mới</span>
+                 <span className="text-lg font-black text-emerald-600">+{monthlySummary.currentMonth.newUsers}</span>
+               </div>
+               <div className="flex justify-between items-center bg-slate-50/80 hover:bg-blue-50 transition-colors p-3.5 rounded-xl border border-slate-100">
+                 <span className="text-sm font-bold text-slate-600">Số user đăng nhập</span>
+                 <span className="text-lg font-black text-blue-600">{monthlySummary.currentMonth.loginUsers}</span>
+               </div>
+               <div className="flex justify-between items-center bg-slate-50/80 hover:bg-red-50 transition-colors p-3.5 rounded-xl border border-slate-100">
+                 <span className="text-sm font-bold text-slate-600">Số user xóa tài khoản</span>
+                 <span className="text-lg font-black text-red-500">{monthlySummary.currentMonth.deletedUsers}</span>
+               </div>
+             </div>
+          </div>
+
+          {/* Previous Month */}
+          <div className="bg-white p-6 rounded-[24px] border border-slate-200 shadow-sm relative overflow-hidden opacity-90 hover:opacity-100 transition-opacity">
+             <div className="absolute top-0 right-0 p-4 opacity-5">
+               <BarChart3 className="w-32 h-32" />
+             </div>
+             <div className="flex items-center gap-3 mb-6 relative z-10">
+               <div className="bg-slate-100 text-slate-600 p-2.5 rounded-xl border border-slate-200">
+                 <Calendar className="h-5 w-5" />
+               </div>
+               <h3 className="text-lg font-black text-[#112240] tracking-tight">Thống kê tháng {format(new Date(new Date().setMonth(new Date().getMonth() - 1)), "MM/yyyy")}</h3>
+             </div>
+             <div className="space-y-3 relative z-10">
+               <div className="flex justify-between items-center bg-slate-50/80 p-3.5 rounded-xl border border-slate-100">
+                 <span className="text-sm font-bold text-slate-600">Số user đăng ký mới</span>
+                 <span className="text-lg font-black text-slate-700">+{monthlySummary.previousMonth.newUsers}</span>
+               </div>
+               <div className="flex justify-between items-center bg-slate-50/80 p-3.5 rounded-xl border border-slate-100">
+                 <span className="text-sm font-bold text-slate-600">Số user đăng nhập</span>
+                 <span className="text-lg font-black text-slate-700">{monthlySummary.previousMonth.loginUsers}</span>
+               </div>
+               <div className="flex justify-between items-center bg-slate-50/80 p-3.5 rounded-xl border border-slate-100">
+                 <span className="text-sm font-bold text-slate-600">Số user xóa tài khoản</span>
+                 <span className="text-lg font-black text-slate-700">{monthlySummary.previousMonth.deletedUsers}</span>
+               </div>
+             </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div className="relative w-full md:w-96">

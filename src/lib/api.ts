@@ -110,7 +110,10 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     let msg = `Request failed: ${res.status}`;
     try {
       const data = await res.json();
-      if (data?.error) msg = data.error;
+      if (data?.error) {
+        msg = data.error;
+        if (data.details) msg += ` (${data.details})`;
+      }
     } catch {
       // ignore json parsing error
     }
