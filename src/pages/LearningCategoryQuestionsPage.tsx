@@ -347,7 +347,7 @@ export default function LearningCategoryQuestionsPage() {
           </div>
 
           <DialogFooter className="mt-4">
-            <Button variant="ghost" className="rounded-xl px-6" onClick={() => setIsQuestionModalOpen(false)}>Hủy</Button>
+            <Button variant="ghost" className="rounded-xl px-6 border border-red-500 text-red-500 hover:bg-red-50 font-bold" onClick={() => setIsQuestionModalOpen(false)}>Hủy</Button>
             <Button 
               className="bg-primary hover:bg-primary/90 rounded-2xl px-10 font-bold shadow-lg shadow-primary/10" 
               onClick={handleSaveQuestion}

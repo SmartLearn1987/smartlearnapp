@@ -539,7 +539,7 @@ export default function VuaTiengVietManagePage() {
             </div>
 
             <div className="mt-8 flex gap-3">
-              <Button variant="outline" className="flex-1 h-12 rounded-xl" onClick={() => setIsFormOpen(false)}>
+              <Button variant="outline" className="flex-1 h-12 rounded-xl border-red-500 text-red-500 hover:bg-red-50 font-bold" onClick={() => setIsFormOpen(false)}>
                 Hủy
               </Button>
               <Button 

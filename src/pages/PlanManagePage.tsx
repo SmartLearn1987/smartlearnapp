@@ -436,7 +436,7 @@ export default function PlanManagePage() {
             <div className="p-8 border-t border-slate-50 flex items-center gap-4">
               <Button 
                 variant="ghost" 
-                className="flex-1 h-14 rounded-2xl font-black text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                className="flex-1 h-14 rounded-2xl font-black border border-red-500 text-red-500 hover:bg-red-50"
                 onClick={() => setIsFormOpen(false)}
               >
                 Hủy bỏ

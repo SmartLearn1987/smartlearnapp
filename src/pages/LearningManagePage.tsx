@@ -259,7 +259,7 @@ export default function LearningManagePage() {
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0 mt-4">
-            <Button variant="ghost" className="rounded-xl px-6" onClick={() => setIsCategoryModalOpen(false)}>Hủy</Button>
+            <Button variant="ghost" className="rounded-xl px-6 border border-red-500 text-red-500 hover:bg-red-50 font-bold" onClick={() => setIsCategoryModalOpen(false)}>Hủy</Button>
             <Button 
               className="bg-primary hover:bg-primary/90 rounded-2xl px-8 font-bold shadow-lg shadow-primary/10" 
               onClick={handleSaveCategory}

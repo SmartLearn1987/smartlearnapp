@@ -278,7 +278,7 @@ import { toast } from "sonner";
             )}
 
             <div className="flex flex-col sm:flex-row gap-3 pt-2 pb-6">
-              <Button variant="outline" onClick={onCancel} className="w-full sm:flex-1 rounded-xl h-11 font-bold">Hủy</Button>
+              <Button variant="outline" onClick={onCancel} className="w-full sm:flex-1 rounded-xl h-11 border-red-500 text-red-500 hover:bg-red-50 font-bold">Hủy</Button>
               <Button onClick={() => setStep("preview")} className="w-full sm:flex-1 rounded-xl h-11 font-bold shadow-lg shadow-primary/20">
                 Tiếp tục: Xem trước →
               </Button>

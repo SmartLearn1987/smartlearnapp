@@ -185,7 +185,7 @@ function DictationModal({
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving} className="border-red-500 text-red-500 hover:bg-red-50 font-bold">
               Hủy
             </Button>
             <Button type="submit" disabled={saving}>

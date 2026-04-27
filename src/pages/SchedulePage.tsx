@@ -283,6 +283,18 @@ function TimetableTab({ userId }: { userId: string }) {
     }
   };
 
+  const openEdit = (entry: TimetableEntry) => {
+    setEditingEntry(entry);
+    setEditForm({
+      day: entry.day,
+      subject: entry.subject,
+      startTime: entry.startTime,
+      endTime: entry.endTime,
+      room: entry.room || "",
+      color: entry.color
+    });
+  };
+
   const saveEdit = async () => {
     if (!editForm.subject.trim()) { toast.error("Vui lòng nhập tên môn học"); return; }
     try {
@@ -525,7 +537,7 @@ function TimetableTab({ userId }: { userId: string }) {
             <button onClick={add} className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
               <Check className="h-4 w-4" /> Thêm
             </button>
-            <button onClick={() => setShowForm(false)} className="flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted transition-colors">
+            <button onClick={() => setShowForm(false)} className="flex items-center gap-2 rounded-xl border border-red-500 text-red-500 px-4 py-2 text-sm font-semibold hover:bg-red-50 hover:text-red-600 transition-colors">
               <X className="h-4 w-4" /> Hủy
             </button>
           </div>
@@ -705,7 +717,7 @@ function TimetableTab({ userId }: { userId: string }) {
               <button onClick={saveEdit} className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-md shadow-primary/20">
                 <Save className="h-4 w-4" /> Lưu thay đổi
               </button>
-              <button onClick={() => setEditingEntry(null)} className="flex items-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-semibold hover:bg-muted transition-colors">
+              <button onClick={() => setEditingEntry(null)} className="flex items-center gap-2 rounded-xl border border-red-500 text-red-500 px-5 py-2.5 text-sm font-semibold hover:bg-red-50 hover:text-red-600 transition-colors">
                 <X className="h-4 w-4" /> Hủy
               </button>
             </div>
@@ -1011,7 +1023,7 @@ function TasksTab({ userId }: { userId: string }) {
             <button onClick={add} className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
               <Check className="h-4 w-4" /> Thêm
             </button>
-            <button onClick={() => setShowForm(false)} className="flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted transition-colors">
+            <button onClick={() => setShowForm(false)} className="flex items-center gap-2 rounded-xl border border-red-500 text-red-500 px-4 py-2 text-sm font-semibold hover:bg-red-50 hover:text-red-600 transition-colors">
               <X className="h-4 w-4" /> Hủy
             </button>
           </div>
@@ -1267,7 +1279,7 @@ function TasksTab({ userId }: { userId: string }) {
               <button onClick={saveEditTask} className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-md shadow-primary/20">
                 <Save className="h-4 w-4" /> Lưu thay đổi
               </button>
-              <button onClick={() => setEditingTask(null)} className="flex items-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-semibold hover:bg-muted transition-colors">
+              <button onClick={() => setEditingTask(null)} className="flex items-center gap-2 rounded-xl border border-red-500 text-red-500 px-5 py-2.5 text-sm font-semibold hover:bg-red-50 hover:text-red-600 transition-colors">
                 <X className="h-4 w-4" /> Hủy
               </button>
             </div>
@@ -1572,7 +1584,7 @@ function NotesTab({ userId }: { userId: string }) {
             <button onClick={add} className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
               <Check className="h-4 w-4" /> Lưu
             </button>
-            <button onClick={() => setShowAdd(false)} className="flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted transition-colors">
+            <button onClick={() => setShowAdd(false)} className="flex items-center gap-2 rounded-xl border border-red-500 text-red-500 px-4 py-2 text-sm font-semibold hover:bg-red-50 hover:text-red-600 transition-colors">
               <X className="h-4 w-4" /> Hủy
             </button>
           </div>
@@ -1631,7 +1643,7 @@ function NotesTab({ userId }: { userId: string }) {
                       <button onClick={() => saveEdit(note.id)} className="flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
                         <Save className="h-3 w-3" /> Lưu
                       </button>
-                      <button onClick={() => setEditingId(null)} className="flex items-center gap-1 rounded-lg border border-border bg-background/80 px-2.5 py-1.5 text-xs font-semibold hover:bg-muted transition-colors">
+                      <button onClick={() => setEditingId(null)} className="flex items-center gap-1 rounded-lg border border-red-500 text-red-500 bg-background/80 px-2.5 py-1.5 text-xs font-semibold hover:bg-red-50 hover:text-red-600 transition-colors">
                         <X className="h-3 w-3" /> Hủy
                       </button>
                     </div>

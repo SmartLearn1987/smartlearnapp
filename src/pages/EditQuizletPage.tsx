@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { 
   Import, Trash2, GripVertical, Image as ImageIcon, Plus,
   ChevronLeft, ChevronRight, Maximize2, Minimize2, Play, Shuffle, Lightbulb,
@@ -73,6 +73,7 @@ const getCardFontSize = (text: string, baseSize: number, isFullscreen: boolean) 
 export default function EditQuizletPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -355,6 +356,7 @@ export default function EditQuizletPage() {
 
   const currentCard = displayCards[currentIndex] || { term: "", definition: "" };
   const isOwner = user?.id === quizletUserId || user?.role === 'admin';
+  const isEditMode = location.pathname.includes('/edit');
 
   return (
     <div className="container py-8 max-w-5xl">
@@ -470,7 +472,7 @@ export default function EditQuizletPage() {
 
       <div className="h-px bg-gray-200 w-full my-12" />
 
-      {isOwner ? (
+      {isEditMode && isOwner ? (
         <>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <h2 className="text-2xl font-bold">Chỉnh sửa học phần</h2>
@@ -559,7 +561,7 @@ export default function EditQuizletPage() {
             <DialogContent>
               <DialogHeader><DialogTitle>Nhập danh sách</DialogTitle></DialogHeader>
               <textarea className="w-full h-40 border p-3 rounded-lg font-mono text-sm" value={importText} onChange={e => setImportText(e.target.value)} placeholder="Từ vựng, Định nghĩa..." />
-              <DialogFooter><Button variant="outline" onClick={() => setIsImportOpen(false)}>Hủy</Button><Button onClick={handleImport}>Nhập ngay</Button></DialogFooter>
+              <DialogFooter><Button variant="outline" onClick={() => setIsImportOpen(false)} className="border-red-500 text-red-500 hover:bg-red-50 font-bold">Hủy</Button><Button onClick={handleImport}>Nhập ngay</Button></DialogFooter>
             </DialogContent>
           </Dialog>
 
@@ -642,7 +644,7 @@ export default function EditQuizletPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsSettingsOpen(false)}>Hủy</Button>
+                <Button variant="outline" onClick={() => setIsSettingsOpen(false)} className="border-red-500 text-red-500 hover:bg-red-50 font-bold">Hủy</Button>
                 <Button onClick={() => {
                   setFrontStyle(tempFrontStyle);
                   setBackStyle(tempBackStyle);
@@ -659,11 +661,13 @@ export default function EditQuizletPage() {
           </div>
         </>
       ) : (
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-8 text-center text-blue-800">
-          <Lightbulb className="w-10 h-10 mx-auto mb-3 opacity-50" />
-          <h3 className="text-xl font-bold mb-2">Học phần công khai</h3>
-          <p>Bạn có thể ôn tập học phần này nhưng không có quyền chỉnh sửa nội dung.</p>
-        </div>
+        !isOwner && (
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-8 text-center text-blue-800">
+            <Lightbulb className="w-10 h-10 mx-auto mb-3 opacity-50" />
+            <h3 className="text-xl font-bold mb-2">Học phần công khai</h3>
+            <p>Bạn có thể ôn tập học phần này nhưng không có quyền chỉnh sửa nội dung.</p>
+          </div>
+        )
       )}
     </div>
   );

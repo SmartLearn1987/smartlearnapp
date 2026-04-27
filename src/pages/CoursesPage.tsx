@@ -1027,7 +1027,7 @@ export default function CoursesPage() {
                 <Button 
                   variant="outline" 
                   onClick={() => setView("lessons")}
-                  className="rounded-xl h-11 px-8 font-bold border-muted-foreground/20"
+                  className="rounded-xl h-11 px-8 font-bold border-red-500 text-red-500 hover:bg-red-50"
                 >
                   Hủy
                 </Button>
@@ -1075,7 +1075,7 @@ export default function CoursesPage() {
               placeholder="Từ vựng, Định nghĩa..."
             />
             <div className="flex justify-end gap-3 mt-4">
-              <Button variant="outline" onClick={() => setShowImportFlashcard(false)}>Hủy</Button>
+              <Button variant="outline" className="border-red-500 text-red-500 hover:bg-red-50 font-bold" onClick={() => setShowImportFlashcard(false)}>Hủy</Button>
               <Button onClick={handleImportFlashcards}>Nhập ngay</Button>
             </div>
           </div>

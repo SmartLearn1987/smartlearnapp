@@ -187,7 +187,7 @@ export default function SubjectsPage() {
             )}
           </div>
           <DialogFooter className="gap-3 sm:gap-2">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)} className="h-11 rounded-xl border-gray-200 font-medium">Hủy</Button>
+            <Button variant="outline" onClick={() => setIsModalOpen(false)} className="h-11 rounded-xl border-red-500 text-red-500 hover:bg-red-50 font-medium">Hủy</Button>
             <Button 
               onClick={handleSave} 
               disabled={isSaving}

@@ -239,7 +239,7 @@ function PictogramModal({
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-border/50">
-            <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
+            <Button type="button" variant="ghost" onClick={onClose} disabled={saving} className="border border-red-500 text-red-500 hover:bg-red-50 font-bold">
               Hủy bỏ
             </Button>
             <Button type="submit" disabled={saving || uploading} className="px-8 flex gap-2">

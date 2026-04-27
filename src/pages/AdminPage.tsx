@@ -288,7 +288,7 @@ function UserCreateScreen({ onBack, onCreated }: { onBack: () => void; onCreated
           )}
 
           <div className="flex gap-4 pt-4 border-t border-border">
-            <Button type="button" variant="outline" onClick={onBack} className="flex-1 h-12 rounded-xl">Hủy</Button>
+            <Button type="button" variant="outline" onClick={onBack} className="flex-1 h-12 rounded-xl border-red-500 text-red-500 hover:bg-red-50 font-bold">Hủy</Button>
             <Button type="submit" className="flex-1 h-12 rounded-xl shadow-lg shadow-primary/20" disabled={loading || !username || !password || !confirmPassword || password.length < 6}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Xác nhận tạo
@@ -462,7 +462,7 @@ function UserEditScreen({ user, onBack, onUpdated }: { user: User; onBack: () =>
           )}
 
           <div className="flex gap-4 pt-4 border-t border-border">
-            <Button type="button" variant="outline" onClick={onBack} className="flex-1 h-12 rounded-xl">Hủy</Button>
+            <Button type="button" variant="outline" onClick={onBack} className="flex-1 h-12 rounded-xl border-red-500 text-red-500 hover:bg-red-50 font-bold">Hủy</Button>
             <Button type="submit" className="flex-1 h-12 rounded-xl shadow-lg shadow-primary/20" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Lưu thay đổi
@@ -516,7 +516,7 @@ function ChangePwModal({ user, onClose }: { user: User; onClose: () => void }) {
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="flex gap-3">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1">Hủy</Button>
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1 border-red-500 text-red-500 hover:bg-red-50 font-bold">Hủy</Button>
             <Button type="submit" className="flex-1" disabled={loading || pw.length < 6}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Lưu
             </Button>
@@ -575,7 +575,7 @@ function SettingsModal({ plans, onClose }: { plans: any[]; onClose: () => void }
               ))}
             </select>
             <div className="flex gap-3">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1 rounded-xl">Hủy</Button>
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1 rounded-xl border-red-500 text-red-500 hover:bg-red-50 font-bold">Hủy</Button>
               <Button type="submit" className="flex-1 rounded-xl shadow-md shadow-primary/20" disabled={mutation.isPending}>
                 {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Lưu thiết định
               </Button>

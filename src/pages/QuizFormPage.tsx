@@ -617,9 +617,9 @@ export default function QuizFormPage() {
           <Button 
             onClick={addQuestion}
             variant="outline"
-            className="w-full max-w-sm h-16 rounded-3xl border-2 border-dashed bg-white border-gray-200 hover:border-primary/40 hover:bg-primary/5 hover:text-primary transition-all text-lg font-bold group"
+            className="w-full max-w-sm h-14 rounded-full border-2 border-primary bg-white text-primary hover:bg-primary/5 transition-all text-lg font-bold group shadow-md shadow-primary/10"
           >
-            <Plus className="mr-3 h-6 w-6 transform group-hover:scale-125 transition-transform" />
+            <Plus className="mr-3 h-6 w-6 transform group-hover:rotate-90 transition-transform" />
             Thêm câu hỏi mới
           </Button>
         </div>

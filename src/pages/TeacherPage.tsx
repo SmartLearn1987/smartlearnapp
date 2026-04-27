@@ -1421,7 +1421,7 @@ export default function TeacherPage() {
                         resetLessonForm();
                         setView("lessons");
                       }}
-                      className="w-full"
+                      className="w-full border-red-500 text-red-500 hover:bg-red-50 font-bold"
                     >
                       Hủy sửa
                     </Button>
@@ -1552,7 +1552,7 @@ export default function TeacherPage() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                  <Button variant="outline" onClick={() => setView("curricula")} className="w-full sm:w-auto">Hủy</Button>
+                  <Button variant="outline" onClick={() => setView("curricula")} className="w-full sm:w-auto border-red-500 text-red-500 hover:bg-red-50 font-bold">Hủy</Button>
                   <Button onClick={() => setUploadStep("preview")} className="flex-1">Xem trước →</Button>
                 </div>
               </div>
@@ -1698,7 +1698,7 @@ export default function TeacherPage() {
                   <div className="rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">{curriculumError}</div>
                 )}
                 <div className="flex gap-2">
-                  <Button variant="outline" className="w-full" onClick={() => setShowCurriculumForm(false)}>
+                  <Button variant="outline" className="w-full border-red-500 text-red-500 hover:bg-red-50 font-bold" onClick={() => setShowCurriculumForm(false)}>
                     Hủy
                   </Button>
                   <Button className="w-full" onClick={handleSaveCurriculumMeta}>
@@ -1730,7 +1730,7 @@ export default function TeacherPage() {
                   placeholder="Từ vựng, Định nghĩa..."
                 />
                 <div className="flex justify-end gap-3 mt-4">
-                  <Button variant="outline" onClick={() => setShowImportFlashcard(false)}>Hủy</Button>
+                  <Button variant="outline" className="border-red-500 text-red-500 hover:bg-red-50 font-bold" onClick={() => setShowImportFlashcard(false)}>Hủy</Button>
                   <Button onClick={handleImportFlashcards}>Nhập ngay</Button>
                 </div>
               </div>

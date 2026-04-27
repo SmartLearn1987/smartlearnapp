@@ -122,7 +122,7 @@ function ProverbModal({
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Hủy</Button>
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving} className="border-red-500 text-red-500 hover:bg-red-50 font-bold">Hủy</Button>
             <Button type="submit" disabled={saving} className="bg-primary hover:brightness-110">
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               {initial ? "Cập nhật" : "Tạo mới"}
@@ -220,7 +220,7 @@ function ProverbBulkModal({
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Hủy</Button>
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving} className="border-red-500 text-red-500 hover:bg-red-50 font-bold">Hủy</Button>
             <Button type="submit" disabled={saving} className="bg-primary hover:brightness-110">
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Thêm vào hệ thống

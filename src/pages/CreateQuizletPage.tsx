@@ -314,7 +314,7 @@ export default function CreateQuizletPage() {
                 />
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsImportOpen(false)}>Hủy</Button>
+                <Button variant="outline" onClick={() => setIsImportOpen(false)} className="border-red-500 text-red-500 hover:bg-red-50 font-bold">Hủy</Button>
                 <Button onClick={handleImport}>Nhập ngay</Button>
               </DialogFooter>
             </DialogContent>

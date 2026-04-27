@@ -557,7 +557,7 @@ export default function ProfilePage() {
               </div>
 
               <div className="flex justify-end gap-3">
-                <Button type="button" variant="outline" onClick={() => navigate(-1)} className="rounded-xl h-12 px-8 font-bold">
+                <Button type="button" variant="outline" onClick={() => navigate(-1)} className="rounded-xl h-12 px-8 font-bold border-red-500 text-red-500 hover:bg-red-50">
                   Hủy
                 </Button>
                 <Button type="submit" className="rounded-xl h-12 px-10 shadow-lg shadow-primary/20 font-bold" disabled={loading}>

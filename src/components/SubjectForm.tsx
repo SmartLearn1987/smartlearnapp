@@ -126,7 +126,7 @@ export default function SubjectForm({ subject, onSave, onCancel }: SubjectFormPr
           )}
 
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={handleClose} className="w-full sm:flex-1 h-11 rounded-xl font-semibold">
+            <Button type="button" variant="outline" onClick={handleClose} className="w-full sm:flex-1 h-11 rounded-xl font-semibold border-red-500 text-red-500 hover:bg-red-50">
               Hủy
             </Button>
             <Button type="submit" className="w-full sm:flex-1 h-11 rounded-xl font-semibold shadow-lg shadow-primary/20">

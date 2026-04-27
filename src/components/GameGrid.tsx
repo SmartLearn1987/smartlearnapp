@@ -146,7 +146,7 @@ function DictationSelectModal({ onClose }: { onClose: () => void }) {
         )}
 
         <div className="flex gap-2 pt-1">
-          <Button variant="outline" className="flex-1" onClick={onClose}>Hủy</Button>
+          <Button variant="outline" className="flex-1 border-red-500 text-red-500 hover:bg-red-50 font-bold" onClick={onClose}>Hủy</Button>
           <Button className="flex-1" onClick={handlePlay} disabled={loading}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Chơi ngay
@@ -252,7 +252,7 @@ function PictogramSelectModal({ onClose }: { onClose: () => void }) {
         )}
 
         <div className="flex gap-2 pt-1">
-          <Button variant="outline" className="flex-1" onClick={onClose}>Hủy</Button>
+          <Button variant="outline" className="flex-1 border-red-500 text-red-500 hover:bg-red-50 font-bold" onClick={onClose}>Hủy</Button>
           <Button className="flex-1" onClick={handlePlay} disabled={loading}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Chơi ngay
@@ -358,7 +358,7 @@ function ProverbSelectModal({ onClose }: { onClose: () => void }) {
         )}
 
         <div className="flex gap-2 pt-1">
-          <Button variant="outline" className="flex-1" onClick={onClose}>Hủy</Button>
+          <Button variant="outline" className="flex-1 border-red-500 text-red-500 hover:bg-red-50 font-bold" onClick={onClose}>Hủy</Button>
           <Button className="flex-1" onClick={handlePlay} disabled={loading}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Chơi ngay
@@ -460,7 +460,7 @@ function LearningSelectModal({ onClose }: { onClose: () => void }) {
             </div>
 
             <div className="flex gap-3 pt-2">
-              <Button variant="outline" className="flex-1 h-12 rounded-2xl font-bold" onClick={onClose}>Hủy</Button>
+              <Button variant="outline" className="flex-1 h-12 rounded-2xl font-bold border-red-500 text-red-500 hover:bg-red-50" onClick={onClose}>Hủy</Button>
               <Button 
                 className="flex-1 h-12 rounded-2xl font-bold text-base bg-primary hover:bg-primary/90 shadow-lg shadow-primary/10" 
                 onClick={handlePlay}
@@ -580,7 +580,7 @@ function NhanhNhuChopSelectModal({ onClose }: { onClose: () => void }) {
         )}
 
         <div className="flex gap-3 pt-2">
-          <Button variant="ghost" className="flex-1 h-12 rounded-2xl font-bold bg-slate-50" onClick={onClose}>Hủy</Button>
+          <Button variant="ghost" className="flex-1 h-12 rounded-2xl font-bold border border-red-500 text-red-500 hover:bg-red-50" onClick={onClose}>Hủy</Button>
           <Button 
             className="flex-1 h-12 rounded-2xl font-bold bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200" 
             onClick={handlePlay} 
@@ -689,7 +689,7 @@ function VuaTiengVietSelectModal({ onClose }: { onClose: () => void }) {
         )}
 
         <div className="flex gap-2 pt-1">
-          <Button variant="outline" className="flex-1" onClick={onClose}>Hủy</Button>
+          <Button variant="outline" className="flex-1 border-red-500 text-red-500 hover:bg-red-50 font-bold" onClick={onClose}>Hủy</Button>
           <Button className="flex-1" onClick={handlePlay} disabled={loading}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Chơi ngay
