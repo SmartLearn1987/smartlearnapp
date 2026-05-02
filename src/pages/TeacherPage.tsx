@@ -1,11 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import RichTextEditor, { type RichBlock } from "@/components/RichTextEditor";
-import { BookOpen, Plus, ArrowLeft, Upload, Trash2, Pencil, ImagePlus, X, Eye, EyeOff, CheckCircle2, HelpCircle, Layers, FileText, Lightbulb, BookMarked, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
+import { BookOpen, Plus, ArrowLeft, Upload, Trash2, Lock, ImagePlus, X, Globe, CheckCircle2, HelpCircle, Layers, FileText, Lightbulb, BookMarked, ChevronLeft, ChevronRight, ImageIcon, MoreVertical, Edit2 } from "lucide-react";
 import QuizRunner from "@/components/QuizRunner";
 import FlashcardViewer from "@/components/FlashcardViewer";
 import ImageLightbox from "@/components/ImageLightbox";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
 import FileUploadZone from "@/components/FileUploadZone";
 import SubjectForm from "../components/SubjectForm";
@@ -105,30 +111,26 @@ function SortableSubjectItem({ subject, onClick, onEdit, onDelete, isAdmin }: an
         </div>
         {isAdmin && (
           <div className="flex gap-2 pointer-events-auto">
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit();
-              }}
-              onPointerDown={(e) => e.stopPropagation()}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              className="h-8 w-8 p-0 rounded-lg"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              onPointerDown={(e) => e.stopPropagation()}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 rounded-lg hover:bg-primary/10"
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-32 rounded-xl">
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(); }} className="cursor-pointer gap-2">
+                  <Edit2 className="h-4 w-4" /> Chỉnh sửa
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(); }} className="cursor-pointer gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive">
+                  <Trash2 className="h-4 w-4" /> Xóa
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
       </div>
@@ -173,11 +175,32 @@ function SortableCurriculumItem({ curriculum, onClick, onEdit, onDelete, isAdmin
         <div className="flex-1 overflow-hidden">
           <div className="flex items-start justify-between gap-2">
             <p className="font-semibold truncate" title={curriculum.name}>{curriculum.name}</p>
-            {curriculum.is_public ? (
-              <Eye className="h-4 w-4 shrink-0 text-blue-500" />
-            ) : (
-              <EyeOff className="h-4 w-4 shrink-0 text-amber-500" />
-            )}
+            <div className="flex items-center gap-1 shrink-0">
+
+              {isAdmin && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl hover:bg-primary/10" onPointerDown={(e) => e.stopPropagation()}>
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40 rounded-xl">
+                    <DropdownMenuItem 
+                      onClick={(e) => { e.stopPropagation(); onEdit(curriculum); }} 
+                      className="cursor-pointer gap-2 font-medium"
+                    >
+                      <Edit2 className="h-4 w-4" /> Chỉnh sửa
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={(e) => { e.stopPropagation(); onDelete(curriculum.id); }} 
+                      className="cursor-pointer gap-2 font-medium text-destructive focus:bg-destructive/10 focus:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" /> Xóa giáo trình
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
             Lớp {curriculum.grade || "Chưa phân loại"}<br/>
@@ -225,32 +248,11 @@ function SortableCurriculumItem({ curriculum, onClick, onEdit, onDelete, isAdmin
       <div className="flex items-center justify-between gap-2 mt-auto pt-4 border-t pointer-events-auto">
         <Button
           variant="outline"
-          size="sm"
-          className="rounded-xl h-9 flex-1"
+          className="w-full rounded-xl border-primary/20 text-primary hover:bg-primary/5 hover:border-primary/40 font-semibold"
           onClick={(e) => { e.stopPropagation(); viewLessons(curriculum); }}
         >
           Quản lý bài học
         </Button>
-        {isAdmin && (
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-xl hover:bg-primary/10"
-              onClick={(e) => { e.stopPropagation(); onEdit(curriculum); }}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-xl hover:bg-destructive/10 text-destructive"
-              onClick={(e) => { e.stopPropagation(); onDelete(curriculum.id); }}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -336,7 +338,7 @@ export default function TeacherPage() {
   useEffect(() => { fetchSubjects(); }, []);
   const fetchSubjects = async () => {
     try {
-      const data = await apiFetch<Subject[]>("/subjects");
+      const data = await apiFetch<Subject[]>("/subjects?mode=teacher");
       setSubjects(data || []);
     } catch {
       setSubjects([]);
@@ -848,33 +850,38 @@ export default function TeacherPage() {
         {/* ── CURRICULA VIEW ── */}
         {view === "curricula" && selectedSubject && (
           <div>
-            <div className="mb-6 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <button onClick={() => setView("subjects")} className="rounded-xl p-2 hover:bg-muted">
-                  <ArrowLeft className="h-5 w-5" />
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <button onClick={() => setView("subjects")} className="rounded-xl p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" title="Quay lại Danh sách môn học">
+                  <ArrowLeft className="h-6 w-6" />
                 </button>
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">{selectedSubject.icon}</span>
-                  <div>
-                    <h2 className="text-2xl font-bold">{selectedSubject.name}</h2>
-                    <p className="text-sm text-muted-foreground">{curricula.length} giáo trình</p>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-3">
+                    <h1 className="font-heading text-3xl font-bold tracking-tight">Quản lý giáo trình</h1>
+                    <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600 uppercase tracking-wider border border-emerald-200 shadow-sm">
+                      Môn: {selectedSubject.name}
+                    </div>
                   </div>
                 </div>
               </div>
-              <Button onClick={() => { 
-                setUploadStep("config"); 
-                setView("upload"); 
-                setUploadedFile(null);
-                setFileContent("");
-                setCoverImageFile(null);
-                setCoverImageUrl(null);
-                setCurriculumName("");
-                setGrade("");
-                setEducationLevel("");
-                setIsPublic(false);
-                setPublisher("");
-              }}>
-                <Plus className="h-4 w-4 mr-2" /> Tạo giáo trình mới
+              <Button 
+                onClick={() => { 
+                  setUploadStep("config"); 
+                  setView("upload"); 
+                  setUploadedFile(null);
+                  setFileContent("");
+                  setCoverImageFile(null);
+                  setCoverImageUrl(null);
+                  setCurriculumName("");
+                  setGrade("");
+                  setEducationLevel("");
+                  setIsPublic(false);
+                  setPublisher("");
+                  setLessonCount(0);
+                }}
+                className="rounded-full h-10 px-6 font-bold bg-primary text-white hover:brightness-110 flex items-center justify-center gap-2 w-full sm:w-auto transition-all active:scale-95 shadow-lg shadow-primary/20"
+              >
+                <Plus className="h-4 w-4" /> Tạo giáo trình mới
               </Button>
             </div>
 
@@ -976,8 +983,11 @@ export default function TeacherPage() {
                     Quản lý bài học ({lessons.length} bài)
                   </p>
                   <div className="flex flex-wrap gap-2 pt-2">
-                    <Button onClick={() => { resetLessonForm(); setView("lesson_form"); }} className="rounded-2xl shadow-lg shadow-primary/20 font-bold bg-[#2D9B63] hover:bg-[#2D9B63]/90 h-10 px-6">
-                      <Plus className="mr-2 h-4 w-4" /> Tạo ghi chú mới
+                    <Button 
+                      onClick={() => { resetLessonForm(); setView("lesson_form"); }} 
+                      className="rounded-full h-10 px-6 font-bold bg-primary text-white hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-primary/20"
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Tạo mới
                     </Button>
                   </div>
                 </div>
@@ -1032,15 +1042,32 @@ export default function TeacherPage() {
                   return (
                     <div key={lesson.id} className="flex flex-col rounded-3xl border bg-white/70 p-6 group hover:shadow-2xl transition-all duration-300 border-white/60 shadow-sm hover:-translate-y-1">
                       <div className="flex-1 mb-6">
-                        <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-start justify-between gap-2 mb-3">
                           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold text-sm">
                             {i + 1}
                           </div>
-                          {isCompleted && (
-                            <div className="rounded-full bg-emerald-100 p-1 font-bold text-emerald-600">
-                              <CheckCircle2 className="h-4 w-4" />
-                            </div>
-                          )}
+                          <div className="flex items-center gap-1">
+                            {isCompleted && (
+                              <div className="rounded-full bg-emerald-100 p-1 font-bold text-emerald-600">
+                                <CheckCircle2 className="h-4 w-4" />
+                              </div>
+                            )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl hover:bg-primary/10 shrink-0">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40 rounded-xl">
+                                <DropdownMenuItem onClick={() => handleEditLesson(lesson)} className="cursor-pointer gap-2 font-medium">
+                                  <Edit2 className="h-4 w-4" /> Chỉnh sửa
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDeleteLesson(lesson.id)} className="cursor-pointer gap-2 font-medium text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                  <Trash2 className="h-4 w-4" /> Xóa bài học
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
                         <h3 className="font-bold text-xl leading-snug group-hover:text-primary transition-colors mb-2">
                           {lesson.title}
@@ -1050,24 +1077,7 @@ export default function TeacherPage() {
                         </p>
                       </div>
                       
-                      <div className="flex items-center justify-between gap-3 pt-5 border-t border-muted/30">
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="rounded-xl h-10 flex-1 font-bold text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
-                          onClick={() => handleEditLesson(lesson)}
-                        >
-                          <Pencil className="mr-2 h-4 w-4" /> Sửa
-                        </Button>
-                        <div className="h-4 w-[1px] bg-muted/30" />
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="rounded-xl h-10 flex-1 font-bold text-destructive hover:bg-destructive/5 transition-all"
-                          onClick={() => handleDeleteLesson(lesson.id)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" /> Xóa
-                        </Button>
+                      <div className="pt-5 border-t border-muted/30">
                       </div>
                     </div>
                   );
@@ -1466,7 +1476,7 @@ export default function TeacherPage() {
 
             {/* step: config */}
             {uploadStep === "config" && (
-              <div className="max-w-2xl space-y-6 pb-10">
+              <div className="space-y-6 pb-10">
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -1476,8 +1486,8 @@ export default function TeacherPage() {
                         onChange={e => setIsPublic(e.target.value === "true")}
                         className="mt-1 w-full rounded-xl border bg-background px-4 py-2.5 text-sm"
                       >
-                        <option value="false">Không công khai (Cá nhân)</option>
-                        <option value="true">Công khai (Mọi người)</option>
+                        <option value="false">🔒 Không công khai (Cá nhân)</option>
+                        <option value="true">🌍 Công khai (Mọi người)</option>
                       </select>
                     </div>
                     <div>
@@ -1560,7 +1570,7 @@ export default function TeacherPage() {
 
             {/* step: preview */}
             {uploadStep === "preview" && (
-              <div className="max-w-2xl space-y-6 pb-10">
+              <div className="space-y-6 pb-10">
                 <div className="rounded-2xl border bg-card p-6 space-y-3">
                   {coverImageUrl && (
                     <div className="mb-4">
@@ -1572,7 +1582,7 @@ export default function TeacherPage() {
                     <div className="min-w-0"><span className="text-muted-foreground">Tên:</span> <span className="font-semibold break-words">{curriculumName}</span></div>
                     <div><span className="text-muted-foreground">Lớp:</span> <span className="font-semibold">{grade}</span></div>
                     <div><span className="text-muted-foreground">Cấp độ:</span> <span className="font-semibold">{educationLevel || "Chưa chọn"}</span></div>
-                    <div><span className="text-muted-foreground">Hiển thị:</span> <span className="font-semibold">{isPublic ? "Công khai" : "Riêng tư"}</span></div>
+                    <div className="flex items-center gap-2"><span className="text-muted-foreground">Hiển thị:</span> <span className={`font-semibold flex items-center gap-1.5 ${isPublic ? "text-emerald-600" : "text-muted-foreground"}`}>{isPublic ? <Globe className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />} {isPublic ? "Công khai" : "Riêng tư"}</span></div>
                     <div><span className="text-muted-foreground">NXB:</span> <span className="font-semibold">{publisher}</span></div>
                     <div><span className="text-muted-foreground">Số bài:</span> <span className="font-semibold">{lessonCount}</span></div>
                   </div>
@@ -1616,8 +1626,8 @@ export default function TeacherPage() {
                       onChange={e => setIsPublic(e.target.value === "true")}
                       className="mt-1 w-full rounded-xl border bg-background px-4 py-2.5 text-sm"
                     >
-                      <option value="false">Không công khai (Cá nhân)</option>
-                      <option value="true">Công khai (Mọi người)</option>
+                      <option value="false">🔒 Không công khai (Cá nhân)</option>
+                      <option value="true">🌍 Công khai (Mọi người)</option>
                     </select>
                   </div>
                   <div>

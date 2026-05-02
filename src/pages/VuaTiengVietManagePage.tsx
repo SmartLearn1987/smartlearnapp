@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Edit2, Loader2, Save, FileQuestion, Upload, Download, FileSpreadsheet } from "lucide-react";
+import { Plus, Trash2, Edit2, Loader2, Save, FileQuestion, Upload, Download, FileSpreadsheet, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { apiFetch } from "@/lib/api";
@@ -266,10 +266,15 @@ export default function VuaTiengVietManagePage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-heading text-2xl font-bold">Vua Tiếng Việt</h1>
-          <p className="text-muted-foreground mt-1">Quản lý ngân hàng câu hỏi game Vua Tiếng Việt</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Link to="/games" className="rounded-xl p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" title="Quay lại Danh sách Game">
+            <ArrowLeft className="h-6 w-6" />
+          </Link>
+          <div>
+            <h1 className="font-heading text-2xl font-bold">Vua Tiếng Việt</h1>
+            <p className="text-muted-foreground mt-1">Quản lý ngân hàng câu hỏi game Vua Tiếng Việt</p>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <input
@@ -285,12 +290,11 @@ export default function VuaTiengVietManagePage() {
           <Button
             variant="outline"
             className="gap-2 rounded-full border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700 bg-blue-50/30 font-semibold px-5 h-11"
-            onClick={handleExcelExport}
-            disabled={exporting || questions.length === 0}
-            title={`Xuất ${questions.length} câu hỏi đang hiển thị ra file Excel`}
+            onClick={handleDownloadTemplate}
+            title="Tải file Excel mẫu"
           >
-            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            Xuất Excel (Trang này)
+            <Download className="h-4 w-4" />
+            File mẫu
           </Button>
 
           {/* Import Excel */}
@@ -301,11 +305,14 @@ export default function VuaTiengVietManagePage() {
             disabled={importing}
           >
             {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-            Thêm danh sách câu hỏi
+            Thêm danh sách
           </Button>
 
-          <Button onClick={openFormForAdd} className="gap-2 rounded-xl h-11">
-            <Plus className="h-4 w-4" /> Thêm câu hỏi
+          <Button 
+            onClick={openFormForAdd} 
+            className="rounded-full h-10 px-6 font-bold bg-primary text-white hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-primary/20"
+          >
+            <Plus className="h-4 w-4 mr-2" /> Tạo mới
           </Button>
         </div>
       </div>
@@ -333,7 +340,7 @@ export default function VuaTiengVietManagePage() {
                   onClick={() => handleFilterChange(stat.value)}
                 >
                   <div className="flex items-center gap-2">
-                    <div className={`h-2.5 w-2.5 rounded-full ${stat.color.split(' ')[0]}`} />
+                    <div className={`h-2.5 w-2.5 rounded-full ${(stat.color || "").split(' ')[0]}`} />
                     <span className="text-sm">{stat.label}</span>
                   </div>
                   <span className="font-mono text-sm font-semibold">{stat.count}</span>

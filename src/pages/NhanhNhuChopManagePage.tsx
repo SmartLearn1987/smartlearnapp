@@ -260,8 +260,9 @@ export default function NhanhNhuChopManagePage() {
       {/* Header */}
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/games")}
           className="flex items-center justify-center h-12 w-12 rounded-2xl bg-white shadow-sm hover:shadow-md transition-all border border-border group"
+          title="Quay lại Danh sách Game"
         >
           <ArrowLeft className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
         </button>
@@ -287,8 +288,11 @@ export default function NhanhNhuChopManagePage() {
                 {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                 Nhập Excel
             </Button>
-            <Button onClick={openFormForAdd} className="h-12 px-6 rounded-xl font-bold gap-2 shadow-lg shadow-emerald-200 bg-emerald-600 hover:bg-emerald-700 text-white">
-                <Plus className="h-5 w-5" /> Thêm câu hỏi
+            <Button 
+                onClick={openFormForAdd} 
+                className="rounded-full h-10 px-6 font-bold bg-primary text-white hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-primary/20"
+            >
+                <Plus className="h-4 w-4 mr-2" /> Tạo mới
             </Button>
         </div>
       </div>

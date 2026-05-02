@@ -51,7 +51,7 @@ export default function StaticPage() {
 
   return (
     <div className="min-h-screen bg-background py-12">
-      <div className="container max-w-3xl px-4 md:px-0">
+      <div className="container px-4 md:px-0">
         <Button 
           variant="ghost" 
           onClick={() => navigate(-1)} 

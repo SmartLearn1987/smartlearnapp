@@ -233,7 +233,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="container py-10 max-w-3xl">
+    <div className="container py-10">
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div>
@@ -249,7 +249,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <div className="space-y-6">
           {/* Streak Section moved from Dashboard */}
           <div className="rounded-2xl bg-card p-6 shadow-sm border border-primary/5 opacity-0 animate-fade-up" style={{ animationDelay: "100ms" }}>

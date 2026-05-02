@@ -113,7 +113,6 @@ import { toast } from "sonner";
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onCancel()}>
       <DialogContent 
-        onOpenAutoFocus={(e) => e.preventDefault()}
         className="max-h-[90dvh] w-[95vw] sm:w-full overflow-y-auto custom-scrollbar max-w-2xl"
       >
         <DialogHeader>
@@ -310,7 +309,8 @@ import { toast } from "sonner";
                     <span className="rounded-lg bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600">
                       {educationLevel || "Chưa chọn cấp độ"}
                     </span>
-                    <span className={`rounded-lg px-2.5 py-1 text-xs font-bold ${isPublic ? "bg-sky-500/10 text-sky-600" : "bg-muted text-muted-foreground"}`}>
+                    <span className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold ${isPublic ? "bg-emerald-500/10 text-emerald-600" : "bg-muted text-muted-foreground"}`}>
+                      {isPublic ? <Globe className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
                       {isPublic ? "Công khai" : "Riêng tư"}
                     </span>
                   </div>

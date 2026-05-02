@@ -50,7 +50,7 @@ export default function Footer() {
                   <span className="text-[10px] font-bold text-primary border border-primary rounded-sm px-0.5">F</span>
                 </div>
                 <a href="https://web.facebook.com/profile.php?id=61588811190072" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                  Fanpage: Smartlear
+                  Fanpage: Smartlearn
                 </a>
               </div>
             </div>

@@ -43,6 +43,8 @@ export default function AppHeader() {
     { path: "/teacher",   label: "Màn hình Giáo viên", icon: GraduationCap,  show: isAdmin || isTeacher },
     { path: "/admin/content", label: "Quản lý nội dung", icon: FileText, show: isAdmin },
     { path: "/admin/statistics", label: "Thống kê", icon: BarChart3, show: isAdmin },
+    { path: "/admin/quiz-repository", label: "Kho Trắc nghiệm", icon: Library, show: isAdmin || isTeacher },
+
   ].filter((item) => item.show);
 
   if (!user) return null;

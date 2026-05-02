@@ -87,7 +87,7 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="container max-w-3xl py-10">
+    <div className="container py-10">
       <Link to="/subjects" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
         <ArrowLeft className="h-4 w-4" /> Quay lại
       </Link>

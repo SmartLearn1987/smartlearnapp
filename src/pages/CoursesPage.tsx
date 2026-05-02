@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, BookOpen, Plus, Trash2, Pencil, Eye, EyeOff, X, ImagePlus, Upload, HelpCircle, Layers, FileText, CheckCircle2, Lightbulb, BookMarked, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
+import { ArrowLeft, BookOpen, Plus, Trash2, Pencil, Lock, Globe, X, ImagePlus, Upload, HelpCircle, Layers, FileText, CheckCircle2, Lightbulb, BookMarked, ChevronLeft, ChevronRight, ImageIcon, MoreVertical, Edit2 } from "lucide-react";
 import QuizRunner from "@/components/QuizRunner";
 import FlashcardViewer from "@/components/FlashcardViewer";
 import ImageLightbox from "@/components/ImageLightbox";
@@ -9,6 +9,12 @@ import { apiFetch, API_BASE_URL } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import CurriculumCreateModal from "@/components/CurriculumCreateModal";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,6 +31,7 @@ interface LessonItem {
   quiz?: QuizItem[];
   flashcards?: FlashcardItem[];
   images?: any[];
+  created_at?: string;
 }
 
 interface SubjectData {
@@ -74,7 +81,7 @@ export default function CoursesPage() {
   const fetchCurricula = () => {
     setIsFetching(true);
     Promise.all([
-      apiFetch<SubjectData>(`/subjects/${subjectId}`),
+    apiFetch<SubjectData>(`/subjects/${subjectId}${isTeacher && !isAdmin ? "?mode=teacher" : ""}`),
       apiFetch<CurriculumData[]>(`/curricula?subject_id=${encodeURIComponent(subjectId)}`),
     ])
       .then(([s, c]) => {
@@ -402,17 +409,15 @@ export default function CoursesPage() {
     <div className="container py-10">
       {view === "list" ? (
         <div className="animate-fade-in">
-          <Link to="/subjects" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-4 w-4" /> Quay lại
-          </Link>
-
           <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 opacity-0 animate-fade-up">
-            <div className="flex items-center gap-3">
-              <span className="text-4xl">{subject.icon}</span>
-              <div>
-                <h1 className="font-heading text-3xl font-bold">{subject.name}</h1>
-                <p className="text-muted-foreground">{subject.description}</p>
-              </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link to="/subjects" className="mr-1 rounded-xl p-2 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="Quay lại danh sách môn học">
+                <ArrowLeft className="h-6 w-6" />
+              </Link>
+              <h1 className="font-heading text-3xl font-bold text-[#112240]">Quản lý giáo trình</h1>
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary uppercase tracking-widest border border-primary/20 whitespace-nowrap mt-1 sm:mt-0">
+                Môn: {subject.name}
+              </span>
             </div>
             
             {user && (
@@ -421,9 +426,9 @@ export default function CoursesPage() {
                   setEditingCurriculum(null);
                   setShowCreateModal(true);
                 }}
-                className="rounded-xl shadow-lg shadow-primary/20 bg-[#2D9B63] hover:bg-[#258a56] text-white font-bold h-11 px-6 active:scale-95 transition-all"
+                className="rounded-full h-10 px-6 font-bold bg-primary text-white hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-primary/20"
               >
-                <Plus className="mr-2 h-5 w-5" /> Tạo giáo trình mới
+                <Plus className="h-4 w-4 mr-2" /> Tạo giáo trình mới
               </Button>
             )}
           </div>
@@ -455,11 +460,24 @@ export default function CoursesPage() {
                         <div className="flex-1 overflow-hidden">
                           <div className="flex items-start justify-between gap-2">
                             <p className="font-semibold truncate" title={course.name}>{course.name}</p>
-                            {course.is_public ? (
-                              <Eye className="h-4 w-4 shrink-0 text-blue-500" />
-                            ) : (
-                              <EyeOff className="h-4 w-4 shrink-0 text-amber-500" />
-                            )}
+                            <div className="flex items-center gap-1 shrink-0">
+
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl hover:bg-primary/10">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-40 rounded-xl">
+                                  <DropdownMenuItem onClick={() => handleEditCurriculum(course)} className="cursor-pointer gap-2 font-medium">
+                                    <Edit2 className="h-4 w-4" /> Chỉnh sửa
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDeleteCurriculum(course.id)} className="cursor-pointer gap-2 font-medium text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                    <Trash2 className="h-4 w-4" /> Xóa giáo trình
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </div>
                           <p className="text-sm text-muted-foreground mt-1 text-xs">
                              Lớp {course.grade || "Chưa phân loại"}<br/>
@@ -475,29 +493,11 @@ export default function CoursesPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="rounded-xl h-9 flex-1 font-bold text-xs"
+                          className="rounded-xl h-9 flex-1 font-bold text-xs border-primary text-primary hover:bg-primary/5 transition-all active:scale-95"
                           onClick={() => viewLessons(course)}
                         >
                           Quản lý bài học
                         </Button>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 rounded-xl hover:bg-primary/10"
-                            onClick={() => handleEditCurriculum(course)}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 rounded-xl hover:bg-destructive/10 text-destructive"
-                            onClick={() => handleDeleteCurriculum(course.id)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
                       </div>
                     </div>
                   ))}
@@ -533,18 +533,7 @@ export default function CoursesPage() {
                   <p className="text-sm text-muted-foreground mt-1">
                     {lessonsSubView === "manage" ? "Quản lý bài học" : "Ôn tập nội dung"} ({lessons.length} bài)
                   </p>
-                  {lessonsSubView === "manage" && (
-                    <Button 
-                      onClick={() => { 
-                        resetLessonForm(); 
-                        setView("lesson_form"); 
-                      }}
-                      variant="outline"
-                      className="mt-3 rounded-full border-[#2D9B63] text-[#2D9B63] hover:bg-emerald-50 font-bold h-9 px-6 transition-all"
-                    >
-                      <Plus className="mr-2 h-4 w-4" /> Tạo ghi chú mới
-                    </Button>
-                  )}
+                  {/* Button moved below tabs */}
                 </div>
               </div>
             </div>
@@ -577,44 +566,64 @@ export default function CoursesPage() {
           </div>
 
           {lessonsSubView === "manage" ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {lessons.length === 0 && (
-                <div className="col-span-full rounded-2xl border-2 border-dashed p-10 text-center">
-                  <p className="text-muted-foreground font-medium">Chưa có bài học nào cho giáo trình này.</p>
-                </div>
-              )}
+            <div className="space-y-6">
+              <div className="flex justify-start">
+                <Button 
+                  onClick={() => { 
+                    resetLessonForm(); 
+                    setView("lesson_form"); 
+                  }}
+                  className="rounded-full h-10 px-6 font-bold bg-primary text-white hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-primary/20"
+                >
+                  <Plus className="h-4 w-4 mr-2" /> Tạo bài học mới
+                </Button>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {lessons.length === 0 && (
+                  <div className="col-span-full rounded-2xl border-2 border-dashed p-10 text-center">
+                    <p className="text-muted-foreground font-medium">Chưa có bài học nào cho giáo trình này.</p>
+                  </div>
+                )}
               {lessons.map((lesson, i) => (
                 <div key={lesson.id} className="flex flex-col rounded-2xl border bg-card p-5 group hover:shadow-lg transition-all border-white/50 shadow-sm">
                   <div className="flex-1 mb-4">
-                    <p className="font-bold text-lg leading-tight group-hover:text-primary transition-colors">
-                      {i + 1}. {lesson.title}
-                    </p>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-bold text-lg leading-tight group-hover:text-primary transition-colors">
+                        {i + 1}. {lesson.title}
+                      </p>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl hover:bg-primary/10 shrink-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40 rounded-xl">
+                          <DropdownMenuItem onClick={() => handleEditLesson(lesson)} className="cursor-pointer gap-2 font-medium">
+                            <Edit2 className="h-4 w-4" /> Chỉnh sửa
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDeleteLesson(lesson.id)} className="cursor-pointer gap-2 font-medium text-destructive focus:bg-destructive/10 focus:text-destructive">
+                            <Trash2 className="h-4 w-4" /> Xóa bài học
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                     <p className="text-sm text-muted-foreground mt-2 line-clamp-2 leading-relaxed">
                       {lesson.description || "Không có mô tả nội dung bài học..."}
                     </p>
                   </div>
                   
-                  <div className="flex items-center justify-end gap-2 pt-4 border-t border-muted/50 mt-auto">
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="rounded-xl h-9 px-4 hover:border-primary/30 hover:text-primary transition-all"
-                      onClick={() => handleEditLesson(lesson)}
-                    >
-                      <Pencil className="mr-1.5 h-3.5 w-3.5" /> Sửa
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="destructive" 
-                      className="rounded-xl h-9 px-4 shadow-sm shadow-red-100"
-                      onClick={() => handleDeleteLesson(lesson.id)}
-                    >
-                      <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Xóa
-                    </Button>
+                  <div className="pt-4 border-t border-muted/50 mt-auto">
+                    {lesson.created_at && (
+                      <div className="text-xs font-medium text-muted-foreground/60 bg-muted/30 w-fit px-2 py-1 rounded-md">
+                        Ngày tạo: {new Date(lesson.created_at).toLocaleDateString('vi-VN')}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
+          </div>
           ) : (
             /* Review Mode */
             <div className="animate-fade-in">
@@ -688,7 +697,7 @@ export default function CoursesPage() {
           )}
         </div>
       ) : (
-        <div className="animate-fade-in max-w-4xl mx-auto space-y-8">
+        <div className="animate-fade-in space-y-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white/50 p-6 sm:p-8 rounded-[40px] border border-white/60 shadow-sm backdrop-blur-sm mb-8 mt-4">
               <div className="flex items-start gap-5">
                 <button

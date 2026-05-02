@@ -3,7 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 
 import { createPortal } from "react-dom";
-import { Calendar as CalendarIcon, CheckSquare, StickyNote, Plus, Trash2, Check, Clock, BookOpen, Edit3, Save, X, GripVertical, ChevronDown, Eye } from "lucide-react";
+import { Calendar as CalendarIcon, CheckSquare, StickyNote, Plus, Trash2, Check, Clock, BookOpen, Edit3, Save, X, GripVertical, ChevronDown, Eye, MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -235,6 +235,19 @@ function TimetableTab({ userId }: { userId: string }) {
   const [editForm, setEditForm] = useState<Omit<TimetableEntry, "id">>({ 
     day: "Thứ 2", subject: "", startTime: "07:00", endTime: "08:30", room: "", color: SUBJECT_COLORS[0],
   });
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
+
+  // Close dropdown on outside click or scroll
+  useEffect(() => {
+    const close = () => setOpenMenuId(null);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("scroll", close, true);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("scroll", close, true);
+    };
+  }, []);
 
   const [isAddingGroup, setIsAddingGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
@@ -463,10 +476,10 @@ function TimetableTab({ userId }: { userId: string }) {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-emerald-600/20 transition-all hover:bg-emerald-700 hover:shadow-lg active:scale-95 w-full sm:w-auto"
+          className="rounded-full h-10 px-6 font-bold bg-primary text-white hover:brightness-110 flex items-center justify-center gap-2 w-full sm:w-auto transition-all active:scale-95 shadow-lg shadow-primary/20"
         >
           <Plus className="h-4 w-4" />
-          Thêm môn học
+          Tạo lịch mới
         </button>
       </div>
 
@@ -556,38 +569,84 @@ function TimetableTab({ userId }: { userId: string }) {
             const morning = dayEntries.filter(e => e.startTime < "12:00");
             const afternoon = dayEntries.filter(e => e.startTime >= "12:00");
 
-            const EntryRow = ({ entry }: { entry: TimetableEntry }) => (
-              <div className="flex items-center gap-2 px-3 py-2.5 group hover:bg-muted/20 transition-colors border-b border-border/50 last:border-0">
-                <div className={`rounded-lg px-2 py-0.5 text-xs font-bold border shrink-0 ${entry.color}`}>
-                  {entry.subject}
-                </div>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground min-w-0">
-                  <Clock className="h-3 w-3 shrink-0" />
-                  <span className="truncate">{entry.startTime} – {entry.endTime}</span>
-                </div>
-                {entry.room && (
-                  <div className="text-xs text-muted-foreground/60 flex items-center gap-1 shrink-0">
-                    <BookOpen className="h-3 w-3" /> {entry.room}
+            const EntryRow = ({ entry }: { entry: TimetableEntry }) => {
+              const btnRef = useRef<HTMLButtonElement>(null);
+              const isOpen = openMenuId === entry.id;
+
+              const handleToggle = (e: React.MouseEvent) => {
+                e.stopPropagation();
+                if (isOpen) {
+                  setOpenMenuId(null);
+                  return;
+                }
+                const rect = btnRef.current?.getBoundingClientRect();
+                if (rect) {
+                  setMenuPos({
+                    top: rect.bottom + 4,
+                    right: window.innerWidth - rect.right,
+                  });
+                }
+                setOpenMenuId(entry.id);
+              };
+
+              return (
+                <div className="flex items-start justify-between gap-2 px-3 py-2 sm:py-2.5 group hover:bg-muted/20 transition-colors border-b border-border/50 last:border-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+                    <div 
+                      className={`rounded-lg px-2 py-0.5 text-xs font-bold border self-start sm:shrink-0 max-w-full truncate ${entry.color}`}
+                      title={entry.subject}
+                    >
+                      {entry.subject}
+                    </div>
+                    <div className="flex items-center gap-1 text-[10px] sm:text-xs text-muted-foreground">
+                      <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 shrink-0" />
+                      <span className="whitespace-nowrap">{entry.startTime} – {entry.endTime}</span>
+                    </div>
+                    {entry.room && (
+                      <div className="text-[10px] sm:text-xs text-muted-foreground/60 flex items-center gap-1 truncate">
+                        <BookOpen className="h-3 w-3 shrink-0" /> {entry.room}
+                      </div>
+                    )}
                   </div>
-                )}
-                <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
-                  <button
-                    onClick={() => openEdit(entry)}
-                    className="rounded-lg p-1 text-primary hover:bg-primary/10 transition-colors"
-                    title="Sửa"
-                  >
-                    <Edit3 className="h-3 w-3" />
-                  </button>
-                  <button
-                    onClick={() => remove(entry.id)}
-                    className="rounded-lg p-1 text-destructive hover:bg-destructive/10 transition-colors"
-                    title="Xóa"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
+
+                  {/* ⋮ Dropdown trigger */}
+                  <div className="shrink-0">
+                    <button
+                      ref={btnRef}
+                      onClick={handleToggle}
+                      className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors sm:opacity-0 group-hover:opacity-100"
+                      title="Thao tác"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                    {/* Dropdown rendered via portal to escape overflow:hidden */}
+                    {isOpen && menuPos && createPortal(
+                      <div
+                        style={{ position: "fixed", top: menuPos.top, right: menuPos.right, zIndex: 9999 }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        className="min-w-[148px] rounded-xl border border-border bg-card shadow-xl py-1 animate-in fade-in zoom-in-95 duration-100"
+                      >
+                        <button
+                          onClick={() => { setOpenMenuId(null); openEdit(entry); }}
+                          className="flex w-full items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted transition-colors"
+                        >
+                          <Edit3 className="h-3.5 w-3.5 text-primary" />
+                          <span>Chỉnh sửa</span>
+                        </button>
+                        <button
+                          onClick={() => { setOpenMenuId(null); remove(entry.id); }}
+                          className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          <span>Xóa tiết học</span>
+                        </button>
+                      </div>,
+                      document.body
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
+              );
+            };
 
             return (
               <div key={day} className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
@@ -796,6 +855,19 @@ function TasksTab({ userId }: { userId: string }) {
   const [editForm, setEditForm] = useState({ title: "", description: "", dueDate: "", priority: "medium" as Task["priority"] });
   const [collapsedMonths, setCollapsedMonths] = useState<Record<string, boolean>>({});
   const [viewingTaskDetail, setViewingTaskDetail] = useState<Task | null>(null);
+  const [openTaskMenuId, setOpenTaskMenuId] = useState<string | null>(null);
+  const [taskMenuPos, setTaskMenuPos] = useState<{ top: number; right: number } | null>(null);
+
+  // Close task dropdown on outside click or scroll
+  useEffect(() => {
+    const close = () => setOpenTaskMenuId(null);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("scroll", close, true);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("scroll", close, true);
+    };
+  }, []);
 
   const toggleMonth = (key: string) => {
     setCollapsedMonths(prev => ({ ...prev, [key]: !prev[key] }));
@@ -955,10 +1027,10 @@ function TasksTab({ userId }: { userId: string }) {
         <h2 className="font-heading text-xl font-bold">Nhiệm vụ</h2>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-lg active:scale-95 w-full sm:w-auto"
+          className="rounded-full h-10 px-6 font-bold bg-primary text-white hover:brightness-110 flex items-center justify-center gap-2 w-full sm:w-auto transition-all active:scale-95 shadow-lg shadow-primary/20"
         >
           <Plus className="h-4 w-4" />
-          Thêm nhiệm vụ
+          Tạo nhiệm vụ mới
         </button>
       </div>
 
@@ -1116,6 +1188,60 @@ function TasksTab({ userId }: { userId: string }) {
                         dayColorClass = DAY_COLORS[dayKey].bg;
                       }
 
+                      const isMenuOpen = openTaskMenuId === task.id;
+                      const TaskMenuBtn = () => {
+                        const btnRef = useRef<HTMLButtonElement>(null);
+                        const handleToggle = (e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          if (isMenuOpen) { setOpenTaskMenuId(null); return; }
+                          const rect = btnRef.current?.getBoundingClientRect();
+                          if (rect) setTaskMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                          setOpenTaskMenuId(task.id);
+                        };
+                        return (
+                          <div className="absolute top-3 right-3">
+                            <button
+                              ref={btnRef}
+                              onClick={handleToggle}
+                              className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors opacity-0 group-hover:opacity-100"
+                              title="Thao tác"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </button>
+                            {isMenuOpen && taskMenuPos && createPortal(
+                              <div
+                                style={{ position: "fixed", top: taskMenuPos.top, right: taskMenuPos.right, zIndex: 9999 }}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                className="min-w-[160px] rounded-xl border border-border bg-card shadow-xl py-1 animate-in fade-in zoom-in-95 duration-100"
+                              >
+                                <button
+                                  onClick={() => { setOpenTaskMenuId(null); setViewingTaskDetail(task); }}
+                                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted transition-colors"
+                                >
+                                  <Eye className="h-3.5 w-3.5 text-primary" />
+                                  <span>Xem chi tiết</span>
+                                </button>
+                                <button
+                                  onClick={() => { setOpenTaskMenuId(null); openEditTask(task); }}
+                                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted transition-colors"
+                                >
+                                  <Edit3 className="h-3.5 w-3.5 text-primary" />
+                                  <span>Chỉnh sửa</span>
+                                </button>
+                                <button
+                                  onClick={() => { setOpenTaskMenuId(null); remove(task.id); }}
+                                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <span>Xóa nhiệm vụ</span>
+                                </button>
+                              </div>,
+                              document.body
+                            )}
+                          </div>
+                        );
+                      };
+
                       return (
                         <div
                           key={task.id}
@@ -1165,29 +1291,7 @@ function TasksTab({ userId }: { userId: string }) {
                               )}
                             </div>
                           </div>
-                          <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
-                            <button
-                              onClick={() => setViewingTaskDetail(task)}
-                              className="rounded-lg p-1.5 text-primary hover:bg-primary/10 transition-colors"
-                              title="Xem chi tiết"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => openEditTask(task)}
-                              className="rounded-lg p-1.5 text-primary hover:bg-primary/10 transition-colors"
-                              title="Sửa"
-                            >
-                              <Edit3 className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => remove(task.id)}
-                              className="rounded-lg p-1.5 text-destructive hover:bg-destructive/10 transition-colors"
-                              title="Xóa"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
+                          <TaskMenuBtn />
                         </div>
                       );
                     })}
@@ -1296,7 +1400,7 @@ function TasksTab({ userId }: { userId: string }) {
           >
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
               <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-xl border ${PRIORITY_CONFIG[viewingTaskDetail.priority].cls.split(" ")[0]} bg-background`}>
+                <div className={`p-2 rounded-xl border ${(PRIORITY_CONFIG[viewingTaskDetail.priority].cls || "").split(" ")[0]} bg-background`}>
                   <CheckSquare className="h-6 w-6 text-primary" />
                 </div>
                 <div>
@@ -1448,8 +1552,19 @@ function NotesTab({ userId }: { userId: string }) {
   const [showAdd, setShowAdd] = useState(false);
   const [editForm, setEditForm] = useState<{ title: string; content: string; color: string }>({ title: "", content: "", color: "" });
   const [viewingNote, setViewingNote] = useState<Note | null>(null);
+  const [openNoteMenuId, setOpenNoteMenuId] = useState<string | null>(null);
+  const [noteMenuPos, setNoteMenuPos] = useState<{ top: number; right: number } | null>(null);
 
-
+  // Close note dropdown on outside click or scroll
+  useEffect(() => {
+    const close = () => setOpenNoteMenuId(null);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("scroll", close, true);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("scroll", close, true);
+    };
+  }, []);
 
   const add = async () => {
     if (!addTitle.trim() && !addContent.trim()) { toast.error("Vui lòng nhập tiêu đề hoặc nội dung"); return; }
@@ -1533,10 +1648,10 @@ function NotesTab({ userId }: { userId: string }) {
         </div>
         <button
           onClick={() => setShowAdd(!showAdd)}
-          className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-lg active:scale-95 w-full sm:w-auto"
+          className="rounded-full h-10 px-6 font-bold bg-primary text-white hover:brightness-110 flex items-center justify-center gap-2 w-full sm:w-auto transition-all active:scale-95 shadow-lg shadow-primary/20"
         >
           <Plus className="h-4 w-4" />
-          Thêm ghi chú
+          Tạo ghi chú mới
         </button>
       </div>
 
@@ -1600,7 +1715,7 @@ function NotesTab({ userId }: { userId: string }) {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {notes.map(note => {
-            const [bg, border] = note.color.split(" ");
+            const [bg, border] = (note.color || "").split(" ");
             return (
               <div
                 key={note.id}
@@ -1664,17 +1779,63 @@ function NotesTab({ userId }: { userId: string }) {
                     <p className="text-[10px] text-muted-foreground mt-3">
                       {formatDate(note.updatedAt)}
                     </p>
-                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                      <button onClick={() => setViewingNote(note)} className="rounded-lg bg-background/80 p-1.5 hover:bg-background shadow-sm transition-colors text-primary" title="Xem">
-                        <Eye className="h-3 w-3" />
-                      </button>
-                      <button onClick={() => startEdit(note)} className="rounded-lg bg-background/80 p-1.5 hover:bg-background shadow-sm transition-colors text-foreground">
-                        <Edit3 className="h-3 w-3" />
-                      </button>
-                      <button onClick={() => remove(note.id)} className="rounded-lg bg-background/80 p-1.5 text-destructive hover:bg-destructive/10 shadow-sm transition-colors">
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
+                    {/* ⋮ Dropdown menu — giống Nhiệm vụ */}
+                    {(() => {
+                      const isMenuOpen = openNoteMenuId === note.id;
+                      const NoteMenuBtn = () => {
+                        const btnRef = useRef<HTMLButtonElement>(null);
+                        const handleToggle = (e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          if (isMenuOpen) { setOpenNoteMenuId(null); return; }
+                          const rect = btnRef.current?.getBoundingClientRect();
+                          if (rect) setNoteMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                          setOpenNoteMenuId(note.id);
+                        };
+                        return (
+                          <div className="absolute top-2 right-2">
+                            <button
+                              ref={btnRef}
+                              onClick={handleToggle}
+                              className="rounded-lg bg-background/80 p-1.5 hover:bg-background shadow-sm transition-colors text-muted-foreground opacity-0 group-hover:opacity-100"
+                              title="Thao tác"
+                            >
+                              <MoreVertical className="h-3.5 w-3.5" />
+                            </button>
+                            {isMenuOpen && noteMenuPos && createPortal(
+                              <div
+                                style={{ position: "fixed", top: noteMenuPos.top, right: noteMenuPos.right, zIndex: 9999 }}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                className="min-w-[155px] rounded-xl border border-border bg-card shadow-xl py-1 animate-in fade-in zoom-in-95 duration-100"
+                              >
+                                <button
+                                  onClick={() => { setOpenNoteMenuId(null); setViewingNote(note); }}
+                                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted transition-colors"
+                                >
+                                  <Eye className="h-3.5 w-3.5 text-primary" />
+                                  <span>Xem chi tiết</span>
+                                </button>
+                                <button
+                                  onClick={() => { setOpenNoteMenuId(null); startEdit(note); }}
+                                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted transition-colors"
+                                >
+                                  <Edit3 className="h-3.5 w-3.5 text-primary" />
+                                  <span>Chỉnh sửa</span>
+                                </button>
+                                <button
+                                  onClick={() => { setOpenNoteMenuId(null); remove(note.id); }}
+                                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <span>Xóa ghi chú</span>
+                                </button>
+                              </div>,
+                              document.body
+                            )}
+                          </div>
+                        );
+                      };
+                      return <NoteMenuBtn />;
+                    })()}
                   </>
                 )}
               </div>
@@ -1686,7 +1847,7 @@ function NotesTab({ userId }: { userId: string }) {
       {viewingNote && (
         <PortalModal onClose={() => setViewingNote(null)}>
           <div
-            className={`w-full rounded-3xl border-2 bg-card border-black/5 shadow-2xl p-8 animate-in zoom-in-95 duration-300 flex flex-col overflow-hidden ${viewingNote.color.split(" ")[0]} ${viewingNote.color.split(" ")[1]}`}
+            className={`w-full rounded-3xl border-2 bg-card border-black/5 shadow-2xl p-8 animate-in zoom-in-95 duration-300 flex flex-col overflow-hidden ${(viewingNote.color || "").split(" ")[0]} ${(viewingNote.color || "").split(" ")[1]}`}
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-black/5">
@@ -1740,7 +1901,7 @@ export default function SchedulePage() {
 
 
   return (
-    <div className="container py-10 max-w-5xl">
+    <div className="container py-10">
       {/* Header */}
       <div className="mb-8 opacity-0 animate-fade-up">
         <h1 className="font-heading text-3xl font-bold">Thời gian biểu</h1>

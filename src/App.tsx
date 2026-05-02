@@ -49,7 +49,9 @@ import QuizResultPage from "./pages/QuizResultPage";
 import StaticPage from "./pages/StaticPage";
 
 
+import QuizRepositoryPage from "./pages/QuizRepositoryPage";
 import NotFound from "./pages/NotFound";
+
 
 const queryClient = new QueryClient();
 
@@ -111,6 +113,8 @@ const App = () => (
             <Route path="/games/learning" element={<ProtectedRoute requiredRole="admin"><LearningManagePage /></ProtectedRoute>} />
             <Route path="/games/learning/:categoryId" element={<ProtectedRoute requiredRole="admin"><LearningCategoryQuestionsPage /></ProtectedRoute>} />
             <Route path="/admin/plans" element={<ProtectedRoute requiredRole="admin"><PlanManagePage /></ProtectedRoute>} />
+            <Route path="/admin/quiz-repository" element={<ProtectedRoute requiredRole={["admin", "teacher"]}><QuizRepositoryPage /></ProtectedRoute>} />
+
 
             <Route path="/p/:slug" element={<StaticPage />} />
             <Route path="/contact" element={<ContactPage />} />

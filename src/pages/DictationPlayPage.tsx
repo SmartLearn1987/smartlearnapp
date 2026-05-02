@@ -29,7 +29,7 @@ function scoreText(original: string, userInput: string): {
   highlights: { word: string; correct: boolean }[];
 } {
   const normalize = (s: string) => s.trim().toLowerCase().replace(/[.,!?;:'"()]/g, "");
-  const origWords = original.trim().split(/\s+/);
+  const origWords = (original || "").trim().split(/\s+/);
   const userWords = userInput.trim().split(/\s+/);
   let correct = 0;
   const highlights = origWords.map((word, i) => {
@@ -147,7 +147,7 @@ export default function DictationPlayPage() {
   const lvlInfo = LEVEL_LABELS[exercise?.level ?? ""] ?? LEVEL_LABELS.medium;
 
   return (
-    <div className="container max-w-3xl py-8 space-y-6">
+    <div className="container py-8 space-y-6">
       {/* Top bar */}
       <div className="space-y-4">
         <div className="flex items-center gap-3">

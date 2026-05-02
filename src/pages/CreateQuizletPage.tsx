@@ -189,7 +189,7 @@ export default function CreateQuizletPage() {
   };
 
   return (
-    <div className="container py-8 max-w-5xl">
+    <div className="container py-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold font-heading text-gray-900 leading-tight">Tạo một học phần mới</h1>

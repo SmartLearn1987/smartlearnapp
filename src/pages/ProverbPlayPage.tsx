@@ -48,7 +48,7 @@ function ResultOverlay({ score, total, onRetry, onHome, questions, userAnswers }
 
         <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
           {questions.map((q, idx) => {
-            const originalWords = q.content.trim().split(/\s+/);
+            const originalWords = (q.content || "").trim().split(/\s+/);
             const userStr = userAnswers[idx].join(' ').trim();
             const correctStr = originalWords.join(' ').trim();
             const isCorrect = userStr.toLowerCase() === correctStr.toLowerCase();
@@ -115,7 +115,7 @@ export default function ProverbPlayPage() {
         
         // Split proverbs into Shuffled Word Arrays
         const initialAnswers = data.map(q => {
-          const words = q.content.trim().split(/\s+/);
+          const words = (q.content || "").trim().split(/\s+/);
           // Create objects with unique ids
           const wordObjs = words.map((w, i) => ({ id: `${i}-${w}`, word: w }));
           // Shuffle
@@ -179,7 +179,7 @@ export default function ProverbPlayPage() {
   const handleFinish = () => {
     let s = 0;
     const finalAnswers = userAnswers.map((ua, idx) => {
-      const originalWords = questions[idx].content.trim().split(/\s+/);
+      const originalWords = (questions[idx]?.content || "").trim().split(/\s+/);
       const correctStr = originalWords.join(' ').toLowerCase();
       const userStr = ua.selected.map(x => x.word).join(' ').trim().toLowerCase();
       
@@ -195,7 +195,7 @@ export default function ProverbPlayPage() {
 
   const handleCheck = () => {
     if (!questions.length) return;
-    const originalWords = questions[currentIdx].content.trim().split(/\s+/);
+    const originalWords = (questions[currentIdx]?.content || "").trim().split(/\s+/);
     const correctStr = originalWords.join(' ').toLowerCase();
     const userStr = userAnswers[currentIdx].selected.map(x => x.word).join(' ').trim().toLowerCase();
     
@@ -382,7 +382,7 @@ export default function ProverbPlayPage() {
               const isCurrent = idx === currentIdx;
               
               // We can determine if it's correct implicitly to show in sidebar
-              const originalWords = q.content.trim().split(/\s+/);
+              const originalWords = (q.content || "").trim().split(/\s+/);
               const correctStr = originalWords.join(' ').toLowerCase();
               const userStr = userAnswers[idx]?.selected.map(x => x.word).join(' ').trim().toLowerCase();
               const isCorrect = userStr === correctStr;

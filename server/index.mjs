@@ -74,7 +74,7 @@ app.use(`${API_PREFIX}`, (req, res, next) => {
       const maskedProvided = providedKey ? providedKey.substring(0, 4) + "..." : "NONE";
       console.warn(`[Security] API Key mismatch for ${req.method} ${req.path}. Expected: ${maskedExpected}, Provided: ${maskedProvided}.`);
 
-      return res.status(403).json({ error: "Forbidden: Invalid API Key" });
+      return res.status(403).json({ error: "API Key không hợp lệ" });
     }
   }
   next();
@@ -95,7 +95,7 @@ app.post(`${API_PREFIX}/upload`, (req, res) => {
     console.log(`[Upload] Received upload request: ${req.file?.originalname || 'No file'}`);
     if (!req.file) {
       console.error("[Upload Error] No file in request");
-      return res.status(400).json({ error: "No file uploaded" });
+      return res.status(400).json({ error: "Không có file được tải lên." });
     }
 
     // Trả về đường dẫn truy cập cho ảnh
@@ -127,7 +127,11 @@ app.post(`${API_PREFIX}/upload`, (req, res) => {
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS access_token_expires_at timestamp;`,
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_expires_at timestamp;`,
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login timestamptz;`,
+      `ALTER TABLE exam_questions ADD COLUMN IF NOT EXISTS is_repository boolean DEFAULT false;`,
+      `ALTER TABLE exam_questions ADD COLUMN IF NOT EXISTS is_system boolean DEFAULT false;`,
+      `ALTER TABLE exam_questions ADD COLUMN IF NOT EXISTS category text;`,
       `CREATE TABLE IF NOT EXISTS system_pages (
+
         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         slug text UNIQUE NOT NULL,
         title text NOT NULL,
@@ -287,7 +291,7 @@ app.use(async (req, res, next) => {
     }
   } catch (err) {
     console.error("Session verification error:", err);
-    try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] Session verification error: ${err.message}\n${err.stack}\n`); } catch (e) {}
+    try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] Session verification error: ${err.message}\n${err.stack}\n`); } catch (e) { }
     return res.status(500).json({ error: "Lỗi xác thực phiên làm việc.", details: err.message });
   }
   next();
@@ -401,13 +405,13 @@ app.get(`${API_PREFIX}/settings/default-plan`, async (req, res) => {
     res.json({ plan });
   } catch (err) {
     console.error("GET default-plan Error:", err.message);
-    res.status(500).json({ error: "Failed to get default plan" });
+    res.status(500).json({ error: "Lấy gói dịch vụ mặc định thất bại, vui lòng thử lại sau" });
   }
 });
 
 app.put(`${API_PREFIX}/settings/default-plan`, async (req, res) => {
   const { plan } = req.body || {};
-  if (!plan) return res.status(400).json({ error: "Missing plan" });
+  if (!plan) return res.status(400).json({ error: "Vui lòng chọn gói dịch vụ" });
 
   try {
     const value = JSON.stringify({ plan });
@@ -420,7 +424,7 @@ app.put(`${API_PREFIX}/settings/default-plan`, async (req, res) => {
     res.json({ plan });
   } catch (err) {
     console.error("PUT default-plan Error:", err.message);
-    res.status(500).json({ error: "Failed to update default plan" });
+    res.status(500).json({ error: "Cập nhật gói dịch vụ thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -428,7 +432,7 @@ app.put(`${API_PREFIX}/settings/default-plan`, async (req, res) => {
 app.post(`${API_PREFIX}/register`, async (req, res) => {
   const { username, email, password, display_name, education_level } = req.body || {};
   if (!username?.trim() || !email?.trim() || !password) {
-    return res.status(400).json({ error: "Missing required fields" });
+    return res.status(400).json({ error: "Vui lòng điền đầy đủ thông tin bắt buộc" });
   }
 
   try {
@@ -467,23 +471,23 @@ app.post(`${API_PREFIX}/register`, async (req, res) => {
     // Gửi email xác nhận đăng ký thành công
     if (newUser && newUser.email) {
       sendRegistrationEmail(newUser.email, newUser.displayName).catch(err => {
-        console.error("Failed to send registration email:", err);
+        console.error("Gửi email đăng ký thất bại:", err);
       });
     }
 
     res.status(201).json({ ...newUser, sessionToken: accessToken, refreshToken, accessTokenExpiresAt });
   } catch (err) {
     if (err.message.includes("unique constraint")) {
-      return res.status(400).json({ error: "Username or email already exists" });
+      return res.status(400).json({ error: "Tên đăng nhập hoặc email đã được sử dụng" });
     }
     console.error("Register Error:", err);
-    res.status(500).json({ error: "Registration failed" });
+    res.status(500).json({ error: "Đăng ký thất bại, vui lòng thử lại sau" });
   }
 });
 
 app.post(`${API_PREFIX}/login`, async (req, res) => {
   const { username, password } = req.body || {};
-  if (!username || !password) return res.status(400).json({ error: "Missing credentials" });
+  if (!username || !password) return res.status(400).json({ error: "Vui lòng nhập tên đăng nhập và mật khẩu" });
 
   try {
     const passwordHash = await hashPassword(password);
@@ -496,7 +500,7 @@ app.post(`${API_PREFIX}/login`, async (req, res) => {
 
     const user = rows[0];
     if (!user || user.password_hash !== passwordHash) {
-      return res.status(401).json({ error: "Invalid username or password" });
+      return res.status(401).json({ error: "Tên đăng nhập hoặc mật khẩu không đúng" });
     }
     if (user.isActive === false) {
       return res.status(403).json({ error: "Tài khoản của bạn đã bị khóa." });
@@ -508,13 +512,13 @@ app.post(`${API_PREFIX}/login`, async (req, res) => {
     res.json({ ...safeUser, sessionToken: accessToken, refreshToken, accessTokenExpiresAt });
   } catch (err) {
     console.error("Login Error:", err);
-    res.status(500).json({ error: "Login failed" });
+    res.status(500).json({ error: "Đăng nhập thất bại, vui lòng thử lại sau" });
   }
 });
 
 app.post(`${API_PREFIX}/refresh-token`, async (req, res) => {
   const { userId, refreshToken } = req.body || {};
-  if (!userId || !refreshToken) return res.status(400).json({ error: "Missing data" });
+  if (!userId || !refreshToken) return res.status(400).json({ error: "Vui lòng cung cấp đầy đủ thông tin" });
 
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!uuidRegex.test(userId)) {
@@ -529,18 +533,18 @@ app.post(`${API_PREFIX}/refresh-token`, async (req, res) => {
 
     const user = rows[0];
     if (!user || user.refresh_token !== refreshToken) {
-      return res.status(401).json({ error: "Invalid refresh token" });
+      return res.status(401).json({ error: "Refresh token không hợp lệ" });
     }
 
     if (new Date() > new Date(user.refresh_token_expires_at)) {
-      return res.status(401).json({ error: "Refresh token expired" });
+      return res.status(401).json({ error: "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại" });
     }
 
     const { accessToken, refreshToken: newRefresh, accessTokenExpiresAt } = await generateTokens(userId);
     res.json({ sessionToken: accessToken, refreshToken: newRefresh, accessTokenExpiresAt });
   } catch (err) {
     console.error("Refresh Token Error:", err);
-    res.status(500).json({ error: "Refresh failed" });
+    res.status(500).json({ error: "Làm mới token thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -626,25 +630,25 @@ async function checkAdmin(userId) {
 // ── Current User Profile ──────────────────────────────────────────────────
 app.get(`${API_PREFIX}/me`, async (req, res) => {
   const userId = getUserId(req);
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  if (!userId) return res.status(401).json({ error: "Bạn không có quyền truy cập" });
   try {
     const { rows } = await query(
       `select id, username, email, display_name as "displayName", role, education_level as "educationLevel", avatar_url as "avatarUrl", is_active as "isActive", plan, plan_start_date::text as "planStartDate", plan_end_date::text as "planEndDate", created_at as "createdAt"
        from users where id = $1`,
       [userId]
     );
-    if (!rows[0]) return res.status(404).json({ error: "User not found" });
+    if (!rows[0]) return res.status(404).json({ error: "Không tìm thấy thông tin người dùng" });
     res.json(rows[0]);
   } catch (err) {
     console.error("GET /me Error:", err.message);
-    res.status(500).json({ error: "Failed to fetch user profile" });
+    res.status(500).json({ error: "Lấy thông tin người dùng thất bại, vui lòng thử lại sau" });
   }
 });
 
 // ── Statistics (Admin) ─────────────────────────────────────────────────────
 app.get(`${API_PREFIX}/statistics/users`, async (req, res) => {
   const userId = getUserId(req);
-  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden: Admins only" });
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Chỉ quản trị viên mới có quyền truy cập" });
 
   try {
     const { rows } = await query(`
@@ -677,14 +681,14 @@ app.get(`${API_PREFIX}/statistics/users`, async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error("GET /statistics/users Error:", err);
-    try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] GET /statistics/users Error: ${err.message}\n${err.stack}\n`); } catch (e) {}
-    res.status(500).json({ error: "Failed to fetch user statistics", details: err.message });
+    try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] GET /statistics/users Error: ${err.message}\n${err.stack}\n`); } catch (e) { }
+    res.status(500).json({ error: "Lấy thống kê người dùng thất bại, vui lòng thử lại sau", details: err.message });
   }
 });
 
 app.get(`${API_PREFIX}/statistics/monthly-summary`, async (req, res) => {
   const userId = getUserId(req);
-  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden: Admins only" });
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Chỉ quản trị viên mới có quyền truy cập" });
 
   try {
     const { rows } = await query(`
@@ -718,7 +722,7 @@ app.get(`${API_PREFIX}/statistics/monthly-summary`, async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error("GET /statistics/monthly-summary Error:", err);
-    res.status(500).json({ error: "Failed to fetch monthly summary", details: err.message });
+    res.status(500).json({ error: "Lấy thống kê hàng tháng thất bại, vui lòng thử lại sau", details: err.message });
   }
 });
 
@@ -800,28 +804,34 @@ app.get(`${API_PREFIX}/users`, async (req, res) => {
     });
   } catch (err) {
     console.error("GET /users Error:", err);
-    try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] GET /users Error: ${err.message}\n${err.stack}\n`); } catch (e) {}
-    res.status(500).json({ error: "Failed to fetch users", details: err.message });
+    try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] GET /users Error: ${err.message}\n${err.stack}\n`); } catch (e) { }
+    res.status(500).json({ error: "Lấy danh sách người dùng thất bại, vui lòng thử lại sau", details: err.message });
   }
 });
 
 app.post(`${API_PREFIX}/users`, async (req, res) => {
   let { username, email, password, display_name, role = "user", education_level, plan = "Miễn phí", plan_start_date, plan_end_date } = req.body || {};
-  if (!username?.trim() || !password) return res.status(400).json({ error: "Missing fields" });
+  if (!username?.trim() || !password) return res.status(400).json({ error: "Vui lòng điền đầy đủ thông tin bắt buộc" });
 
   // Thiết lập mặc định nếu chưa có ngày bắt đầu/kết thúc
   if (!plan_start_date) {
     plan_start_date = new Date().toISOString();
   }
   if (!plan_end_date || plan_end_date === "") {
+    // Tra cứu duration_days từ subscription_plans thay vì hardcode
+    let daysToAdd = 6; // fallback mặc định
+    try {
+      const { rows: planRows } = await query(
+        `SELECT duration_days FROM subscription_plans WHERE name = $1 AND is_active = true LIMIT 1`,
+        [plan]
+      );
+      if (planRows.length > 0) {
+        daysToAdd = planRows[0].duration_days;
+      }
+    } catch (e) {
+      console.error("Failed to fetch plan duration for admin user creation, fallback to 6 days:", e);
+    }
     const defaultEnd = new Date(plan_start_date);
-    let daysToAdd = 6;
-    if (plan === "1 tháng") daysToAdd = 30;
-    else if (plan === "2 tháng") daysToAdd = 60;
-    else if (plan === "3 tháng") daysToAdd = 90;
-    else if (plan === "6 tháng") daysToAdd = 180;
-    else if (plan === "12 tháng") daysToAdd = 365;
-    else if (plan === "Vô thời hạn") daysToAdd = 1800;
     defaultEnd.setDate(defaultEnd.getDate() + daysToAdd);
     plan_end_date = defaultEnd.toISOString();
   }
@@ -846,7 +856,7 @@ app.post(`${API_PREFIX}/users`, async (req, res) => {
 
     res.status(201).json(newUser);
   } catch (err) {
-    res.status(500).json({ error: "Failed to create user" });
+    res.status(500).json({ error: "Tạo người dùng thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -856,7 +866,7 @@ app.delete(`${API_PREFIX}/users/:id`, async (req, res) => {
   const isAdmin = await checkAdmin(currentUserId);
 
   if (!isAdmin && currentUserId !== id) {
-    return res.status(403).json({ error: "Forbidden: You can only delete your own account" });
+    return res.status(403).json({ error: "Bạn chỉ có thể xóa tài khoản của chính mình" });
   }
 
   const { reason } = req.body || {};
@@ -864,7 +874,7 @@ app.delete(`${API_PREFIX}/users/:id`, async (req, res) => {
   try {
     const { rows } = await query(`select username from users where id = $1`, [id]);
     if (rows[0]?.username === "adminsmart") {
-      return res.status(403).json({ error: "Cannot delete the root admin account" });
+      return res.status(403).json({ error: "Không thể xóa tài khoản quản trị viên gốc" });
     }
 
     if (reason) {
@@ -878,7 +888,7 @@ app.delete(`${API_PREFIX}/users/:id`, async (req, res) => {
     res.status(204).send();
   } catch (err) {
     console.error("DELETE /users/:id error:", err);
-    res.status(500).json({ error: "Failed to delete user" });
+    res.status(500).json({ error: "Xóa người dùng thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -895,24 +905,24 @@ app.put(`${API_PREFIX}/users/:id`, async (req, res) => {
        returning id, username, email, display_name as "displayName", role, education_level as "educationLevel", is_active as "isActive", plan, plan_start_date::text as "planStartDate", plan_end_date::text as "planEndDate", avatar_url as "avatarUrl", created_at as "createdAt"`,
       [email?.trim() || "", display_name?.trim() || "", role || "user", education_level || null, is_active ?? true, plan, plan_start_date, plan_end_date, avatar_url || null, id]
     );
-    if (!rows[0]) return res.status(404).json({ error: "User not found" });
+    if (!rows[0]) return res.status(404).json({ error: "Không tìm thấy thông tin người dùng" });
     res.json(rows[0]);
   } catch (err) {
     console.error("PUT /users/:id Error:", err.message);
-    res.status(500).json({ error: "Failed to update user" });
+    res.status(500).json({ error: "Cập nhật người dùng thất bại, vui lòng thử lại sau" });
   }
 });
 
 app.put(`${API_PREFIX}/users/:id/password`, async (req, res) => {
   const { id } = req.params;
   const { password } = req.body || {};
-  if (!password) return res.status(400).json({ error: "Password required" });
+  if (!password) return res.status(400).json({ error: "Vui lòng nhập mật khẩu mới" });
   try {
     const hash = await hashPassword(password);
     await query(`update users set password_hash = $1 where id = $2`, [hash, id]);
     res.json({ ok: true });
   } catch (err) {
-    res.status(500).json({ error: "Failed to change password" });
+    res.status(500).json({ error: "Đổi mật khẩu thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -928,7 +938,7 @@ app.get(`${API_PREFIX}/plans`, async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error("GET /plans error:", err);
-    try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] GET /plans Error: ${err.message}\n${err.stack}\n`); } catch (e) {}
+    try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] GET /plans Error: ${err.message}\n${err.stack}\n`); } catch (e) { }
     res.status(500).json({ error: "Không thể tải danh sách gói cước: " + err.message });
   }
 });
@@ -1023,7 +1033,7 @@ app.delete(`${API_PREFIX}/plans/:id`, async (req, res) => {
     await query(`DELETE FROM subscription_plans WHERE id = $1`, [req.params.id]);
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete plan" });
+    res.status(500).json({ error: "Xóa gói cước thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1036,7 +1046,7 @@ app.get(`${API_PREFIX}/system-pages/:slug`, async (req, res) => {
     if (!rows[0]) return res.json({ title: "", content: "", slug });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch page" });
+    res.status(500).json({ error: "Lấy nội dung trang thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1045,16 +1055,16 @@ app.get(`${API_PREFIX}/system-pages`, async (req, res) => {
     const { rows } = await query(`select slug, title, updated_at from system_pages order by title asc`);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch pages" });
+    res.status(500).json({ error: "Lấy danh sách trang thất bại, vui lòng thử lại sau" });
   }
 });
 
 app.post(`${API_PREFIX}/system-pages`, async (req, res) => {
   const userId = getUserId(req);
-  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Unauthorized" });
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Bạn không có quyền truy cập" });
 
   const { slug, title, content } = req.body || {};
-  if (!slug || !title) return res.status(400).json({ error: "Slug and title are required" });
+  if (!slug || !title) return res.status(400).json({ error: "Vui lòng nhập slug và tiêu đề trang" });
 
   try {
     const { rows } = await query(
@@ -1068,13 +1078,13 @@ app.post(`${API_PREFIX}/system-pages`, async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
     console.error("POST /system-pages error:", err);
-    res.status(500).json({ error: "Failed to update page" });
+    res.status(500).json({ error: "Cập nhật trang thất bại, vui lòng thử lại sau" });
   }
 });
 
 app.get(`${API_PREFIX}/user-subjects`, async (req, res) => {
   const userId = getUserId(req);
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  if (!userId) return res.status(401).json({ error: "Bạn không có quyền truy cập" });
 
   try {
     const { rows } = await query(
@@ -1086,22 +1096,22 @@ app.get(`${API_PREFIX}/user-subjects`, async (req, res) => {
        where us.user_id = $1
        group by s.id, s.name, s.description, s.icon, s.sort_order, s.created_at
        order by s.sort_order asc, s.created_at desc`,
-       [userId]
+      [userId]
     );
     res.json(rows);
   } catch (err) {
     console.error("GET /user-subjects Error:", err.message);
-    try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] GET /user-subjects Error: ${err.message}\n${err.stack}\n`); } catch (e) {}
-    res.status(500).json({ error: "Failed to fetch user subjects", details: err.message });
+    try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] GET /user-subjects Error: ${err.message}\n${err.stack}\n`); } catch (e) { }
+    res.status(500).json({ error: "Lấy danh sách môn học cá nhân thất bại, vui lòng thử lại sau", details: err.message });
   }
 });
 
 app.post(`${API_PREFIX}/user-subjects`, async (req, res) => {
   const userId = getUserId(req);
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  if (!userId) return res.status(401).json({ error: "Bạn không có quyền truy cập" });
 
   const { subject_ids } = req.body || {};
-  if (!Array.isArray(subject_ids)) return res.status(400).json({ error: "subject_ids must be an array" });
+  if (!Array.isArray(subject_ids)) return res.status(400).json({ error: "Danh sách môn học phải là một mảng hợp lệ" });
 
   try {
     await query("BEGIN");
@@ -1114,7 +1124,7 @@ app.post(`${API_PREFIX}/user-subjects`, async (req, res) => {
   } catch (err) {
     await query("ROLLBACK");
     console.error("POST /user-subjects Error:", err.message);
-    res.status(500).json({ error: "Failed to update user subjects" });
+    res.status(500).json({ error: "Cập nhật môn học cá nhân thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1142,14 +1152,14 @@ app.get(`${API_PREFIX}/timetable`, async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error("GET /timetable error:", err);
-    res.status(500).json({ error: "Failed to fetch timetable" });
+    res.status(500).json({ error: "Lấy thời khóa biểu thất bại, vui lòng thử lại sau" });
   }
 });
 
 app.post(`${API_PREFIX}/timetable/groups`, async (req, res) => {
   const userId = getUserId(req);
   const { name } = req.body || {};
-  if (!name) return res.status(400).json({ error: "Name is required" });
+  if (!name) return res.status(400).json({ error: "Vui lòng nhập tên nhóm" });
   try {
     const { rows } = await query(
       `insert into timetable_groups (user_id, name) values ($1, $2) returning *`,
@@ -1157,7 +1167,7 @@ app.post(`${API_PREFIX}/timetable/groups`, async (req, res) => {
     );
     res.json({ ...rows[0], entries: [] });
   } catch (err) {
-    res.status(500).json({ error: "Failed to create group" });
+    res.status(500).json({ error: "Tạo nhóm thời khóa biểu thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1171,10 +1181,10 @@ app.put(`${API_PREFIX}/timetable/groups/:id`, async (req, res) => {
        where id = $3 and user_id = $4 returning *`,
       [name, sort_order, id, userId]
     );
-    if (!rows[0]) return res.status(404).json({ error: "Group not found" });
+    if (!rows[0]) return res.status(404).json({ error: "Không tìm thấy nhóm thời khóa biểu" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to update group" });
+    res.status(500).json({ error: "Cập nhật nhóm thời khóa biểu thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1183,10 +1193,10 @@ app.delete(`${API_PREFIX}/timetable/groups/:id`, async (req, res) => {
   const { id } = req.params;
   try {
     const { rowCount } = await query(`delete from timetable_groups where id = $1 and user_id = $2`, [id, userId]);
-    if (rowCount === 0) return res.status(404).json({ error: "Group not found" });
+    if (rowCount === 0) return res.status(404).json({ error: "Không tìm thấy nhóm thời khóa biểu" });
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete group" });
+    res.status(500).json({ error: "Xóa nhóm thời khóa biểu thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1194,12 +1204,12 @@ app.post(`${API_PREFIX}/timetable/entries`, async (req, res) => {
   const userId = getUserId(req);
   const { group_id, day, subject, start_time, end_time, room, color } = req.body || {};
   if (!group_id || !day || !subject || !start_time || !end_time) {
-    return res.status(400).json({ error: "Missing required fields" });
+    return res.status(400).json({ error: "Vui lòng điền đầy đủ thông tin bắt buộc" });
   }
   try {
     // Verify group belongs to user
     const { rows: grp } = await query(`select id from timetable_groups where id = $1 and user_id = $2`, [group_id, userId]);
-    if (!grp[0]) return res.status(403).json({ error: "Forbidden" });
+    if (!grp[0]) return res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này" });
 
     const { rows } = await query(
       `insert into timetable_entries (group_id, day, subject, start_time, end_time, room, color) 
@@ -1208,7 +1218,7 @@ app.post(`${API_PREFIX}/timetable/entries`, async (req, res) => {
     );
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to create entry" });
+    res.status(500).json({ error: "Tạo tiết học thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1229,10 +1239,10 @@ app.put(`${API_PREFIX}/timetable/entries/:id`, async (req, res) => {
        returning *`,
       [day, subject, start_time, end_time, room, color, id, userId]
     );
-    if (!rows[0]) return res.status(404).json({ error: "Entry not found" });
+    if (!rows[0]) return res.status(404).json({ error: "Không tìm thấy tiết học" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to update entry" });
+    res.status(500).json({ error: "Cập nhật tiết học thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1244,10 +1254,10 @@ app.delete(`${API_PREFIX}/timetable/entries/:id`, async (req, res) => {
       `delete from timetable_entries where id = $1 and group_id in (select id from timetable_groups where user_id = $2)`,
       [id, userId]
     );
-    if (rowCount === 0) return res.status(404).json({ error: "Entry not found" });
+    if (rowCount === 0) return res.status(404).json({ error: "Không tìm thấy tiết học" });
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete entry" });
+    res.status(500).json({ error: "Xóa tiết học thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1258,14 +1268,14 @@ app.get(`${API_PREFIX}/tasks`, async (req, res) => {
     const { rows } = await query(`select * from user_tasks where user_id = $1 order by created_at desc`, [userId]);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch tasks" });
+    res.status(500).json({ error: "Lấy danh sách nhiệm vụ thất bại, vui lòng thử lại sau" });
   }
 });
 
 app.post(`${API_PREFIX}/tasks`, async (req, res) => {
   const userId = getUserId(req);
   const { title, description, due_date, completed, priority } = req.body || {};
-  if (!title) return res.status(400).json({ error: "Title is required" });
+  if (!title) return res.status(400).json({ error: "Vui lòng nhập tiêu đề nhiệm vụ" });
   try {
     const { rows } = await query(
       `insert into user_tasks (user_id, title, description, due_date, completed, priority) 
@@ -1274,7 +1284,7 @@ app.post(`${API_PREFIX}/tasks`, async (req, res) => {
     );
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to create task" });
+    res.status(500).json({ error: "Tạo nhiệm vụ thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1293,10 +1303,10 @@ app.put(`${API_PREFIX}/tasks/:id`, async (req, res) => {
        where id = $6 and user_id = $7 returning *`,
       [title, description, due_date, completed, priority, id, userId]
     );
-    if (!rows[0]) return res.status(404).json({ error: "Task not found" });
+    if (!rows[0]) return res.status(404).json({ error: "Không tìm thấy nhiệm vụ" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to update task" });
+    res.status(500).json({ error: "Cập nhật nhiệm vụ thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1305,10 +1315,10 @@ app.delete(`${API_PREFIX}/tasks/:id`, async (req, res) => {
   const { id } = req.params;
   try {
     const { rowCount } = await query(`delete from user_tasks where id = $1 and user_id = $2`, [id, userId]);
-    if (rowCount === 0) return res.status(404).json({ error: "Task not found" });
+    if (rowCount === 0) return res.status(404).json({ error: "Không tìm thấy nhiệm vụ" });
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete task" });
+    res.status(500).json({ error: "Xóa nhiệm vụ thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1319,7 +1329,7 @@ app.get(`${API_PREFIX}/notes`, async (req, res) => {
     const { rows } = await query(`select * from user_notes where user_id = $1 order by updated_at desc`, [userId]);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch notes" });
+    res.status(500).json({ error: "Lấy danh sách ghi chú thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1333,7 +1343,7 @@ app.post(`${API_PREFIX}/notes`, async (req, res) => {
     );
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to create note" });
+    res.status(500).json({ error: "Tạo ghi chú thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1347,10 +1357,10 @@ app.put(`${API_PREFIX}/notes/:id`, async (req, res) => {
        where id = $4 and user_id = $5 returning *`,
       [title, content, color, id, userId]
     );
-    if (!rows[0]) return res.status(404).json({ error: "Note not found" });
+    if (!rows[0]) return res.status(404).json({ error: "Không tìm thấy ghi chú" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to update note" });
+    res.status(500).json({ error: "Cập nhật ghi chú thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1359,54 +1369,80 @@ app.delete(`${API_PREFIX}/notes/:id`, async (req, res) => {
   const { id } = req.params;
   try {
     const { rowCount } = await query(`delete from user_notes where id = $1 and user_id = $2`, [id, userId]);
-    if (rowCount === 0) return res.status(404).json({ error: "Note not found" });
+    if (rowCount === 0) return res.status(404).json({ error: "Không tìm thấy ghi chú" });
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete note" });
+    res.status(500).json({ error: "Xóa ghi chú thất bại, vui lòng thử lại sau" });
   }
 });
 
 app.get(`${API_PREFIX}/subjects`, async (req, res) => {
+  const { mode } = req.query;
+  const userId = getUserId(req);
+
   try {
-    const { rows } = await query(
-      `select s.*, count(c.id)::int as curriculum_count
-       from subjects s
-       left join curricula c on c.subject_id = s.id and c.is_public = true
-       group by s.id
-       order by s.sort_order asc, s.created_at desc`
-    );
+    let sql;
+    let params = [];
+
+    if (mode === "teacher" && userId) {
+      sql = `SELECT s.*, 
+                    (SELECT count(*)::int FROM curricula c WHERE c.subject_id = s.id AND c.user_id = $1) as curriculum_count
+             FROM subjects s
+             ORDER BY s.sort_order ASC, s.created_at DESC`;
+      params = [userId];
+    } else {
+      sql = `SELECT s.*, 
+                    (SELECT count(*)::int FROM curricula c WHERE c.subject_id = s.id AND c.is_public = true) as curriculum_count
+             FROM subjects s
+             ORDER BY s.sort_order ASC, s.created_at DESC`;
+    }
+
+    const { rows } = await query(sql, params);
     res.json(rows);
 
   } catch (err) {
     console.error("GET /subjects Error:", err.message);
-    res.status(500).json({ error: "Failed to fetch subjects", details: err.message });
+    res.status(500).json({ error: "Lấy danh sách môn học thất bại, vui lòng thử lại sau", details: err.message });
   }
 });
 
 app.get(`${API_PREFIX}/subjects/:id`, async (req, res) => {
-  try {
-    const { rows } = await query(
-      `select s.*, count(c.id)::int as curriculum_count
-       from subjects s
-       left join curricula c on c.subject_id = s.id and c.is_public = true
-       where s.id = $1
-       group by s.id`,
-      [req.params.id]
-    );
+  const { mode } = req.query;
+  const userId = getUserId(req);
 
-    if (!rows[0]) return res.status(404).json({ error: "Subject not found" });
+  try {
+    let sql;
+    let params = [req.params.id];
+
+    if (mode === "teacher" && userId) {
+      sql = `SELECT s.*, 
+                    (SELECT count(*)::int FROM curricula c WHERE c.subject_id = s.id AND c.user_id = $2) as curriculum_count
+             FROM subjects s
+             WHERE s.id = $1`;
+      params = [req.params.id, userId];
+    } else {
+      sql = `SELECT s.*, 
+                    (SELECT count(*)::int FROM curricula c WHERE c.subject_id = s.id AND c.is_public = true) as curriculum_count
+             FROM subjects s
+             WHERE s.id = $1`;
+    }
+
+    const { rows } = await query(sql, params);
+
+    if (!rows[0]) return res.status(404).json({ error: "Không tìm thấy môn học" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch subject" });
+    console.error("GET /subjects/:id Error:", err.message);
+    res.status(500).json({ error: "Lấy thông tin môn học thất bại, vui lòng thử lại sau" });
   }
 });
 
 app.post(`${API_PREFIX}/subjects`, async (req, res) => {
   const userId = getUserId(req);
-  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Only admins can create subjects" });
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Chỉ quản trị viên mới có quyền tạo môn học" });
 
   const { name, description = null, icon = null, created_by = null } = req.body || {};
-  if (!name?.trim()) return res.status(400).json({ error: "name is required" });
+  if (!name?.trim()) return res.status(400).json({ error: "Vui lòng nhập tên" });
   try {
     const { rows } = await query(
       `insert into subjects (name, description, icon, user_id, created_by, sort_order)
@@ -1416,16 +1452,16 @@ app.post(`${API_PREFIX}/subjects`, async (req, res) => {
     );
     res.status(201).json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to create subject" });
+    res.status(500).json({ error: "Tạo môn học thất bại, vui lòng thử lại sau" });
   }
 });
 
 app.put(`${API_PREFIX}/subjects/reorder`, async (req, res) => {
   const userId = getUserId(req);
-  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này" });
 
   const { orders } = req.body || {}; // array of { id, sort_order }
-  if (!Array.isArray(orders)) return res.status(400).json({ error: "orders must be an array" });
+  if (!Array.isArray(orders)) return res.status(400).json({ error: "orders phải là một mảng" });
 
   try {
     for (const item of orders) {
@@ -1433,17 +1469,17 @@ app.put(`${API_PREFIX}/subjects/reorder`, async (req, res) => {
     }
     res.json({ ok: true });
   } catch (err) {
-    res.status(500).json({ error: "Failed to reorder subjects" });
+    res.status(500).json({ error: "Sắp xếp lại danh sách môn học thất bại" });
   }
 });
 
 app.put(`${API_PREFIX}/subjects/:id`, async (req, res) => {
   const userId = getUserId(req);
-  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này" });
 
   const { id } = req.params;
   const { name, description = null, icon = null } = req.body || {};
-  if (!name?.trim()) return res.status(400).json({ error: "name is required" });
+  if (!name?.trim()) return res.status(400).json({ error: "Vui lòng nhập tên" });
   try {
     const { rows } = await query(
       `update subjects
@@ -1452,10 +1488,10 @@ app.put(`${API_PREFIX}/subjects/:id`, async (req, res) => {
        returning *`,
       [name.trim(), description, icon, id]
     );
-    if (!rows[0]) return res.status(404).json({ error: "Subject not found" });
+    if (!rows[0]) return res.status(404).json({ error: "Không tìm thấy môn học" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to update subject" });
+    res.status(500).json({ error: "Cập nhật môn học thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1468,7 +1504,7 @@ app.delete(`${API_PREFIX}/subjects/:id`, async (req, res) => {
     await query(`delete from subjects where id = $1`, [id]);
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete subject" });
+    res.status(500).json({ error: "Xóa danh sách môn học thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1497,8 +1533,8 @@ app.get(`${API_PREFIX}/curricula`, async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error("GET /curricula Error:", err.message);
-    try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] GET /curricula Error: ${err.message}\n${err.stack}\n`); } catch (e) {}
-    res.status(500).json({ error: "Failed to fetch curricula", details: err.message });
+    try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] GET /curricula Error: ${err.message}\n${err.stack}\n`); } catch (e) { }
+    res.status(500).json({ error: "Lấy danh sách chương trình học thất bại, vui lòng thử lại sau", details: err.message });
   }
 });
 
@@ -1516,10 +1552,10 @@ app.get(`${API_PREFIX}/curricula/:id`, async (req, res) => {
       [req.params.id]
     );
 
-    if (!rows[0]) return res.status(404).json({ error: "Curriculum not found" });
+    if (!rows[0]) return res.status(404).json({ error: "Không tìm thấy chương trình học" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch curriculum" });
+    res.status(500).json({ error: "Lấy danh sách chương trình học thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1533,7 +1569,7 @@ app.post(`${API_PREFIX}/curricula`, (req, res) => {
     }
 
     const userId = getUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!userId) return res.status(401).json({ error: "Bạn không có quyền truy cập" });
 
     try {
       const {
@@ -1578,22 +1614,22 @@ app.post(`${API_PREFIX}/curricula`, (req, res) => {
       res.status(201).json(rows[0]);
     } catch (dbErr) {
       console.error("POST /curricula Error:", dbErr.message);
-      res.status(500).json({ error: "Failed to create curriculum" });
+      res.status(500).json({ error: "Tạo giáo trình thất bại, vui lòng thử lại sau" });
     }
   });
 });
 
 app.put(`${API_PREFIX}/curricula/:id`, async (req, res) => {
   const userId = getUserId(req);
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  if (!userId) return res.status(401).json({ error: "Bạn không có quyền truy cập" });
 
   const { id } = req.params;
   const isAdmin = await checkAdmin(userId);
   const { rows: ownerRows } = await query(`select user_id from curricula where id = $1`, [id]);
-  if (!ownerRows[0]) return res.status(404).json({ error: "Curriculum not found" });
+  if (!ownerRows[0]) return res.status(404).json({ error: "Không tìm thấy chương trình học" });
 
   const isOwner = ownerRows[0].user_id === userId;
-  if (!isAdmin && !isOwner) return res.status(403).json({ error: "Forbidden" });
+  if (!isAdmin && !isOwner) return res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này" });
 
   const {
     name,
@@ -1606,7 +1642,7 @@ app.put(`${API_PREFIX}/curricula/:id`, async (req, res) => {
     file_content = null,
     image_url = null,
   } = req.body || {};
-  if (!name?.trim()) return res.status(400).json({ error: "name is required" });
+  if (!name?.trim()) return res.status(400).json({ error: "Vui lòng nhập tên" });
 
   try {
     const { rows } = await query(
@@ -1617,16 +1653,16 @@ app.put(`${API_PREFIX}/curricula/:id`, async (req, res) => {
       [name.trim(), grade, education_level, is_public, publisher, Number(lesson_count) || 0, file_url, file_content, image_url, id]
     );
 
-    if (!rows[0]) return res.status(404).json({ error: "Curriculum not found" });
+    if (!rows[0]) return res.status(404).json({ error: "Không tìm thấy chương trình học" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to update curriculum" });
+    res.status(500).json({ error: "Cập nhật chương trình học thất bại, vui lòng thử lại sau" });
   }
 });
 
 app.post(`${API_PREFIX}/curricula/reorder`, async (req, res) => {
   const userId = getUserId(req);
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  if (!userId) return res.status(401).json({ error: "Bạn không có quyền truy cập" });
 
   // For reorder, ideally we check if user owns all curricula they are reordering
   // For now, allow any logged in user as they only see their own anyway in the UI
@@ -1634,7 +1670,7 @@ app.post(`${API_PREFIX}/curricula/reorder`, async (req, res) => {
 
   try {
     const { order } = req.body;
-    if (!Array.isArray(order)) return res.status(400).json({ error: "Invalid order format" });
+    if (!Array.isArray(order)) return res.status(400).json({ error: "Định dạng thứ tự không hợp lệ" });
 
     // Update each curriculum's sort_order based on the provided array
     for (let i = 0; i < order.length; i++) {
@@ -1643,14 +1679,14 @@ app.post(`${API_PREFIX}/curricula/reorder`, async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    console.error("Error reordering curricula:", err);
-    res.status(500).json({ error: "Failed to reorder curricula" });
+    console.error("Lỗi sắp xếp lại chương trình học:", err);
+    res.status(500).json({ error: "Sắp xếp lại chương trình học thất bại, vui lòng thử lại sau" });
   }
 });
 
 app.delete(`${API_PREFIX}/curricula/:id`, async (req, res) => {
   const userId = getUserId(req);
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  if (!userId) return res.status(401).json({ error: "Bạn không có quyền truy cập" });
 
   const { id } = req.params;
   const isAdmin = await checkAdmin(userId);
@@ -1658,13 +1694,13 @@ app.delete(`${API_PREFIX}/curricula/:id`, async (req, res) => {
   if (!ownerRows[0]) return res.status(204).send(); // Gone already
 
   const isOwner = ownerRows[0].user_id === userId;
-  if (!isAdmin && !isOwner) return res.status(403).json({ error: "Forbidden" });
+  if (!isAdmin && !isOwner) return res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này" });
 
   try {
     await query(`delete from curricula where id = $1`, [req.params.id]);
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete curriculum" });
+    res.status(500).json({ error: "Xóa chương trình học thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1710,7 +1746,7 @@ app.get(`${API_PREFIX}/lessons`, async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch lessons" });
+    res.status(500).json({ error: "Lấy danh sách bài học thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1746,10 +1782,10 @@ app.get(`${API_PREFIX}/lessons/:id`, async (req, res) => {
        where l.id = $1`,
       [req.params.id]
     );
-    if (!rows[0]) return res.status(404).json({ error: "Lesson not found" });
+    if (!rows[0]) return res.status(404).json({ error: "Không tìm thấy bài học" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch lesson" });
+    res.status(500).json({ error: "Lấy danh sách bài học thất bại" });
   }
 });
 
@@ -1764,8 +1800,8 @@ app.post(`${API_PREFIX}/lessons`, async (req, res) => {
     vocabulary = [],
     sort_order = 0,
   } = req.body || {};
-  if (!curriculum_id) return res.status(400).json({ error: "curriculum_id is required" });
-  if (!title?.trim()) return res.status(400).json({ error: "title is required" });
+  if (!curriculum_id) return res.status(400).json({ error: "Vui lòng cung cấp ID chương trình học" });
+  if (!title?.trim()) return res.status(400).json({ error: "Vui lòng nhập tiêu đề" });
 
   try {
     const { rows } = await query(
@@ -1786,7 +1822,7 @@ app.post(`${API_PREFIX}/lessons`, async (req, res) => {
     );
     res.status(201).json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to create lesson" });
+    res.status(500).json({ error: "Tạo bài học thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1801,7 +1837,7 @@ app.put(`${API_PREFIX}/lessons/:id`, async (req, res) => {
     vocabulary = [],
     sort_order = 0,
   } = req.body || {};
-  if (!title?.trim()) return res.status(400).json({ error: "title is required" });
+  if (!title?.trim()) return res.status(400).json({ error: "Vui lòng nhập tiêu đề" });
   try {
     const { rows } = await query(
       `update lessons
@@ -1825,10 +1861,10 @@ app.put(`${API_PREFIX}/lessons/:id`, async (req, res) => {
         id,
       ]
     );
-    if (!rows[0]) return res.status(404).json({ error: "Lesson not found" });
+    if (!rows[0]) return res.status(404).json({ error: "Không tìm thấy bài học" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to update lesson" });
+    res.status(500).json({ error: "Cập nhật bài học thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1837,7 +1873,7 @@ app.delete(`${API_PREFIX}/lessons/:id`, async (req, res) => {
     await query(`delete from lessons where id = $1`, [req.params.id]);
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete lesson" });
+    res.status(500).json({ error: "Xóa bài học thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1877,7 +1913,7 @@ app.put(`${API_PREFIX}/lessons/:id/quiz-flashcards`, async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     await client.query("rollback");
-    res.status(500).json({ error: "Failed to save quiz/flashcards" });
+    res.status(500).json({ error: "Lưu bài kiểm tra/thẻ học thất bại, vui lòng thử lại sau" });
   } finally {
     client.release();
   }
@@ -1895,7 +1931,7 @@ app.get(`${API_PREFIX}/lessons/:id/images`, async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch lesson images" });
+    res.status(500).json({ error: "Lấy ảnh bài học thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1910,7 +1946,7 @@ app.post(`${API_PREFIX}/lessons/:id/images`, (req, res) => {
 
     const { id } = req.params;
     const files = req.files;
-    if (!files || files.length === 0) return res.status(400).json({ error: "No files uploaded" });
+    if (!files || files.length === 0) return res.status(400).json({ error: "Vui lòng chọn ít nhất một file để tải lên" });
 
     try {
       // Get current max sort_order
@@ -1934,7 +1970,7 @@ app.post(`${API_PREFIX}/lessons/:id/images`, (req, res) => {
       res.status(201).json(inserted);
     } catch (dbErr) {
       console.error("POST /lessons/:id/images Error:", dbErr.message);
-      res.status(500).json({ error: "Failed to upload lesson images" });
+      res.status(500).json({ error: "Tải ảnh bài học thất bại, vui lòng thử lại sau" });
     }
   });
 });
@@ -1952,13 +1988,13 @@ app.delete(`${API_PREFIX}/lessons/:id/images/:imageId`, async (req, res) => {
     }
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete lesson image" });
+    res.status(500).json({ error: "Xóa ảnh bài học thất bại, vui lòng thử lại sau" });
   }
 });
 
 app.get(`${API_PREFIX}/progress`, async (req, res) => {
   const studentId = String(req.query.student_id || "").trim();
-  if (!studentId) return res.status(400).json({ error: "student_id is required" });
+  if (!studentId) return res.status(400).json({ error: "Vui lòng cung cấp ID học sinh" });
   try {
     const { rows } = await query(
       `select lesson_id::text as lesson_id, completed, completed_at
@@ -1968,7 +2004,7 @@ app.get(`${API_PREFIX}/progress`, async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch progress" });
+    res.status(500).json({ error: "Lấy tiến độ học tập thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -1976,7 +2012,7 @@ app.put(`${API_PREFIX}/progress/:lessonId`, async (req, res) => {
   const { lessonId } = req.params;
   const studentId = String(req.body?.student_id || "").trim();
   const completed = Boolean(req.body?.completed);
-  if (!studentId) return res.status(400).json({ error: "student_id is required" });
+  if (!studentId) return res.status(400).json({ error: "Vui lòng cung cấp ID học sinh" });
   try {
     const { rows } = await query(
       `insert into lesson_progress (student_id, lesson_id, completed, completed_at)
@@ -1989,7 +2025,7 @@ app.put(`${API_PREFIX}/progress/:lessonId`, async (req, res) => {
     );
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to save progress" });
+    res.status(500).json({ error: "Lưu tiến độ học tập thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -2000,7 +2036,7 @@ app.get(`${API_PREFIX}/quizlets`, async (req, res) => {
   try {
     const { rows: userRows } = await query('select role, education_level from users where id = cast($1 as uuid)', [userId]);
     const user = userRows[0];
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) return res.status(404).json({ error: "Không tìm thấy thông tin người dùng" });
 
     const isAdmin = user.role === "admin";
     const userLevelStr = String(user.education_level || "");
@@ -2050,13 +2086,13 @@ app.get(`${API_PREFIX}/quizlets`, async (req, res) => {
     }
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch quizlet sets" });
+    res.status(500).json({ error: "Lấy danh sách bộ thẻ học thất bại, vui lòng thử lại sau" });
   }
 });
 
 app.post(`${API_PREFIX}/quizlets`, async (req, res) => {
   const { title, description = null, subject_id = null, grade = null, education_level = null, is_public = false, created_by = null, terms = [] } = req.body || {};
-  if (!title?.trim()) return res.status(400).json({ error: "title is required" });
+  if (!title?.trim()) return res.status(400).json({ error: "Vui lòng nhập tiêu đề" });
 
   try {
     const userId = getUserId(req);
@@ -2077,7 +2113,7 @@ app.post(`${API_PREFIX}/quizlets`, async (req, res) => {
     }
     res.status(201).json({ id: setId });
   } catch (err) {
-    res.status(500).json({ error: "Failed to create quizlet set" });
+    res.status(500).json({ error: "Tạo bộ thẻ học thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -2093,7 +2129,7 @@ app.get(`${API_PREFIX}/quizlets/:id`, async (req, res) => {
       [req.params.id, isAdmin, userId]
     );
 
-    if (!setRows[0]) return res.status(404).json({ error: "Quizlet set not found or permission denied" });
+    if (!setRows[0]) return res.status(404).json({ error: "Không tìm thấy bộ thẻ học hoặc bạn không có quyền truy cập" });
 
     const { rows: termRows } = await query(
       `select * from quizlet_terms where quizlet_set_id = $1 order by sort_order asc`,
@@ -2102,7 +2138,7 @@ app.get(`${API_PREFIX}/quizlets/:id`, async (req, res) => {
 
     res.json({ ...setRows[0], terms: termRows });
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch quizlet set" });
+    res.status(500).json({ error: "Lấy bộ thẻ học thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -2116,8 +2152,8 @@ app.put(`${API_PREFIX}/quizlets/:id`, async (req, res) => {
 
     // Check ownership
     const { rows: setRows } = await query(`select user_id from quizlet_sets where id = $1`, [id]);
-    if (setRows.length === 0) return res.status(404).json({ error: "Quizlet set not found" });
-    if (!isAdmin && setRows[0].user_id !== userId) return res.status(403).json({ error: "Forbidden" });
+    if (setRows.length === 0) return res.status(404).json({ error: "Không tìm thấy bộ thẻ học" });
+    if (!isAdmin && setRows[0].user_id !== userId) return res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này" });
 
     await query(
       `update quizlet_sets set title = $1, description = $2, subject_id = $3, grade = $4, education_level = $5, is_public = $6
@@ -2137,7 +2173,7 @@ app.put(`${API_PREFIX}/quizlets/:id`, async (req, res) => {
     res.json({ success: true });
 
   } catch (err) {
-    res.status(500).json({ error: "Failed to update quizlet set" });
+    res.status(500).json({ error: "Cập nhật bộ thẻ học thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -2149,7 +2185,7 @@ app.delete(`${API_PREFIX}/quizlets/:id`, async (req, res) => {
 
     // Check if the set exists and is owned by the user or if the user is an admin
     const { rows } = await query(`select id from quizlet_sets where id = $1 and ($2 = true or user_id = $3)`, [id, isAdmin, userId]);
-    if (rows.length === 0) return res.status(404).json({ error: "Quizlet set not found" });
+    if (rows.length === 0) return res.status(404).json({ error: "Không tìm thấy bộ thẻ học" });
 
     // Delete terms first (if not cascading)
     await query(`delete from quizlet_terms where quizlet_set_id = $1`, [id]);
@@ -2157,7 +2193,7 @@ app.delete(`${API_PREFIX}/quizlets/:id`, async (req, res) => {
     res.status(204).send();
 
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete quizlet set" });
+    res.status(500).json({ error: "Xóa bộ thẻ học thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -2169,7 +2205,7 @@ app.get(`${API_PREFIX}/exams`, async (req, res) => {
   try {
     const { rows: userRows } = await query('select role, education_level from users where id = cast($1 as uuid)', [userId]);
     const user = userRows[0];
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) return res.status(404).json({ error: "Không tìm thấy thông tin người dùng" });
 
     const isAdmin = user.role === "admin";
     const userLevelStr = String(user.education_level || "");
@@ -2185,7 +2221,7 @@ app.get(`${API_PREFIX}/exams`, async (req, res) => {
          from exams e 
          left join users u on e.user_id = u.id
          left join subjects s on e.subject_id = s.id
-         where e.user_id = $1::uuid
+         where e.user_id = $1::uuid and e.is_repository = false
          order by e.created_at desc`,
         [userId]
       );
@@ -2199,7 +2235,7 @@ app.get(`${API_PREFIX}/exams`, async (req, res) => {
          from exams e 
          left join users u on e.user_id = u.id
          left join subjects s on e.subject_id = s.id
-         where e.is_public = true ${isAdmin ? "" : "and e.education_level = cast($2 as text)"}
+         where e.is_public = true and e.is_repository = false ${isAdmin ? "" : "and e.education_level = cast($2 as text)"}
          order by e.created_at desc`;
 
       const params = isAdmin ? [userId] : [userId, userLevelStr];
@@ -2215,7 +2251,7 @@ app.get(`${API_PREFIX}/exams`, async (req, res) => {
          from exams e 
          left join users u on e.user_id = u.id
          left join subjects s on e.subject_id = s.id
-         where ($2::boolean = true or e.user_id = $1::uuid or e.is_public = true)
+         where ($2::boolean = true or e.user_id = $1::uuid or e.is_public = true) and e.is_repository = false
          order by e.created_at desc`,
         [userId, isAdmin]
       );
@@ -2223,7 +2259,7 @@ app.get(`${API_PREFIX}/exams`, async (req, res) => {
     }
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch exams" });
+    res.status(500).json({ error: "Lấy danh sách trắc nghiệm thất bại" });
   }
 });
 
@@ -2236,7 +2272,7 @@ app.get(`${API_PREFIX}/exams/:id`, async (req, res) => {
       `select * from exams where id = $1 and ($2 = true or user_id = $3 or is_public = true)`,
       [id, isAdmin, userId]
     );
-    if (exams.length === 0) return res.status(404).json({ error: "Exam not found or permission denied" });
+    if (exams.length === 0) return res.status(404).json({ error: "Không tìm thấy đề thi hoặc bạn không có quyền truy cập" });
 
     const { rows: questions } = await query(
       `select * from exam_questions where exam_id = $1 order by sort_order`,
@@ -2253,7 +2289,7 @@ app.get(`${API_PREFIX}/exams/:id`, async (req, res) => {
 
     res.json({ ...exams[0], questions });
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch exam details" });
+    res.status(500).json({ error: "Lấy chi tiết đề thi thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -2266,10 +2302,10 @@ app.delete(`${API_PREFIX}/exams/:id`, async (req, res) => {
       `delete from exams where id = $1 and ($2 = true or user_id = $3)`,
       [id, isAdmin, userId]
     );
-    if (rowCount === 0) return res.status(404).json({ error: "Exam not found or permission denied" });
+    if (rowCount === 0) return res.status(404).json({ error: "Không tìm thấy đề thi hoặc bạn không có quyền truy cập" });
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete exam" });
+    res.status(500).json({ error: "Xóa đề thi thất bại, vui lòng thử lại sau" });
   }
 });
 
@@ -2315,7 +2351,7 @@ app.post(`${API_PREFIX}/exams`, async (req, res) => {
     res.status(201).json({ id: examId });
   } catch (err) {
     await client.query("ROLLBACK");
-    res.status(500).json({ error: "Failed to create exam" });
+    res.status(500).json({ error: "Tạo đề thi thất bại, vui lòng thử lại sau" });
   } finally {
     client.release();
   }
@@ -2339,7 +2375,7 @@ app.put(`${API_PREFIX}/exams/:id`, async (req, res) => {
     );
 
     if (rowCount === 0) {
-      throw new Error("Exam not found or permission denied");
+      throw new Error("Không tìm thấy đề thi hoặc bạn không có quyền truy cập");
     }
 
     // Delete old questions/options (cascading)
@@ -2372,7 +2408,7 @@ app.put(`${API_PREFIX}/exams/:id`, async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     await client.query("ROLLBACK");
-    res.status(500).json({ error: err.message || "Failed to update exam" });
+    res.status(500).json({ error: err.message || "Cập nhật đề thi thất bại, vui lòng thử lại sau" });
   } finally {
     client.release();
   }
@@ -2385,7 +2421,7 @@ app.post(`${API_PREFIX}/exams/:id/results`, async (req, res) => {
   const { score, timeTaken } = req.body || {};
 
   if (score === undefined || timeTaken === undefined) {
-    return res.status(400).json({ error: "Missing score or timeTaken" });
+    return res.status(400).json({ error: "Vui lòng cung cấp điểm số và thời gian làm bài" });
   }
 
   try {
@@ -2396,11 +2432,233 @@ app.post(`${API_PREFIX}/exams/:id/results`, async (req, res) => {
     );
     res.status(201).json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to save exam result" });
+    res.status(500).json({ error: "Lưu kết quả thi thất bại, vui lòng thử lại sau" });
+  }
+});
+
+
+// ── Quiz Question Repository ───────────────────────────────────────────
+app.get(`${API_PREFIX}/questions`, async (req, res) => {
+  const userId = getUserId(req);
+  const isAdmin = await checkAdmin(userId);
+  const isTeacher = await (async () => {
+    const { rows } = await query('select role from users where id = cast($1 as uuid)', [userId]);
+    return rows[0]?.role === "teacher";
+  })();
+
+  if (!isAdmin && !isTeacher) {
+    return res.status(403).json({ error: "Chỉ dành cho quản trị viên và giáo viên" });
+  }
+
+  try {
+    let sql = `
+      SELECT 
+        eq.id, 
+        eq.content, 
+        eq.type, 
+        eq.exam_id,
+        e.subject_id,
+        eq.category,
+        eq.is_system,
+        e.education_level, 
+        e.grade, 
+        s.name as subject_name, 
+        u.display_name as creator_name, 
+        eq.created_at,
+        (
+          SELECT jsonb_agg(jsonb_build_object('content', eo.content, 'is_correct', eo.is_correct, 'id', eo.id) ORDER BY eo.sort_order)
+          FROM exam_options eo 
+          WHERE eo.question_id = eq.id
+        ) as options
+
+      FROM exam_questions eq
+      JOIN exams e ON eq.exam_id = e.id
+      LEFT JOIN subjects s ON e.subject_id = s.id
+      LEFT JOIN users u ON e.user_id = u.id
+      WHERE eq.is_repository = true
+    `;
+
+    const params = [];
+    if (!isAdmin) {
+      sql += " AND e.user_id = $1";
+      params.push(userId);
+    }
+
+    sql += " ORDER BY eq.created_at DESC";
+
+    const { rows } = await query(sql, params);
+    res.json(rows);
+  } catch (err) {
+    console.error("GET /questions Error:", err);
+    res.status(500).json({ error: "Không thể lấy danh sách kho câu hỏi" });
+  }
+});
+
+app.delete(`${API_PREFIX}/questions/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId)) && !(await (async () => {
+    const { rows } = await query('select role from users where id = cast($1 as uuid)', [userId]);
+    return rows[0]?.role === "teacher";
+  })())) {
+    return res.status(403).json({ error: "Không có quyền" });
+  }
+
+  try {
+    const { id } = req.params;
+    await query(`delete from exam_questions where id = $1`, [id]);
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: "Xóa câu hỏi thất bại" });
+  }
+});
+
+app.put(`${API_PREFIX}/questions/:id`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId)) && !(await (async () => {
+    const { rows } = await query('select role from users where id = cast($1 as uuid)', [userId]);
+    return rows[0]?.role === "teacher";
+  })())) {
+    return res.status(403).json({ error: "Không có quyền" });
+  }
+
+  const { id } = req.params;
+  const { content, type, options, subject_id, grade, education_level, category } = req.body || {};
+  if (!content) return res.status(400).json({ error: "Nội dung câu hỏi không được để trống" });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Identify or create target exam
+    const { rows: examRows } = await client.query(
+      `select id from exams 
+       where user_id = $1 
+       and is_repository = true
+       and (subject_id = $2 or (subject_id is null and $2 is null))
+       and (grade = $3 or (grade is null and $3 is null))
+       and (education_level = $4 or (education_level is null and $4 is null))
+       limit 1`,
+      [userId, subject_id || null, grade || null, education_level || 'Khác']
+    );
+
+    let targetExamId;
+    if (examRows.length > 0) {
+      targetExamId = examRows[0].id;
+    } else {
+      const title = `Kho câu hỏi - ${education_level || 'Khác'} - ${grade || ''}`;
+      const { rows: newExamRows } = await client.query(
+        `insert into exams (title, description, user_id, is_public, education_level, subject_id, grade, is_repository)
+         values ($1, 'Nơi lưu trữ các câu hỏi trắc nghiệm', $2, false, $3, $4, $5, true)
+         returning id`,
+        [title, userId, education_level || 'Khác', subject_id || null, grade || null]
+      );
+      targetExamId = newExamRows[0].id;
+    }
+
+    await client.query(
+      `update exam_questions set content = $1, type = $2, exam_id = $3, category = $4 where id = $5`,
+      [content, type || 'single', targetExamId, category || null, id]
+    );
+
+    if (options && Array.isArray(options)) {
+      await client.query(`delete from exam_options where question_id = $1`, [id]);
+      for (let i = 0; i < options.length; i++) {
+        const opt = options[i];
+        await client.query(
+          `insert into exam_options (question_id, content, is_correct, sort_order)
+           values ($1, $2, $3, $4)`,
+          [id, opt.content, opt.is_correct || false, i]
+        );
+      }
+    }
+    await client.query("COMMIT");
+    res.json({ ok: true });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    res.status(500).json({ error: "Cập nhật câu hỏi thất bại" });
+  } finally {
+    client.release();
+  }
+});
+
+app.post(`${API_PREFIX}/questions/bulk`, async (req, res) => {
+  const userId = getUserId(req);
+  if (!(await checkAdmin(userId)) && !(await (async () => {
+    const { rows } = await query('select role from users where id = cast($1 as uuid)', [userId]);
+    return rows[0]?.role === "teacher";
+  })())) {
+    return res.status(403).json({ error: "Không có quyền" });
+  }
+
+  const { questions, exam_id, subject_id, grade, education_level } = req.body || {};
+  if (!Array.isArray(questions) || questions.length === 0) {
+    return res.status(400).json({ error: "Mảng câu hỏi là bắt buộc" });
+  }
+
+  // Identify or create target exam
+  let targetExamId = exam_id;
+  if (!targetExamId) {
+    const { rows: examRows } = await query(
+      `select id from exams 
+       where user_id = $1 
+       and is_repository = true
+       and (subject_id = $2 or (subject_id is null and $2 is null))
+       and (grade = $3 or (grade is null and $3 is null))
+       and (education_level = $4 or (education_level is null and $4 is null))
+       limit 1`,
+      [userId, subject_id || null, grade || null, education_level || 'Khác']
+    );
+
+    if (examRows.length > 0) {
+      targetExamId = examRows[0].id;
+    } else {
+      const title = `Kho câu hỏi - ${education_level || 'Khác'} - ${grade || ''}`;
+      const { rows: newExamRows } = await query(
+        `insert into exams (title, description, user_id, is_public, education_level, subject_id, grade, is_repository)
+         values ($1, 'Nơi lưu trữ các câu hỏi trắc nghiệm', $2, false, $3, $4, $5, true)
+         returning id`,
+        [title, userId, education_level || 'Khác', subject_id || null, grade || null]
+      );
+      targetExamId = newExamRows[0].id;
+    }
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const isAdmin = await checkAdmin(userId);
+    for (const q of questions) {
+      const { rows: qRows } = await client.query(
+        `insert into exam_questions (exam_id, content, type, category, sort_order, is_repository, is_system)
+         values ($1, $2, $3, $4, 0, true, $5) returning id`,
+        [targetExamId, q.content, q.type || 'single', q.category || category || null, isAdmin]
+      );
+
+      const qId = qRows[0].id;
+
+      if (q.options && Array.isArray(q.options)) {
+        for (let i = 0; i < q.options.length; i++) {
+          const opt = q.options[i];
+          await client.query(
+            `insert into exam_options (question_id, content, is_correct, sort_order)
+             values ($1, $2, $3, $4)`,
+            [qId, opt.content, opt.is_correct || false, i]
+          );
+        }
+      }
+    }
+    await client.query("COMMIT");
+    res.status(201).json({ imported: questions.length });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    res.status(500).json({ error: "Nhập hàng loại câu hỏi thất bại" });
+  } finally {
+    client.release();
   }
 });
 
 // ── Dictation Exercises ─────────────────────────────────────────────────────
+
 
 // GET random dictation by level & language
 app.get(`${API_PREFIX}/dictation/random`, async (req, res) => {
@@ -2414,10 +2672,12 @@ app.get(`${API_PREFIX}/dictation/random`, async (req, res) => {
     if (conditions.length) sql += ` where ` + conditions.join(" and ");
     sql += ` order by random() limit 1`;
     const { rows } = await query(sql, params);
-    if (rows.length === 0) return res.status(404).json({ error: "No exercise found" });
+    if (rows.length === 0) return res.status(404).json({ error: "Không tìm thấy bài tập nào" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch random dictation" });
+    res.status(500).json({
+      error: "Lấy danh sách ngẫu nhiên thất bại"
+    });
   }
 });
 
@@ -2432,7 +2692,7 @@ app.get(`${API_PREFIX}/dictation`, async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch dictation exercises" });
+    res.status(500).json({ error: "Lấy danh sách thất bại" });
   }
 });
 
@@ -2441,7 +2701,7 @@ app.post(`${API_PREFIX}/dictation`, async (req, res) => {
   const userId = getUserId(req);
   const { title, level, language, content } = req.body;
   if (!title || !level || !content) {
-    return res.status(400).json({ error: "Missing required fields" });
+    return res.status(400).json({ error: "Thiếu trường yêu cầu" });
   }
   try {
     const { rows } = await query(
@@ -2451,7 +2711,7 @@ app.post(`${API_PREFIX}/dictation`, async (req, res) => {
     );
     res.status(201).json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to create dictation exercise" });
+    res.status(500).json({ error: "Tạo bài tập chính tả thất bại" });
   }
 });
 
@@ -2464,10 +2724,10 @@ app.put(`${API_PREFIX}/dictation/:id`, async (req, res) => {
       `update dictation_exercises set title=$1, level=$2, language=$3, content=$4 where id=$5 returning *`,
       [title, level, language || 'vi', content, id]
     );
-    if (rowCount === 0) return res.status(404).json({ error: "Not found" });
+    if (rowCount === 0) return res.status(404).json({ error: "Không tìm thấy" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to update dictation exercise" });
+    res.status(500).json({ error: "Cập nhật bài chính tả thất bại" });
   }
 });
 
@@ -2478,7 +2738,7 @@ app.delete(`${API_PREFIX}/dictation/:id`, async (req, res) => {
     await query(`delete from dictation_exercises where id=$1`, [id]);
     res.json({ ok: true });
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete dictation exercise" });
+    res.status(500).json({ error: "Xóa bài tập chính tả thất bại" });
   }
 });
 
@@ -2495,7 +2755,7 @@ app.get(`${API_PREFIX}/pictogram`, async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch pictogram questions" });
+    res.status(500).json({ error: "Lấy danh sách thất bại" });
   }
 });
 
@@ -2504,7 +2764,7 @@ app.post(`${API_PREFIX}/pictogram`, async (req, res) => {
   const userId = getUserId(req);
   const { image_url, answer, level } = req.body;
   if (!image_url || !answer || !level) {
-    return res.status(400).json({ error: "Missing required fields" });
+    return res.status(400).json({ error: "Thiếu trường bắt buộc" });
   }
   try {
     const { rows } = await query(
@@ -2514,7 +2774,7 @@ app.post(`${API_PREFIX}/pictogram`, async (req, res) => {
     );
     res.status(201).json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to create pictogram question" });
+    res.status(500).json({ error: "Tạo danh sách đuổi hình bắt chữ thất bại" });
   }
 });
 
@@ -2527,10 +2787,10 @@ app.put(`${API_PREFIX}/pictogram/:id`, async (req, res) => {
       `update pictogram_questions set image_url=$1, answer=$2, level=$3 where id=$4 returning *`,
       [image_url, answer.trim().toUpperCase(), level, id]
     );
-    if (rowCount === 0) return res.status(404).json({ error: "Not found" });
+    if (rowCount === 0) return res.status(404).json({ error: "Không tìm thấy" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to update pictogram question" });
+    res.status(500).json({ error: "Cập nhật danh sách đuổi hình bắt chữ thất bại" });
   }
 });
 
@@ -2541,7 +2801,7 @@ app.delete(`${API_PREFIX}/pictogram/:id`, async (req, res) => {
     await query(`delete from pictogram_questions where id=$1`, [id]);
     res.json({ ok: true });
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete pictogram question" });
+    res.status(500).json({ error: "Xóa câu hỏi đuổi hình bắt chữ thất bại" });
   }
 });
 
@@ -2559,10 +2819,10 @@ app.get(`${API_PREFIX}/pictogram/play`, async (req, res) => {
     params.push(Number(limit) || 5);
 
     const { rows } = await query(sql, params);
-    if (rows.length === 0) return res.status(404).json({ error: "No questions found for this level" });
+    if (rows.length === 0) return res.status(404).json({ error: "Không tìm thấy câu hỏi cho level này" });
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch questions" });
+    res.status(500).json({ error: "Lấy danh sách câu hỏi thất bại" });
   }
 });
 
@@ -2581,10 +2841,10 @@ app.get(`${API_PREFIX}/proverbs/play`, async (req, res) => {
     params.push(Number(limit) || 5);
 
     const { rows } = await query(sql, params);
-    if (rows.length === 0) return res.status(404).json({ error: "No proverbs found for this level" });
+    if (rows.length === 0) return res.status(404).json({ error: "Không tìm thấy danh sách câu hỏi cho level này" });
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch proverbs" });
+    res.status(500).json({ error: "Lấy danh sách Ca dao tục ngữ thất bại" });
   }
 });
 app.get(`${API_PREFIX}/proverbs`, async (req, res) => {
@@ -2592,16 +2852,16 @@ app.get(`${API_PREFIX}/proverbs`, async (req, res) => {
     const { rows } = await query(`select * from proverbs order by created_at desc`);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch proverbs" });
+    res.status(500).json({ error: "Lấy danh sách Ca dao tục ngữ thất bại" });
   }
 });
 
 app.post(`${API_PREFIX}/proverbs`, async (req, res) => {
   const userId = getUserId(req);
-  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Không có quyền" });
 
   const { content, level } = req.body || {};
-  if (!content?.trim()) return res.status(400).json({ error: "content required" });
+  if (!content?.trim()) return res.status(400).json({ error: "Thiếu trường bắt buộc" });
 
   try {
     const { rows } = await query(
@@ -2610,16 +2870,16 @@ app.post(`${API_PREFIX}/proverbs`, async (req, res) => {
     );
     res.status(201).json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to create proverb" });
+    res.status(500).json({ error: "Tạo ca dao tục ngữ thất bại" });
   }
 });
 
 app.post(`${API_PREFIX}/proverbs/bulk`, async (req, res) => {
   const userId = getUserId(req);
-  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Không có quyền" });
 
   const { content, level } = req.body || {};
-  if (!content) return res.status(400).json({ error: "content required" });
+  if (!content) return res.status(400).json({ error: "Thiếu trường bắt buộc" });
 
   const lines = content.split('\n').map(l => l.trim()).filter(l => l !== "");
   const inserted = [];
@@ -2634,7 +2894,7 @@ app.post(`${API_PREFIX}/proverbs/bulk`, async (req, res) => {
     }
     res.status(201).json(inserted);
   } catch (err) {
-    res.status(500).json({ error: "Failed to create some proverbs" });
+    res.status(500).json({ error: "Tạo ca dao tục ngữ thất bại" });
   }
 });
 
@@ -2651,10 +2911,10 @@ app.put(`${API_PREFIX}/proverbs/:id`, async (req, res) => {
       `update proverbs set content = $1, level = $2 where id = $3 returning *`,
       [content.trim(), level || 'easy', id]
     );
-    if (!rows[0]) return res.status(404).json({ error: "Not found" });
+    if (!rows[0]) return res.status(404).json({ error: "Không tìm thấy" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to update proverb" });
+    res.status(500).json({ error: "Cập nhật ca dao tục ngữ thất bại" });
   }
 });
 
@@ -2667,7 +2927,7 @@ app.delete(`${API_PREFIX}/proverbs/:id`, async (req, res) => {
     await query(`delete from proverbs where id = $1`, [id]);
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete proverb" });
+    res.status(500).json({ error: "Xóa ca dao tục ngữ thất bại" });
   }
 });
 // ── Vua Tiếng Việt Endpoints ─────────────────────────────────────
@@ -2724,7 +2984,7 @@ app.get(`${API_PREFIX}/vuatiengviet`, async (req, res) => {
       stats
     });
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch questions" });
+    res.status(500).json({ error: "Lấy danh sách câu hỏi thất bại" });
   }
 });
 
@@ -2745,7 +3005,7 @@ app.get(`${API_PREFIX}/vuatiengviet/play`, async (req, res) => {
     if (rows.length === 0) return res.status(404).json({ error: "No questions found for this level" });
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch questions" });
+    res.status(500).json({ error: "Lấy danh sách câu hỏi thất bại" });
   }
 });
 
@@ -2763,7 +3023,7 @@ app.post(`${API_PREFIX}/vuatiengviet`, async (req, res) => {
     );
     res.status(201).json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to create question" });
+    res.status(500).json({ error: "Tạo câu hỏi thất bại" });
   }
 });
 
@@ -2773,7 +3033,7 @@ app.post(`${API_PREFIX}/vuatiengviet/bulk`, async (req, res) => {
 
   const { questions } = req.body || {};
   if (!Array.isArray(questions) || questions.length === 0) {
-    return res.status(400).json({ error: "questions array is required" });
+    return res.status(400).json({ error: "Danh sách câu hỏi là bắt buộc" });
   }
 
   try {
@@ -2795,7 +3055,7 @@ app.post(`${API_PREFIX}/vuatiengviet/bulk`, async (req, res) => {
     res.status(201).json({ imported: results.length });
   } catch (err) {
     await query('ROLLBACK').catch(() => { });
-    res.status(500).json({ error: "Failed to bulk create questions" });
+    res.status(500).json({ error: "Tạo hàng loạt câu hỏi thất bại" });
   }
 });
 
@@ -2812,10 +3072,10 @@ app.put(`${API_PREFIX}/vuatiengviet/:id`, async (req, res) => {
       `update vua_tieng_viet_questions set question = $1, answer = $2, hint = $3, level = $4 where id = $5 returning *`,
       [question.trim(), answer.trim(), hint?.trim() || null, level || 'medium', id]
     );
-    if (!rows[0]) return res.status(404).json({ error: "Not found" });
+    if (!rows[0]) return res.status(404).json({ error: "Không tìm thấy" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to update question" });
+    res.status(500).json({ error: "Cập nhật câu hỏi thất bại" });
   }
 });
 
@@ -2828,7 +3088,7 @@ app.delete(`${API_PREFIX}/vuatiengviet/:id`, async (req, res) => {
     await query(`delete from vua_tieng_viet_questions where id = $1`, [id]);
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete question" });
+    res.status(500).json({ error: "Xóa câu hỏi thất bại" });
   }
 });
 
@@ -2845,7 +3105,7 @@ app.get(`${API_PREFIX}/learning/categories`, async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch categories" });
+    res.status(500).json({ error: "Lấy danh sách danh mục thất bại" });
   }
 });
 
@@ -2855,16 +3115,16 @@ app.get(`${API_PREFIX}/learning/categories/:id`, async (req, res) => {
       `SELECT * FROM learning_categories WHERE id = $1`,
       [req.params.id]
     );
-    if (!rows[0]) return res.status(404).json({ error: "Category not found" });
+    if (!rows[0]) return res.status(404).json({ error: "Không tìm thấy danh mục" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch category" });
+    res.status(500).json({ error: "Lấy danh sách danh mục thất bại" });
   }
 });
 
 app.post(`${API_PREFIX}/learning/categories`, async (req, res) => {
   const userId = getUserId(req);
-  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Không có quyền" });
 
   const { name, description, general_question } = req.body || {};
   if (!name || !general_question) return res.status(400).json({ error: "Name and general question required" });
@@ -2876,13 +3136,13 @@ app.post(`${API_PREFIX}/learning/categories`, async (req, res) => {
     );
     res.status(201).json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to create category" });
+    res.status(500).json({ error: "Tạo danh mục thất bại" });
   }
 });
 
 app.put(`${API_PREFIX}/learning/categories/:id`, async (req, res) => {
   const userId = getUserId(req);
-  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Không có quyền" });
 
   const { id } = req.params;
   const { name, description, general_question } = req.body || {};
@@ -2893,10 +3153,10 @@ app.put(`${API_PREFIX}/learning/categories/:id`, async (req, res) => {
       `UPDATE learning_categories SET name = $1, description = $2, general_question = $3 WHERE id = $4 RETURNING *`,
       [name.trim(), description?.trim() || null, general_question.trim(), id]
     );
-    if (!rows[0]) return res.status(404).json({ error: "Category not found" });
+    if (!rows[0]) return res.status(404).json({ error: "Không tìm thấy danh mục" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to update category" });
+    res.status(500).json({ error: "Cập nhật" });
   }
 });
 
@@ -2908,7 +3168,7 @@ app.delete(`${API_PREFIX}/learning/categories/:id`, async (req, res) => {
     await query(`DELETE FROM learning_categories WHERE id = $1`, [req.params.id]);
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete category" });
+    res.status(500).json({ error: "Xóa danh mục thất bại" });
   }
 });
 
@@ -2920,7 +3180,7 @@ app.get(`${API_PREFIX}/learning/categories/:categoryId/questions`, async (req, r
     );
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch questions" });
+    res.status(500).json({ error: "Lấy danh sách câu hỏi thất bại" });
   }
 });
 
@@ -2938,7 +3198,7 @@ app.post(`${API_PREFIX}/learning/questions`, async (req, res) => {
     );
     res.status(201).json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to create question" });
+    res.status(500).json({ error: "Tạo câu hỏi thất bại" });
   }
 });
 
@@ -2955,10 +3215,10 @@ app.put(`${API_PREFIX}/learning/questions/:id`, async (req, res) => {
       `UPDATE learning_questions SET image_url = $1, answer = $2 WHERE id = $3 RETURNING *`,
       [image_url, answer.trim(), id]
     );
-    if (!rows[0]) return res.status(404).json({ error: "Question not found" });
+    if (!rows[0]) return res.status(404).json({ error: "Không tìm thấy câu hỏi" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to update question" });
+    res.status(500).json({ error: "Cập nhật câu hỏi thất bại" });
   }
 });
 
@@ -2970,7 +3230,7 @@ app.delete(`${API_PREFIX}/learning/questions/:id`, async (req, res) => {
     await query(`DELETE FROM learning_questions WHERE id = $1`, [req.params.id]);
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete question" });
+    res.status(500).json({ error: "Xóa câu hỏi thất bại" });
   }
 });
 
@@ -3019,7 +3279,7 @@ app.get(`${API_PREFIX}/nhanhnhuchop/questions`, async (req, res) => {
       limit
     });
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch questions" });
+    res.status(500).json({ error: "Lấy danh sách câu hỏi thất bại" });
   }
 });
 
@@ -3033,7 +3293,7 @@ app.get(`${API_PREFIX}/nhanhnhuchop/play`, async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch questions" });
+    res.status(500).json({ error: "Lấy danh sách câu hỏi thất bại" });
   }
 });
 
@@ -3087,17 +3347,17 @@ app.post(`${API_PREFIX}/nhanhnhuchop/questions`, async (req, res) => {
     );
     res.status(201).json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to create question" });
+    res.status(500).json({ error: "Tạo câu hỏi thất bại" });
   }
 });
 
 app.post(`${API_PREFIX}/nhanhnhuchop/import`, async (req, res) => {
   const userId = getUserId(req);
-  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Không có quyền" });
 
   const { questions } = req.body || {};
   if (!Array.isArray(questions) || questions.length === 0) {
-    return res.status(400).json({ error: "questions array is required" });
+    return res.status(400).json({ error: "Thiếu danh sách câu hỏi" });
   }
 
   try {
@@ -3117,17 +3377,17 @@ app.post(`${API_PREFIX}/nhanhnhuchop/import`, async (req, res) => {
     res.status(201).json({ imported: results.length });
   } catch (err) {
     await query('ROLLBACK').catch(() => { });
-    res.status(500).json({ error: "Failed to bulk import questions" });
+    res.status(500).json({ error: "Thêm câu hỏi thất bại" });
   }
 });
 
 app.put(`${API_PREFIX}/nhanhnhuchop/questions/:id`, async (req, res) => {
   const userId = getUserId(req);
-  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Không có quyền" });
 
   const { id } = req.params;
   const { question, options, correct_index, explanation, level } = req.body || {};
-  if (!question || !Array.isArray(options)) return res.status(400).json({ error: "Question and options required" });
+  if (!question || !Array.isArray(options)) return res.status(400).json({ error: "Thiếu trường bắt buộc" });
 
   try {
     const { rows } = await query(
@@ -3135,22 +3395,22 @@ app.put(`${API_PREFIX}/nhanhnhuchop/questions/:id`, async (req, res) => {
        WHERE id = $6 RETURNING *`,
       [question.trim(), options, correct_index || 0, explanation?.trim() || null, level || 'medium', id]
     );
-    if (!rows[0]) return res.status(404).json({ error: "Question not found" });
+    if (!rows[0]) return res.status(404).json({ error: "Không tìm thấy câu hỏi" });
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to update question" });
+    res.status(500).json({ error: "Cập nhật câu hỏi thất bại" });
   }
 });
 
 app.delete(`${API_PREFIX}/nhanhnhuchop/questions/:id`, async (req, res) => {
   const userId = getUserId(req);
-  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
+  if (!(await checkAdmin(userId))) return res.status(403).json({ error: "Không có quyền" });
 
   try {
     await query(`DELETE FROM nhanh_nhu_chop_questions WHERE id = $1`, [req.params.id]);
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete question" });
+    res.status(500).json({ error: "Xóa câu hỏi thất bại" });
   }
 });
 
@@ -3158,7 +3418,7 @@ app.delete(`${API_PREFIX}/nhanhnhuchop/questions/:id`, async (req, res) => {
 
 app.use((req, res, next) => {
   // If it's an API request that reached here, it's a 404
-  if (req.path.startsWith(API_PREFIX)) return res.status(404).json({ error: "Not found" });
+  if (req.path.startsWith(API_PREFIX)) return res.status(404).json({ error: "Không tìm thấy" });
 
   res.sendFile(path.join(distDir, "index.html"), (err) => {
     if (err) {
@@ -3295,6 +3555,7 @@ async function initializeApp() {
         await query(`alter table exams add column if not exists grade text`);
         await query(`alter table exams add column if not exists education_level text`);
         await query(`alter table exams add column if not exists is_public boolean default true`);
+        await query(`alter table exams add column if not exists is_repository boolean default false`);
       } catch (colErr) {
       }
 
@@ -3393,7 +3654,7 @@ async function initializeApp() {
 // ── Global Express Error Handler ───────────────────────────────────────────
 app.use(async (err, req, res, next) => {
   console.error("[Unhandled Express Error]", err.stack || err.message);
-  try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] Unhandled Express Error: ${err.message}\n${err.stack}\n`); } catch (e) {}
+  try { await fs.appendFile(path.join(projectRoot, "server_error.log"), `[${new Date().toISOString()}] Unhandled Express Error: ${err.message}\n${err.stack}\n`); } catch (e) { }
   if (res.headersSent) return next(err);
   res.status(500).json({ error: "Đã xảy ra lỗi máy chủ. Vui lòng thử lại.", details: err.message });
 });

@@ -3,7 +3,7 @@ import {
   ArrowLeft, Plus, Trash2, GripVertical, 
   CheckCircle2, Circle, CheckSquare, Square, Type, 
   Clock, Save, Loader2, AlertCircle, Trash,
-  Download, Upload, FileSpreadsheet, FileJson
+  Download, Upload, FileSpreadsheet, FileJson, Lock, Globe
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiFetch } from "@/lib/api";
@@ -346,7 +346,7 @@ export default function QuizFormPage() {
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Sticky Header */}
       <header className="sticky top-0 z-40 w-full border-b bg-white/95 backdrop-blur-md px-4 py-3 sm:py-4 shadow-sm">
-        <div className="container max-w-5xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="container flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate("/quizzes")} className="rounded-xl shrink-0">
               <ArrowLeft className="h-5 w-5" />
@@ -388,11 +388,11 @@ export default function QuizFormPage() {
         </div>
       </header>
 
-      <main className="container max-w-4xl py-6 sm:py-8 px-4 space-y-8">
+      <main className="container py-6 sm:py-8 px-4 space-y-8">
         {/* Exam Meta Card */}
         <section className="bg-white rounded-[32px] p-6 sm:p-10 shadow-sm border border-gray-100 transition-all">
           <div className="space-y-8">
-            <div className="max-w-xl space-y-8">
+            <div className="max-w-4xl space-y-8">
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest text-[10px]">Chế độ hiển thị</label>
                 <Select value={isPublic ? "public" : "private"} onValueChange={(val) => setIsPublic(val === "public")}>
@@ -400,8 +400,16 @@ export default function QuizFormPage() {
                     <SelectValue placeholder="Chọn chế độ hiển thị" />
                   </SelectTrigger>
                   <SelectContent className="rounded-2xl border-gray-100 shadow-xl">
-                    <SelectItem value="public" className="cursor-pointer font-medium">Công khai (Mọi người đều có thể thấy)</SelectItem>
-                    <SelectItem value="private" className="cursor-pointer font-medium">Không công khai (Chỉ mình tôi)</SelectItem>
+                    <SelectItem value="private" className="cursor-pointer font-medium">
+                      <div className="flex items-center gap-2">
+                        <Lock className="h-4 w-4" /> Không công khai (Cá nhân)
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="public" className="cursor-pointer font-medium">
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-emerald-500" /> Công khai (Mọi người)
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>

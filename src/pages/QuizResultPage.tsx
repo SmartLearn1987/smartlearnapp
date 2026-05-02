@@ -254,7 +254,7 @@ export default function QuizResultPage() {
         <div className="pt-12 flex justify-center">
           <Button 
             onClick={() => navigate("/quizzes")}
-            className="rounded-3xl h-16 px-12 font-black text-xl bg-gray-900 shadow-2xl hover:bg-black transition-all hover:scale-105"
+            className="rounded-3xl h-16 px-12 font-black text-xl bg-primary shadow-xl shadow-primary/20 hover:brightness-110 transition-all hover:scale-105 active:scale-95"
           >
             Quay lại danh sách bài thi
           </Button>

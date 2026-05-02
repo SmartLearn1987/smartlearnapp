@@ -138,18 +138,18 @@ export default function FlashcardViewer({ flashcards }: { flashcards: Flashcard[
           }}
         >
           {/* Front */}
-          <div className="backface-hidden absolute inset-0 flex items-center justify-center rounded-3xl bg-primary p-6 sm:p-12 text-primary-foreground shadow-xl border-4 border-white/20 overflow-hidden">
+          <div className="backface-hidden absolute inset-0 flex items-center justify-center rounded-3xl bg-gray-100 p-6 sm:p-12 text-[#ef4444] shadow-md border border-gray-200 overflow-hidden">
             <span 
-              className="text-center font-heading font-black break-words w-full"
+              className="text-center font-bold break-words w-full"
               style={{ fontSize: getDynamicFontSize(card.front, isFullscreen ? 64 : 40) }}
             >
               {card.front}
             </span>
           </div>
           {/* Back */}
-          <div className="backface-hidden rotate-y-180 absolute inset-0 flex items-center justify-center rounded-3xl bg-secondary p-6 sm:p-12 text-secondary-foreground shadow-xl border-4 border-white/20 overflow-hidden">
+          <div className="backface-hidden rotate-y-180 absolute inset-0 flex items-center justify-center rounded-3xl bg-gray-100 p-6 sm:p-12 text-[#2563eb] shadow-md border border-gray-200 overflow-hidden">
             <span 
-              className="text-center font-heading font-bold break-words w-full"
+              className="text-center font-bold break-words w-full"
               style={{ fontSize: getDynamicFontSize(card.back, isFullscreen ? 48 : 28) }}
             >
               {card.back}
@@ -189,7 +189,7 @@ export default function FlashcardViewer({ flashcards }: { flashcards: Flashcard[
           >
             <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
-          <span className="font-heading text-[12px] sm:text-lg font-black px-1 sm:px-4 text-center whitespace-nowrap shrink-0 tabular-nums leading-none min-w-[50px] sm:min-w-[100px]">
+          <span className="font-bold text-[12px] sm:text-lg px-1 sm:px-4 text-center whitespace-nowrap shrink-0 tabular-nums leading-none min-w-[50px] sm:min-w-[100px]">
             {currentIndex + 1} / {displayCards.length}
           </span>
           <button 

@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { 
   Import, Trash2, GripVertical, Image as ImageIcon, Plus,
   ChevronLeft, ChevronRight, Maximize2, Minimize2, Play, Shuffle, Lightbulb,
-  Pause, Settings, Check
+  Pause, Settings, Check, Lock, Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -359,8 +359,17 @@ export default function EditQuizletPage() {
   const isEditMode = location.pathname.includes('/edit');
 
   return (
-    <div className="container py-8 max-w-5xl">
-      <h1 className="text-2xl font-bold font-heading text-left text-gray-800 mb-4">{title}</h1>
+    <div className="container py-8">
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => navigate("/quizlet")}
+          className="group rounded-xl bg-white/80 p-2 shadow-sm border border-gray-100 hover:bg-white hover:shadow-md transition-all shrink-0"
+          title="Quay lại danh sách"
+        >
+          <ChevronLeft className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+        </button>
+        <h1 className="text-2xl font-bold font-heading text-left text-gray-800">{title}</h1>
+      </div>
 
       <div className="flex mb-6 justify-center">
         <div className="grid grid-cols-2 sm:flex items-center p-1 bg-white/80 backdrop-blur-md rounded-2xl border border-[#2D9B63]/10 shadow-lg shadow-[#2D9B63]/5 w-full sm:w-auto gap-1">
@@ -493,8 +502,21 @@ export default function EditQuizletPage() {
             <div className="space-y-2">
               <label className="text-sm font-bold uppercase tracking-wide">Hiển thị</label>
               <Select value={isPublic ? "public" : "private"} onValueChange={(val) => setIsPublic(val === "public")}>
-                <SelectTrigger className="h-12 rounded-xl"><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="public">Công khai</SelectItem><SelectItem value="private">Quyền riêng tư</SelectItem></SelectContent>
+                <SelectTrigger className="h-12 rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="private">
+                    <div className="flex items-center gap-2">
+                      <Lock className="h-4 w-4" /> Không công khai (Cá nhân)
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="public">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-emerald-500" /> Công khai (Mọi người)
+                    </div>
+                  </SelectItem>
+                </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">

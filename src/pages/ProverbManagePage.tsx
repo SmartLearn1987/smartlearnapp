@@ -318,8 +318,11 @@ export default function ProverbManagePage() {
           <Button variant="outline" onClick={() => setShowBulk(true)} className="rounded-xl border-primary/20 text-primary hover:bg-primary/5">
             <Layers className="h-4 w-4 mr-2" /> Thêm danh sách
           </Button>
-          <Button onClick={() => setShowCreate(true)} className="rounded-xl bg-primary hover:brightness-110 shadow-lg shadow-primary/20 text-white">
-            <Plus className="h-4 w-4 mr-2" /> Thêm một câu
+          <Button 
+            onClick={() => setShowCreate(true)} 
+            className="rounded-full h-10 px-6 font-bold bg-primary text-white hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-primary/20"
+          >
+            <Plus className="h-4 w-4 mr-2" /> Tạo mới
           </Button>
         </div>
       </div>

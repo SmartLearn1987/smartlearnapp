@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Search, ClipboardList, MoreVertical, Trash2, Edit2, Clock, Trophy, Eye, EyeOff, Layers, AlertTriangle, Crown } from "lucide-react";
+import { Plus, Search, ClipboardList, MoreVertical, Trash2, Edit2, Clock, Trophy, Lock, Globe, Layers, AlertTriangle, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -151,11 +151,10 @@ export default function QuizListPage() {
       {viewMode === "personal" && (
         <div className="mb-8 opacity-0 animate-fade-up" style={{ animationDelay: "200ms" }}>
           <Button 
-            variant="outline"
             onClick={() => navigate('/quizzes/create')}
-            className="rounded-full h-10 px-6 font-bold border-primary text-primary hover:bg-primary/5 flex items-center gap-2 w-full sm:w-auto transition-all"
+            className="rounded-full h-10 px-6 font-bold bg-primary text-white hover:brightness-110 flex items-center gap-2 w-full sm:w-auto transition-all active:scale-95 shadow-lg shadow-primary/20"
           >
-            <Plus className="h-4 w-4" /> Tạo bài mới
+            <Plus className="h-4 w-4" /> Tạo trắc nghiệm mới
           </Button>
         </div>
       )}
@@ -220,12 +219,12 @@ export default function QuizListPage() {
                               {/* Visibility Icon - Only show in Personal mode */}
                               {viewMode === "personal" && (
                                 exam.is_public ? (
-                                  <div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-50 text-blue-600 border border-blue-100 shadow-sm transition-transform group-hover:scale-110 mr-1" title="Công khai">
-                                    <Eye className="w-4 h-4" />
+                                  <div className="flex items-center justify-center h-8 w-8 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm transition-transform group-hover:scale-110 mr-1" title="Mọi người">
+                                    <Globe className="w-4 h-4" />
                                   </div>
                                 ) : (
-                                  <div className="flex items-center justify-center h-8 w-8 rounded-full bg-orange-50 text-orange-600 border border-orange-200 shadow-sm transition-transform group-hover:scale-110 mr-1" title="Cá nhân">
-                                    <EyeOff className="w-4 h-4" />
+                                  <div className="flex items-center justify-center h-8 w-8 rounded-full bg-gray-50 text-muted-foreground/60 border border-gray-200 shadow-sm transition-transform group-hover:scale-110 mr-1" title="Cá nhân">
+                                    <Lock className="w-4 h-4" />
                                   </div>
                                 )
                               )}

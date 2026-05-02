@@ -264,8 +264,11 @@ export default function DictationManagePage() {
             {exercises.length} bài · Luyện nghe và viết tiếng Việt chuẩn xác
           </p>
         </div>
-        <Button onClick={() => setShowCreate(true)}>
-          <Plus className="h-4 w-4 mr-2" /> Tạo bài mới
+        <Button 
+          onClick={() => setShowCreate(true)}
+          className="rounded-full h-10 px-6 font-bold bg-primary text-white hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-primary/20"
+        >
+          <Plus className="h-4 w-4 mr-2" /> Tạo mới
         </Button>
       </div>
 
@@ -278,7 +281,7 @@ export default function DictationManagePage() {
         <div className="flex flex-col items-center justify-center py-20 text-center gap-3 border-2 border-dashed border-border rounded-2xl">
           <BookText className="h-12 w-12 text-muted-foreground/40" />
           <p className="font-semibold text-muted-foreground">Chưa có bài chính tả nào</p>
-          <p className="text-sm text-muted-foreground/70">Nhấn "Tạo bài mới" để bắt đầu</p>
+          <p className="text-sm text-muted-foreground/70">Nhấn "Tạo mới" để bắt đầu</p>
         </div>
       ) : (
         <div className="space-y-8">

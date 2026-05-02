@@ -337,11 +337,11 @@ export default function PictogramManagePage() {
             </div>
           </div>
         </div>
-        <Button onClick={() => setShowCreate(true)} className="h-12 px-6 rounded-2xl shadow-lg shadow-primary/20 flex gap-2 font-bold animate-fade-in group">
-          <div className="bg-white/20 p-1 rounded-lg transition-transform group-hover:rotate-90">
-            <Plus className="h-4 w-4" />
-          </div>
-          Thêm câu hỏi mới
+        <Button 
+          onClick={() => setShowCreate(true)} 
+          className="rounded-full h-10 px-6 font-bold bg-primary text-white hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-primary/20"
+        >
+          <Plus className="h-4 w-4 mr-2" /> Tạo mới
         </Button>
       </div>
 
