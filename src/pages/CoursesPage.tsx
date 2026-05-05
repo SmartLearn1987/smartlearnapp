@@ -6,6 +6,7 @@ import FlashcardViewer from "@/components/FlashcardViewer";
 import ImageLightbox from "@/components/ImageLightbox";
 import RichTextEditor, { type RichBlock } from "@/components/RichTextEditor";
 import { apiFetch, API_BASE_URL } from "@/lib/api";
+import { getAssetUrl } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -451,7 +452,7 @@ export default function CoursesPage() {
                       <div className="flex items-start gap-4">
                         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-muted overflow-hidden border relative">
                           {course.image_url ? (
-                            <img src={course.image_url.startsWith("http") ? course.image_url : `${API_BASE_URL.replace("/api", "")}${course.image_url}`} alt={course.name} className="h-full w-full object-cover" />
+                            <img src={getAssetUrl(course.image_url)} alt={course.name} className="h-full w-full object-cover" />
                           ) : (
                             <BookOpen className="h-8 w-8 text-primary/50" />
                           )}
@@ -1311,14 +1312,11 @@ function LessonReviewMode({
                   onClick={() => setIsLightboxOpen(true)}
                 >
                   <div className="aspect-[16/10] flex items-center justify-center bg-white rounded-xl sm:rounded-2xl shadow-inner border border-muted/20 overflow-hidden">
-                     <img
-                       src={(() => {
-                         const url = images[slideIndex]?.file_url || "";
-                         return url.startsWith("http") ? url : `${API_BASE_URL.replace("/api", "")}${url}`;
-                       })()}
-                       alt={images[slideIndex]?.caption || ""}
-                       className="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
-                     />
+                      <img
+                        src={getAssetUrl(images[slideIndex]?.file_url)}
+                        alt={images[slideIndex]?.caption || ""}
+                        className="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+                      />
                   </div>
                   {images.length > 1 && (
                     <>
@@ -1429,7 +1427,7 @@ function LessonReviewMode({
       <ImageLightbox
         isOpen={isLightboxOpen}
         onClose={() => setIsLightboxOpen(false)}
-        images={images.map(img => img.file_url.startsWith("http") ? img.file_url : `${API_BASE_URL.replace("/api", "")}${img.file_url}`)}
+        images={images.map(img => getAssetUrl(img.file_url))}
         currentIndex={slideIndex}
         onNavigate={setSlideIndex}
       />

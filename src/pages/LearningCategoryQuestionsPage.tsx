@@ -6,6 +6,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiFetch, API_BASE_URL } from "@/lib/api";
+import { getAssetUrl } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -205,7 +206,7 @@ export default function LearningCategoryQuestionsPage() {
           <div key={q.id} className="group relative bg-card border border-border rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300">
             <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
               <img 
-                src={q.image_url} 
+                src={getAssetUrl(q.image_url)} 
                 alt={q.answer} 
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
               />
@@ -270,7 +271,7 @@ export default function LearningCategoryQuestionsPage() {
                 {questImageUrl ? (
                   <>
                     <img 
-                      src={questImageUrl} 
+                      src={getAssetUrl(questImageUrl)} 
                       alt="Preview" 
                       className="h-full w-full object-contain p-2"
                     />

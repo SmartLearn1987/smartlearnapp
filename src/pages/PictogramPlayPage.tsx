@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, getAssetUrl } from "@/lib/utils";
 import { createPortal } from "react-dom";
 
 interface Question {
@@ -55,7 +55,7 @@ function ResultOverlay({ score, total, onRetry, onHome, questions, userAnswers }
             return (
               <div key={q.id} className={`flex items-center gap-4 p-4 rounded-2xl border ${isCorrect ? 'border-green-200 bg-green-50/50' : 'border-red-200 bg-red-50/50'}`}>
                 <div className="h-16 w-16 rounded-xl bg-white border border-border overflow-hidden shrink-0">
-                  <img src={q.image_url} alt="" className="h-full w-full object-contain p-1" />
+                  <img src={getAssetUrl(q.image_url)} alt="" className="h-full w-full object-contain p-1" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Câu {idx + 1}</p>
@@ -286,21 +286,21 @@ export default function PictogramPlayPage() {
         <div className="flex-1 flex flex-col gap-2 sm:gap-4 min-h-0 animate-fade-in order-2 lg:order-1">
           {/* Image - Grows/Shrinks Flexibly */}
           <div className="flex-1 min-h-[180px] sm:min-h-0 relative bg-muted/30 rounded-[1.5rem] sm:rounded-[2.5rem] border-2 sm:border-4 border-border/50 overflow-hidden shadow-inner flex items-center justify-center p-4 sm:p-8 group">
-             <img 
-               src={currentQuestion.image_url} 
-               alt="Pictogram" 
-               className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-700 group-hover:scale-105"
-             />
+               <img 
+                src={getAssetUrl(currentQuestion.image_url)} 
+                alt="Pictogram" 
+                className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-700 group-hover:scale-105"
+              />
           </div>
 
           {/* Answer Boxes - Prominent & Large */}
-          <div className="flex flex-wrap justify-center gap-x-2 sm:gap-x-4 gap-y-3 sm:gap-y-5 py-3 sm:py-6 px-4 bg-white/40 backdrop-blur-sm rounded-2xl sm:rounded-[2rem] border-2 border-dashed border-primary/20 shrink-0">
+          <div className="flex flex-nowrap overflow-x-auto custom-scrollbar justify-start sm:justify-center items-center gap-x-2 sm:gap-x-4 py-6 sm:py-10 px-6 bg-white/40 backdrop-blur-sm rounded-2xl sm:rounded-[2rem] border-2 border-dashed border-primary/20 shrink-0 w-full">
             {(currentQuestion.answer || "").split("").map((char, charIdx) => {
               if (char === " ") {
                 return <div key={charIdx} className="w-6 sm:w-10" />; // Spacer
               }
               return (
-                <div key={charIdx} className="relative group scale-95 sm:scale-125 mx-0.5 sm:mx-1">
+                <div key={charIdx} className="relative group scale-95 sm:scale-125 mx-0.5 sm:mx-1 shrink-0">
                    <input
                     ref={el => {
                       if (inputRefs.current[currentIdx]) {

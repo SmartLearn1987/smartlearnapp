@@ -19,6 +19,14 @@ import {
 import { format, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { AlertCircle, PieChart, Info, Trash2 } from "lucide-react";
 
 interface UserStatistic {
   id: string;
@@ -41,6 +49,12 @@ export default function StatisticsPage() {
     queryKey: ["statistics", "users"],
     queryFn: () => apiFetch("/statistics/users"),
   });
+  
+  const [breakdownModalOpen, setBreakdownModalOpen] = useState(false);
+  const [selectedBreakdown, setSelectedBreakdown] = useState<{
+    month: string;
+    data: { reason: string; count: number }[];
+  } | null>(null);
 
   const { data: monthlySummary, isLoading: summaryLoading } = useQuery({
     queryKey: ["statistics", "monthly-summary"],
@@ -137,10 +151,22 @@ export default function StatisticsPage() {
                  <span className="text-sm font-bold text-slate-600">Số user đăng nhập</span>
                  <span className="text-lg font-black text-blue-600">{monthlySummary.currentMonth.loginUsers}</span>
                </div>
-               <div className="flex justify-between items-center bg-slate-50/80 hover:bg-red-50 transition-colors p-3.5 rounded-xl border border-slate-100">
-                 <span className="text-sm font-bold text-slate-600">Số user xóa tài khoản</span>
-                 <span className="text-lg font-black text-red-500">{monthlySummary.currentMonth.deletedUsers}</span>
-               </div>
+                <div 
+                  className="flex justify-between items-center bg-slate-50/80 hover:bg-red-50 transition-all p-3.5 rounded-xl border border-slate-100 cursor-pointer group/item"
+                  onClick={() => {
+                    setSelectedBreakdown({
+                      month: format(new Date(), "MM/yyyy"),
+                      data: monthlySummary.currentMonth.deletionBreakdown || []
+                    });
+                    setBreakdownModalOpen(true);
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-slate-600 group-hover/item:text-red-600 transition-colors">Số user xóa tài khoản</span>
+                    <Info className="h-3 w-3 text-slate-400 group-hover/item:text-red-400 transition-colors" />
+                  </div>
+                  <span className="text-lg font-black text-red-500">{monthlySummary.currentMonth.deletedUsers}</span>
+                </div>
              </div>
           </div>
 
@@ -164,10 +190,22 @@ export default function StatisticsPage() {
                  <span className="text-sm font-bold text-slate-600">Số user đăng nhập</span>
                  <span className="text-lg font-black text-slate-700">{monthlySummary.previousMonth.loginUsers}</span>
                </div>
-               <div className="flex justify-between items-center bg-slate-50/80 p-3.5 rounded-xl border border-slate-100">
-                 <span className="text-sm font-bold text-slate-600">Số user xóa tài khoản</span>
-                 <span className="text-lg font-black text-slate-700">{monthlySummary.previousMonth.deletedUsers}</span>
-               </div>
+                <div 
+                  className="flex justify-between items-center bg-slate-50/80 hover:bg-red-50 transition-all p-3.5 rounded-xl border border-slate-100 cursor-pointer group/item"
+                  onClick={() => {
+                    setSelectedBreakdown({
+                      month: format(new Date(new Date().setMonth(new Date().getMonth() - 1)), "MM/yyyy"),
+                      data: monthlySummary.previousMonth.deletionBreakdown || []
+                    });
+                    setBreakdownModalOpen(true);
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-slate-600 group-hover/item:text-red-600 transition-colors">Số user xóa tài khoản</span>
+                    <Info className="h-3 w-3 text-slate-400 group-hover/item:text-red-400 transition-colors" />
+                  </div>
+                  <span className="text-lg font-black text-slate-700 group-hover/item:text-red-500 transition-colors">{monthlySummary.previousMonth.deletedUsers}</span>
+                </div>
              </div>
           </div>
         </div>
@@ -320,6 +358,58 @@ export default function StatisticsPage() {
           </table>
         </div>
       </div>
+
+      <Dialog open={breakdownModalOpen} onOpenChange={setBreakdownModalOpen}>
+        <DialogContent className="max-w-md rounded-[32px] p-8">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="bg-red-50 text-red-600 p-2.5 rounded-xl border border-red-100">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-black text-[#112240]">Lý do xóa tài khoản</DialogTitle>
+                <DialogDescription className="text-sm font-bold text-muted-foreground">Tháng {selectedBreakdown?.month}</DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {selectedBreakdown?.data && selectedBreakdown.data.length > 0 ? (
+              <div className="space-y-3">
+                {selectedBreakdown.data.map((item, idx) => {
+                  const total = selectedBreakdown.data.reduce((acc, curr) => acc + curr.count, 0);
+                  const percentage = total > 0 ? Math.round((item.count / total) * 100) : 0;
+                  
+                  return (
+                    <div key={idx} className="bg-slate-50 border border-slate-100 p-4 rounded-2xl space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-sm text-slate-700">{item.reason}</span>
+                        <span className="font-black text-red-600">{item.count}</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-red-500 rounded-full transition-all duration-1000 ease-out" 
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-end">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{percentage}%</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-12 text-center space-y-3 bg-slate-50 rounded-[32px] border border-dashed border-slate-200">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-300 mx-auto">
+                  <AlertCircle className="h-8 w-8" />
+                </div>
+                <p className="text-sm font-bold text-slate-400">Không có dữ liệu thống kê cho tháng này</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
+import { getAssetUrl } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface LearningQuestion {
@@ -191,11 +192,11 @@ export default function LearningGamePlayPage() {
                   <span className="font-bold text-sm">{category?.general_question || "Đây là gì nào?"}</span>
                 </div>
                 
-                <div className="w-full flex-1 min-h-0 rounded-3xl overflow-hidden bg-[#F8FAFC] p-2 border border-slate-100 shadow-inner">
+                <div className="w-full flex-1 min-h-0 rounded-3xl overflow-hidden bg-[#F8FAFC] p-2 border border-slate-100 shadow-inner flex items-center justify-center">
                   <img 
-                    src={currentQuestion?.image_url} 
+                    src={getAssetUrl(currentQuestion?.image_url)} 
                     alt="Illustration"
-                    className="w-full h-full object-contain rounded-2xl transition-transform duration-500 hover:scale-105"
+                    className="max-w-full max-h-full object-contain rounded-2xl transition-transform duration-500 hover:scale-105"
                   />
                 </div>
               </div>
@@ -206,11 +207,11 @@ export default function LearningGamePlayPage() {
             {/* Back Side */}
             <div className="absolute inset-0 backface-hidden w-full h-full bg-white rounded-[2.5rem] border-4 border-emerald-400 p-6 flex flex-col items-center rotate-y-180">
                <div className="w-full flex-1 flex flex-col items-center justify-center space-y-6">
-                 <div className="w-full flex-1 min-h-0 rounded-3xl overflow-hidden bg-white">
+                 <div className="w-full flex-1 min-h-0 rounded-3xl overflow-hidden bg-white flex items-center justify-center">
                     <img 
-                      src={currentQuestion?.image_url} 
+                      src={getAssetUrl(currentQuestion?.image_url)} 
                       alt="Illustration"
-                      className="w-full h-full object-contain"
+                      className="max-w-full max-h-full object-contain"
                     />
                  </div>
                  

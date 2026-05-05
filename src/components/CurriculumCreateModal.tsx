@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Plus, ArrowLeft, Upload, ImagePlus, X, BookOpen } from "lucide-react";
+import { Plus, ArrowLeft, Upload, ImagePlus, X, BookOpen, Globe, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { apiFetch, API_BASE_URL } from "@/lib/api";
+import { getAssetUrl } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
@@ -35,11 +36,9 @@ import { toast } from "sonner";
    const [isPublic, setIsPublic] = useState(editingCurriculum?.is_public ?? false);
    const [lessonCount, setLessonCount] = useState<number | "">(editingCurriculum?.lesson_count || "");
    const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
-   const initialImageUrl = editingCurriculum?.image_url 
-     ? (editingCurriculum.image_url.startsWith("http") 
-         ? editingCurriculum.image_url 
-         : `${API_BASE_URL.replace("/api", "")}${editingCurriculum.image_url}`)
-     : null;
+    const initialImageUrl = editingCurriculum?.image_url 
+      ? getAssetUrl(editingCurriculum.image_url)
+      : null;
    const [coverImageUrl, setCoverImageUrl] = useState<string | null>(initialImageUrl);
    const [error, setError] = useState("");
 
@@ -256,7 +255,7 @@ import { toast } from "sonner";
                 </label>
               ) : (
                 <div className="relative group rounded-2xl overflow-hidden border-2 border-primary/20 bg-muted/50 p-2 w-48 mx-auto">
-                  <img src={coverImageUrl} alt="Preview" className="h-32 w-full object-cover rounded-xl shadow-sm" />
+                  <img src={getAssetUrl(coverImageUrl)} alt="Preview" className="h-32 w-full object-cover rounded-xl shadow-sm" />
                   <button
                     onClick={() => {
                       setCoverImageFile(null);

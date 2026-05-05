@@ -561,8 +561,8 @@ function TimetableTab({ userId }: { userId: string }) {
         {grouped.filter(g => g.entries.length > 0).length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center rounded-2xl border-2 border-dashed border-border bg-muted/20">
             <CalendarIcon className="h-12 w-12 text-muted-foreground/40 mb-3" />
-            <p className="font-medium text-muted-foreground">Chưa có môn học nào</p>
-            <p className="text-sm text-muted-foreground/60 mt-1">Nhấn "Thêm môn học" để bắt đầu</p>
+            <p className="font-medium text-muted-foreground">Chưa có lịch học nào</p>
+            <p className="text-sm text-muted-foreground/60 mt-1">Nhấn "Tạo lịch mới" để bắt đầu</p>
           </div>
         ) : (
           grouped.filter(g => g.entries.length > 0).map(({ day, entries: dayEntries }) => {

@@ -16,6 +16,7 @@ import { useAuth } from "@/context/AuthContext";
 import FileUploadZone from "@/components/FileUploadZone";
 import SubjectForm from "../components/SubjectForm";
 import { apiFetch, API_BASE_URL } from "@/lib/api";
+import { getAssetUrl } from "@/lib/utils";
 import { 
   DndContext, 
   closestCenter,
@@ -166,7 +167,7 @@ function SortableCurriculumItem({ curriculum, onClick, onEdit, onDelete, isAdmin
       <div className="flex items-start gap-4 pointer-events-none">
         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-muted overflow-hidden border relative">
           {curriculum.image_url ? (
-            <img src={curriculum.image_url.startsWith("http") ? curriculum.image_url : `${API_BASE_URL.replace("/api", "")}${curriculum.image_url}`} alt={curriculum.name} className="h-full w-full object-cover" />
+            <img src={getAssetUrl(curriculum.image_url)} alt={curriculum.name} className="h-full w-full object-cover" />
           ) : (
             <BookOpen className="h-8 w-8 text-primary/50" />
           )}
@@ -1283,9 +1284,7 @@ export default function TeacherPage() {
                   {lessonImages.length > 0 && (
                     <div className="grid grid-cols-3 gap-3">
                       {lessonImages.map((img) => {
-                        const src = img.file_url.startsWith("http")
-                          ? img.file_url
-                          : `${API_BASE_URL.replace("/api", "")}${img.file_url}`;
+                        const src = getAssetUrl(img.file_url);
                         return (
                           <div key={img.id} className="group relative rounded-xl overflow-hidden border bg-muted aspect-video">
                             <img
@@ -1547,7 +1546,7 @@ export default function TeacherPage() {
                       </div>
                     ) : (
                       <div className="relative inline-block rounded-xl overflow-hidden border bg-muted/30 p-1">
-                        <img src={coverImageUrl || ""} alt="Cover preview" className="h-32 w-auto max-w-full object-contain rounded-lg" />
+                        <img src={getAssetUrl(coverImageUrl)} alt="Cover preview" className="h-32 w-auto max-w-full object-contain rounded-lg" />
                         <button
                           onClick={() => {
                             setCoverImageFile(null);
@@ -1574,7 +1573,7 @@ export default function TeacherPage() {
                 <div className="rounded-2xl border bg-card p-6 space-y-3">
                   {coverImageUrl && (
                     <div className="mb-4">
-                      <img src={coverImageUrl} alt="Cover preview" className="h-24 w-auto max-w-full object-contain rounded-xl border bg-muted/30 p-1" />
+                      <img src={getAssetUrl(coverImageUrl)} alt="Cover preview" className="h-24 w-auto max-w-full object-contain rounded-xl border bg-muted/30 p-1" />
                     </div>
                   )}
                   <h3 className="font-bold text-lg">Thông tin giáo trình</h3>
@@ -1691,7 +1690,7 @@ export default function TeacherPage() {
                     </div>
                   ) : (
                     <div className="relative inline-block rounded-xl overflow-hidden border bg-muted/30 p-1">
-                      <img src={(coverImageUrl && !coverImageUrl.startsWith("blob:") && !coverImageUrl.startsWith("http")) ? `${API_BASE_URL.replace("/api", "")}${coverImageUrl}` : (coverImageUrl || "")} alt="Cover preview" className="h-32 w-auto max-w-full object-contain rounded-lg" />
+                      <img src={getAssetUrl(coverImageUrl)} alt="Cover preview" className="h-32 w-auto max-w-full object-contain rounded-lg" />
                       <button
                         onClick={() => {
                           setCoverImageFile(null);
@@ -1965,14 +1964,11 @@ function LessonReviewMode({
                   onClick={() => setIsLightboxOpen(true)}
                 >
                   <div className="aspect-[16/10] flex items-center justify-center bg-white rounded-xl sm:rounded-2xl shadow-inner border border-muted/20 overflow-hidden">
-                     <img
-                       src={(() => {
-                         const url = images[slideIndex]?.file_url || "";
-                         return url.startsWith("http") ? url : `${API_BASE_URL.replace("/api", "")}${url}`;
-                       })()}
-                       alt={images[slideIndex]?.caption || ""}
-                       className="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
-                     />
+                      <img
+                        src={getAssetUrl(images[slideIndex]?.file_url)}
+                        alt={images[slideIndex]?.caption || ""}
+                        className="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+                      />
                   </div>
                   {images.length > 1 && (
                     <>
@@ -2093,7 +2089,7 @@ function LessonReviewMode({
       <ImageLightbox
         isOpen={isLightboxOpen}
         onClose={() => setIsLightboxOpen(false)}
-        images={images.map(img => img.file_url.startsWith("http") ? img.file_url : `${API_BASE_URL.replace("/api", "")}${img.file_url}`)}
+        images={images.map(img => getAssetUrl(img.file_url))}
         currentIndex={slideIndex}
         onNavigate={setSlideIndex}
       />

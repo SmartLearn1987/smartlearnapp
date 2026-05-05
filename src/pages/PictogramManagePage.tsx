@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
+import { getAssetUrl } from "@/lib/utils";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
@@ -167,7 +168,7 @@ function PictogramModal({
               {form.image_url ? (
                 <>
                   <img 
-                    src={form.image_url} 
+                    src={getAssetUrl(form.image_url)} 
                     alt="Preview" 
                     className="h-full w-full object-contain p-2"
                   />
@@ -390,7 +391,7 @@ export default function PictogramManagePage() {
                       {/* Image Area */}
                       <div className="relative h-48 bg-muted/30 overflow-hidden flex items-center justify-center p-4">
                         <img
-                          src={q.image_url}
+                          src={getAssetUrl(q.image_url)}
                           alt={q.answer}
                           className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500"
                         />

@@ -241,3 +241,31 @@ Nâng cấp tính nhất quán của giao diện người dùng trên toàn hệ
  ### Nội dung thay đổi
  - **Database**: Thêm bảng `deleted_users` (id, original_id, username, deleted_at) để theo dõi lịch sử xóa tài khoản phục vụ thống kê.
  - **Backend**: Cập nhật logic khởi tạo server để tự động kiểm tra và tạo bảng nếu chưa tồn tại, giúp hệ thống hoạt động ổn định trên mọi môi trường build (Local, Railway, v.v.).
+
+---
+
+## 13. Chuẩn hóa UI/UX Quản lý & Navigation (UI/UX Standardization)
+
+**Date:** 2026-05-02
+
+### Task Content
+Đồng bộ hóa giao diện người dùng (UI) và trải nghiệm điều hướng (UX) trên toàn bộ các trang quản lý của hệ thống (Kho trắc nghiệm, Giáo trình, Lịch học, Quản lý Game). Tiêu chuẩn hóa các nút bấm tạo mới, nút chức năng Excel, và thiết kế lại Header với nút quay lại (Back navigation).
+
+### Checklist
+- [x] Đổi tên cụ thể cho các nút "Tạo mới" theo từng ngữ cảnh (VD: "Tạo lịch mới", "Tạo học phần mới", "Tạo trắc nghiệm mới", "Tạo giáo trình mới").
+- [x] Chuẩn hóa phong cách (style) của nút bấm chính (solid primary, rounded-full) trên các module.
+- [x] Thiết kế lại Header của `TeacherPage` đồng bộ với `CoursesPage` (thêm Pill môn học, nút quay lại).
+- [x] Cập nhật điều hướng Header (Nút ArrowLeft) cho các module quản lý Game (`VuaTiengVietManagePage`, `NhanhNhuChopManagePage`) quay về đúng trang danh sách `/games`.
+- [x] Định dạng lại các nút thao tác Excel ("Tải trắc nghiệm", "File mẫu") trong Kho trắc nghiệm sang dạng pill-shaped (rounded-full) với màu sắc nhận diện riêng biệt.
+- [x] Cải thiện bố cục hiển thị: Di chuyển nhãn "Ngày tạo" xuống góc dưới các thẻ (cards) bài học để giao diện thoáng hơn.
+- [x] Thiết kế hình ảnh Logo Icon 3D dạng 4 quyển sách xếp đứng và nghiêng ( |||\ ) làm nhận diện hệ thống.
+
+### Nội dung thay đổi
+- **Frontend**:
+    - **Header & Navigation**: Thêm nút `ArrowLeft` quay về `/games` cho quản lý trò chơi. Đồng bộ cấu trúc Header trên màn hình Giáo viên (`TeacherPage`).
+    - **Action Buttons**: 
+        - Nút tạo mới được cụ thể hóa nội dung ở `SchedulePage`, `QuizletPage`, `QuizListPage`, `TeacherPage`.
+        - Thay đổi style nút "Quản lý bài học" thành kiểu outline viền xanh.
+        - Đảo vị trí và cập nhật style cho cụm nút Import/Export Excel ở `QuizRepositoryPage`.
+    - **Layout**: Tối ưu hiển thị metadata (Ngày tạo) trên `CoursesPage`.
+- **Assets**: Cập nhật thiết kế 3D cho logo icon của Smart Learn.

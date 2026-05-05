@@ -32,4 +32,12 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // manualChunks can sometimes cause issues with dynamic imports
+        // if not configured correctly. Let Vite handle it naturally.
+      },
+    },
+  },
 }));
